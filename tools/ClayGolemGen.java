@@ -18,8 +18,10 @@ import java.util.Random;
  * Запуск из корня проекта: java tools/ClayGolemGen.java .
  */
 public class ClayGolemGen {
-    /** Во сколько раз текстура подробнее развёртки. */
-    static final int R = 4;
+    /** Во сколько раз текстура подробнее развёртки (1 — пиксель на единицу модели, как у ванильных мобов). */
+    static final int R = 1;
+    /** Во сколько раз шум и узоры мельче, чем на эталонной текстуре 4×: узоры заданы в её пикселях. */
+    static final double K = 4.0 / R;
 
     record Box(double x, double y, double z, int w, int h, int d, double inflate, String mat, String feature) {}
 
@@ -169,95 +171,182 @@ public class ClayGolemGen {
         m.part("body", "root", 0, 8, 0, 0.12, 0, 0)
                 .box(-8, -16, -5, 16, 14, 10, 0, "clay", "core")
                 .box(-6, -2, -4, 12, 5, 8, 0, "clay_dark", "")
-                .box(-5, -14, 4.5, 10, 9, 2, 0, "clay_dark", "");
+                .box(-5, -14, 4.5, 10, 9, 2, 0, "clay_dark", "")
+                // Горб из глиняных глыб и янтарные кристаллы вдоль хребта.
+                .box(-7, -17, 2, 5, 4, 4, 0, "clay_dark", "")
+                .box(2, -16, 2.5, 5, 3, 4, 0, "clay_dark", "")
+                .box(-1, -21, 3, 2, 5, 2, 0, "crystal", "")
+                .box(-4, -19, 4, 2, 3, 2, 0, "crystal", "")
+                .box(2.5, -18, 4.5, 2, 3, 2, 0, "crystal", "")
+                // Рёбра на боках.
+                .box(-8.6, -12, -3, 1, 6, 6, 0, "clay_dark", "seams")
+                .box(7.6, -12, -3, 1, 6, 6, 0, "clay_dark", "seams");
         m.part("chest_plate", "body", 0, 0, 0)
                 .box(-8, -16, -5, 16, 9, 10, 0.8, "fired", "plate")
-                .box(-3, -18, -5.5, 6, 3, 2, 0, "fired", "plate");
+                .box(-3, -18, -5.5, 6, 3, 2, 0, "fired", "plate")
+                .box(-5, -17, -6.6, 10, 2, 2, 0, "fired", "plate")
+                .box(-2, -14, -6.6, 4, 4, 1, 0, "copper", "")
+                .box(-7, -9, -6.2, 14, 1, 1, 0, "copper", "");
         m.part("belt_plate", "body", 0, 0, 0)
                 .box(-6, -2, -4, 12, 4, 8, 0.7, "fired", "plate")
-                .box(-4, 1, -5.2, 8, 5, 1, 0, "fired", "plate");
+                .box(-4, 1, -5.2, 8, 5, 1, 0, "fired", "plate")
+                .box(-7, 2, -5, 3, 5, 1, 0, "fired", "plate")
+                .box(4, 2, -5, 3, 5, 1, 0, "fired", "plate")
+                .box(-1.5, -1, -5.6, 3, 3, 1, 0, "copper", "");
         m.part("head", "body", 0, -16, -2)
                 .box(-4, -7, -4, 8, 8, 8, 0, "clay", "face")
-                .box(-3, -1, -4.6, 6, 2, 1, 0, "clay_dark", "");
+                .box(-3, -1, -4.6, 6, 2, 1, 0, "clay_dark", "")
+                .box(-4.5, -5, -4.8, 9, 1, 2, 0, "clay_dark", "")
+                .box(-6, -8, -1, 2, 4, 2, 0, "clay_dark", "")
+                .box(4, -8, -1, 2, 4, 2, 0, "clay_dark", "")
+                .box(-2, 1, -4.2, 4, 1, 3, 0, "clay_dark", "");
         m.part("helmet", "head", 0, 0, 0)
                 .box(-4, -7, -4, 8, 4, 8, 0.8, "fired", "plate")
-                .box(-1, -10, -3, 2, 3, 8, 0, "fired", "plate");
+                .box(-1, -10, -3, 2, 3, 8, 0, "fired", "plate")
+                .box(-5, -4, -4.4, 1, 4, 6, 0, "fired", "")
+                .box(4, -4, -4.4, 1, 4, 6, 0, "fired", "")
+                .box(-0.5, -4, -5.2, 1, 3, 1, 0, "copper", "");
         for (int s = -1; s <= 1; s += 2) {
             String side = s < 0 ? "right" : "left";
-            double o = s < 0 ? 0 : 1; // смещение кубоидов левой руки, чтобы она была зеркалом правой
+            double fx = s < 0 ? -6 : -2; // левый край кулака: левая рука — зеркало правой
             m.part("arm_" + side, "body", 10 * s, -13, 0)
-                    .box(s < 0 ? -5 : -1, -2, -3, 6, 18, 6, "clay")
-                    .box(s < 0 ? -6 : -2, 16, -4, 8, 6, 8, 0, "clay_dark", "fist");
+                    .box(s < 0 ? -5 : -1, -2, -3, 6, 18, 6, 0, "clay", "seams")
+                    .box(fx, 16, -4, 8, 6, 8, 0, "clay_dark", "fist")
+                    .box(fx + 0.5, 9, -3.5, 7, 4, 7, 0, "copper", "band")
+                    .box(fx, 22, -4, 2, 2, 2, 0, "clay_dark", "")
+                    .box(fx + 3, 22, -4, 2, 2, 2, 0, "clay_dark", "")
+                    .box(fx + 6, 22, -4, 2, 2, 2, 0, "clay_dark", "");
             m.part("pauldron_" + side, "arm_" + side, 0, 0, 0)
                     .box(s < 0 ? -6 : -2, -4, -4, 8, 6, 8, 0.4, "fired", "plate")
-                    .box(s < 0 ? -4 : 0, -6, -2, 4, 2, 4, 0, "fired", "plate");
+                    .box(s < 0 ? -4 : 0, -6, -2, 4, 2, 4, 0, "fired", "plate")
+                    .box(s < 0 ? -3 : 1, -9, -1, 2, 3, 2, 0, "copper", "")
+                    .box(s < 0 ? -6.6 : 5.6, -3, -3, 1, 4, 6, 0, "fired", "");
             m.part("arm_mid_" + side, "body", 8 * s, -8, 1, 0, 0, -0.35 * s)
                     .box(-2, -1, -2, 4, 13, 4, "clay")
-                    .box(-2.5, 12, -2.5, 5, 4, 5, 0, "clay_dark", "fist");
+                    .box(-2.5, 12, -2.5, 5, 4, 5, 0, "clay_dark", "fist")
+                    .box(-2.5, 5, -2.5, 5, 2, 5, 0, "copper", "band")
+                    .box(-2, 16, -2.5, 1, 2, 1, 0, "clay_dark", "")
+                    .box(1, 16, -2.5, 1, 2, 1, 0, "clay_dark", "");
             m.part("arm_lower_" + side, "body", 7 * s, -3, 1, 0, 0, -0.6 * s)
                     .box(-1.5, -1, -1.5, 3, 10, 3, "clay")
-                    .box(-2, 9, -2, 4, 3, 4, 0, "clay_dark", "fist");
+                    .box(-2, 9, -2, 4, 3, 4, 0, "clay_dark", "fist")
+                    .box(-1, 12, -2, 1, 2, 1, 0, "clay_dark", "")
+                    .box(0.5, 12, -2, 1, 2, 1, 0, "clay_dark", "");
             m.part("leg_" + side, "root", 4 * s, 10, 0)
-                    .box(-3.5, 0, -3.5, 7, 14, 7, "clay")
-                    .box(-4, 11, -5, 8, 3, 9, 0, "clay_dark", "");
+                    .box(-3.5, 0, -3.5, 7, 14, 7, 0, "clay", "seams")
+                    .box(-4, 11, -5, 8, 3, 9, 0, "clay_dark", "")
+                    .box(-3, 3, -4.6, 6, 4, 2, 0, "fired", "plate")
+                    .box(-4, 12, -6.5, 2, 2, 2, 0, "clay_dark", "")
+                    .box(-1, 12, -6.5, 2, 2, 2, 0, "clay_dark", "")
+                    .box(2, 12, -6.5, 2, 2, 2, 0, "clay_dark", "")
+                    .box(-4, -1, -4, 8, 2, 8, 0, "clay_dark", "");
         }
         return m;
     }
 
-    /** Маленький голем ближнего боя: коренастый, по пояс человеку. */
+    /** Маленький голем ближнего боя: коренастый, по пояс человеку, с рожками, поясом и янтарём в груди. */
     static Model golem() {
         Model m = new Model("clay_golem", AMBER);
         m.part("body", "root", 0, 12, 0)
-                .box(-4, -8, -3, 8, 8, 6, 0, "clay", "seams");
+                .box(-4, -8, -3, 8, 8, 6, 0, "clay", "seams")
+                .box(-4.5, -2, -3.5, 9, 2, 7, 0, "leather", "")
+                .box(2, -2.5, -4.3, 2, 2, 1, 0, "leather", "")
+                .box(-1, -6, -3.6, 2, 2, 1, 0, "crystal", "")
+                .box(-3, -9, 1, 6, 2, 3, 0, "clay_dark", "");
         m.part("head", "body", 0, -8, -1)
-                .box(-3, -5, -3, 6, 5, 6, 0, "clay", "face");
+                .box(-3, -5, -3, 6, 5, 6, 0, "clay", "face")
+                .box(-3.5, -4, -3.6, 7, 1, 1, 0, "clay_dark", "")
+                .box(-4, -7, -1, 2, 2, 2, 0, "clay_dark", "")
+                .box(2, -7, -1, 2, 2, 2, 0, "clay_dark", "")
+                .box(-2, 0, -3.4, 4, 1, 3, 0, "clay_dark", "");
         for (int s = -1; s <= 1; s += 2) {
             String side = s < 0 ? "right" : "left";
             m.part("arm_" + side, "root", 5.5 * s, 5, 0)
                     .box(-2, -1, -2, 4, 9, 4, "clay")
-                    .box(-2.5, 7, -2.5, 5, 4, 5, 0, "clay_dark", "fist");
+                    .box(-2.5, 7, -2.5, 5, 4, 5, 0, "clay_dark", "fist")
+                    .box(-2.5, -2, -2.5, 5, 3, 5, 0, "clay_dark", "")
+                    .box(-2, 11, -2.5, 1, 1, 1, 0, "clay_dark", "")
+                    .box(1, 11, -2.5, 1, 1, 1, 0, "clay_dark", "");
             m.part("leg_" + side, "root", 2 * s, 12, 0)
-                    .box(-2, 0, -2, 4, 12, 4, "clay");
+                    .box(-2, 0, -2, 4, 12, 4, "clay")
+                    .box(-2.5, 10, -3, 5, 2, 5, 0, "clay_dark", "")
+                    .box(-2.3, 4, -2.3, 4, 2, 4, 0, "leather", "band");
         }
         return m;
     }
 
-    /** Голем-метатель: светлая глина, сума с глиняными ядрами на боку, длинная бросковая рука. */
+    /** Голем-метатель: светлая глина, капюшон, сума с глиняными ядрами и праща в бросковой руке. */
     static Model thrower() {
         Model m = new Model("clay_thrower", CYAN);
         m.part("body", "root", 0, 12, 0)
                 .box(-3.5, -9, -2.5, 7, 9, 5, 0, "pale", "seams")
-                .box(3, -7, -3, 3, 5, 6, 0, "leather", "");
+                .box(3, -7, -3, 3, 5, 6, 0, "leather", "")
+                .box(3.5, -8, -2, 1, 1, 1, 0, "clayball", "")
+                .box(4.5, -8, 0, 1, 1, 1, 0, "clayball", "")
+                .box(3.5, -8, 1.5, 1, 1, 1, 0, "clayball", "")
+                .box(-3.8, -9, -2.8, 2, 9, 1, 0, "leather", "")
+                .box(-3.8, -9, 1.8, 2, 9, 1, 0, "leather", "")
+                .box(-4, -1.5, -3, 8, 2, 6, 0, "leather", "")
+                .box(-3, -10, 0.5, 6, 3, 2, 0, "leather", "");
         m.part("head", "body", 0, -9, -1)
                 .box(-3, -6, -3, 6, 6, 6, 0, "pale", "face")
-                .box(-3.5, -7, -3.5, 7, 2, 7, 0, "leather", "");
+                .box(-3.5, -7, -3.5, 7, 2, 7, 0, "leather", "")
+                .box(-3.5, -5, -4, 7, 1, 1, 0, "leather", "")
+                .box(-3.6, -5, -3, 1, 4, 6, 0, "leather", "")
+                .box(2.6, -5, -3, 1, 4, 6, 0, "leather", "")
+                .box(-2, -8, -1, 4, 1, 4, 0, "leather", "");
         for (int s = -1; s <= 1; s += 2) {
             String side = s < 0 ? "right" : "left";
-            m.part("arm_" + side, "root", 5 * s, 4, 0)
+            Part arm = m.part("arm_" + side, "root", 5 * s, 4, 0)
                     .box(-1.5, -1, -1.5, 3, s < 0 ? 12 : 10, 3, "pale")
-                    .box(-2, s < 0 ? 10 : 8, -2, 4, 3, 4, 0, "pale_dark", "fist");
+                    .box(-2, s < 0 ? 10 : 8, -2, 4, 3, 4, 0, "pale_dark", "fist")
+                    .box(-2, s < 0 ? 6 : 4, -2, 4, 3, 4, 0, "leather", "band")
+                    .box(-2, -2, -2, 4, 2, 4, 0, "pale_dark", "");
+            if (s < 0) arm.box(-0.5, 13, -0.5, 1, 3, 1, 0, "leather", "")
+                    .box(-1.5, 15.5, -1.5, 3, 2, 3, 0, "clayball", "");
             m.part("leg_" + side, "root", 2 * s, 12, 0)
-                    .box(-1.5, 0, -1.5, 3, 12, 3, "pale");
+                    .box(-1.5, 0, -1.5, 3, 12, 3, "pale")
+                    .box(-2, 3, -2, 4, 3, 4, 0, "leather", "band")
+                    .box(-2, 10, -2.5, 4, 2, 4, 0, "pale_dark", "");
         }
         return m;
     }
 
-    /** Голем-танк: массивный, из тёмной обожжённой глины, грудь и плечи под толстыми плитами. */
+    /** Голем-танк: массивный, из тёмной обожжённой глины, под толстыми плитами, с шипами, бивнями и валунами на спине. */
     static Model brute() {
         Model m = new Model("clay_brute", RED);
         m.part("body", "root", 0, 12, 0, 0.15, 0, 0)
                 .box(-7, -11, -4.5, 14, 11, 9, 0, "dark", "seams")
-                .box(-7, -11, -4.5, 14, 7, 9, 0.6, "fired", "plate");
+                .box(-7, -11, -4.5, 14, 7, 9, 0.6, "fired", "plate")
+                .box(-7.5, -1.5, -5, 15, 2, 10, 0, "leather", "")
+                .box(-1.5, -2, -5.8, 3, 3, 1, 0, "copper", "")
+                .box(-6, -14, 2, 5, 4, 4, 0, "clay_dark", "")
+                .box(1, -13, 2.5, 5, 3, 4, 0, "clay_dark", "")
+                .box(-2, -16, 3, 2, 3, 2, 0, "fired", "")
+                .box(2, -15, 3.5, 2, 2, 2, 0, "fired", "");
         m.part("head", "body", 0, -10, -3)
-                .box(-3, -4, -3.5, 6, 5, 6, 0, "dark", "face");
+                .box(-3, -4, -3.5, 6, 5, 6, 0, "dark", "face")
+                .box(-3.5, -3, -4.2, 7, 1, 1, 0, "fired", "")
+                .box(-2.5, 0, -4, 5, 2, 2, 0, "dark", "")
+                .box(-2.5, -1, -4.5, 1, 2, 1, 0, "bone", "")
+                .box(1.5, -1, -4.5, 1, 2, 1, 0, "bone", "");
         for (int s = -1; s <= 1; s += 2) {
             String side = s < 0 ? "right" : "left";
+            double x0 = s < 0 ? -4.5 : -1.5;
             m.part("arm_" + side, "root", 8.5 * s, 3, 0)
                     .box(s < 0 ? -3.5 : -1.5, -2, -2.5, 5, 13, 5, "dark")
-                    .box(s < 0 ? -4.5 : -1.5, 10, -3.5, 6, 6, 7, 0, "fired", "fist")
-                    .box(s < 0 ? -4.5 : -1.5, -4, -3.5, 6, 5, 7, 0.3, "fired", "plate");
+                    .box(x0, 10, -3.5, 6, 6, 7, 0, "fired", "fist")
+                    .box(x0, -4, -3.5, 6, 5, 7, 0.3, "fired", "plate")
+                    .box(x0 + 1, -7, -2, 2, 3, 2, 0, "fired", "")
+                    .box(x0 + 3, -6, 0.5, 2, 2, 2, 0, "fired", "")
+                    .box(x0 + 0.5, 12, -4.5, 1, 1, 1, 0, "bone", "")
+                    .box(x0 + 2.5, 12, -4.5, 1, 1, 1, 0, "bone", "")
+                    .box(x0 + 4.5, 12, -4.5, 1, 1, 1, 0, "bone", "")
+                    .box(x0, 5, -3, 6, 2, 6, 0, "copper", "band");
             m.part("leg_" + side, "root", 3.5 * s, 12, 0)
-                    .box(-2.5, 0, -2.5, 5, 12, 5, "dark");
+                    .box(-2.5, 0, -2.5, 5, 12, 5, "dark")
+                    .box(-3, 2, -3.6, 6, 4, 2, 0, "fired", "plate")
+                    .box(-3, 10, -4, 6, 2, 6, 0, "clay_dark", "");
         }
         return m;
     }
@@ -275,6 +364,10 @@ public class ClayGolemGen {
             case "pale_dark" -> new int[][]{{132, 118, 104}, {80, 70, 62}, {170, 158, 142}};
             case "dark" -> new int[][]{{110, 70, 52}, {62, 36, 26}, {150, 100, 76}};
             case "leather" -> new int[][]{{110, 74, 44}, {64, 40, 22}, {150, 106, 66}};
+            case "copper" -> new int[][]{{184, 104, 56}, {104, 52, 26}, {238, 170, 110}};
+            case "crystal" -> new int[][]{{255, 170, 60}, {200, 100, 20}, {255, 230, 150}};
+            case "bone" -> new int[][]{{214, 204, 178}, {150, 138, 112}, {240, 234, 214}};
+            case "clayball" -> new int[][]{{196, 130, 88}, {140, 84, 54}, {226, 170, 128}};
             default -> new int[][]{{132, 56, 34}, {74, 28, 16}, {184, 92, 54}}; // fired — обожжённая терракота лат
         };
     }
@@ -310,10 +403,10 @@ public class ClayGolemGen {
         double[][] tone = new double[pw][ph];
         for (int x = 0; x < pw; x++) {
             for (int y = 0; y < ph; y++) {
-                double n = noise(seed, x / 9.0, y / 9.0) * 0.55 + noise(seed + 1, x / 3.5, y / 3.5) * 0.3 + noise(seed + 2, x, y) * 0.15;
+                double n = noise(seed, x * K / 9.0, y * K / 9.0) * 0.55 + noise(seed + 1, x * K / 3.5, y * K / 3.5) * 0.3 + noise(seed + 2, x * K, y * K) * 0.15;
                 // Разводы пальцев по сырой глине (у лат — ровные полосы обжига).
-                double smear = fired ? Math.sin(y * 0.9 + noise(seed + 3, x / 14.0, 0) * 3) * 0.04
-                        : Math.sin((x * 0.35 + y * 0.12) + noise(seed + 4, x / 7.0, y / 7.0) * 4) * 0.06;
+                double smear = fired ? Math.sin(y * K * 0.9 + noise(seed + 3, x * K / 14.0, 0) * 3) * 0.04
+                        : Math.sin((x * K * 0.35 + y * K * 0.12) + noise(seed + 4, x * K / 7.0, y * K / 7.0) * 4) * 0.06;
                 double shade = switch (kind) {
                     case "top" -> 1.12;
                     case "bottom" -> 0.68;
@@ -323,15 +416,15 @@ public class ClayGolemGen {
             }
         }
         // Трещины: случайные блуждания, тёмные с светлой кромкой.
-        int cracks = (fired ? 1 : 2) + (pw * ph) / 900;
+        int cracks = (pw * ph < 12 ? 0 : fired ? 1 : 2) + (int) (pw * ph * K * K / 900);
         for (int c = 0; c < cracks; c++) crack(tone, rnd, pw, ph, 0.55);
         // Скошенные края грани.
         for (int x = 0; x < pw; x++) {
             for (int y = 0; y < ph; y++) {
                 int edge = Math.min(Math.min(x, pw - 1 - x), Math.min(y, ph - 1 - y));
                 if (edge == 0) tone[x][y] *= 0.72;
-                else if (edge == 1) tone[x][y] *= fired ? 1.18 : 0.88;
-                else if (edge == 2 && fired) tone[x][y] *= 1.1;
+                else if (edge == 1 && R > 1) tone[x][y] *= fired ? 1.18 : 0.88;
+                else if (edge == 2 && R > 1 && fired) tone[x][y] *= 1.1;
             }
         }
         for (int x = 0; x < pw; x++) for (int y = 0; y < ph; y++) put(base, x0 + x, y0 + y, mix(pal, tone[x][y]));
@@ -341,11 +434,36 @@ public class ClayGolemGen {
         if (kind.equals("front") && b.feature.equals("face")) eyes(base, glow, m.glow, x0, y0, pw, ph, b.mat);
         if (kind.equals("front") && b.feature.equals("core")) core(base, glow, m.glow, x0, y0, pw, ph, rnd);
         if (b.feature.equals("fist") && (kind.equals("front") || kind.equals("bottom"))) knuckles(base, x0, y0, pw, ph, pal);
+        if (b.feature.equals("band") && !kind.equals("top") && !kind.equals("bottom")) {
+            // Обмотка или медный обруч: светлая кромка сверху, тёмная снизу.
+            for (int x = 0; x < pw; x++) {
+                put(base, x0 + x, y0, pal[2]);
+                put(base, x0 + x, y0 + ph - 1, pal[1]);
+            }
+        }
+        if (b.mat.equals("crystal")) {
+            // Кристаллы светятся целиком: грань с бликом в верхнем левом углу.
+            for (int x = 0; x < pw; x++) for (int y = 0; y < ph; y++) {
+                int[] c = (x + y < 2) ? pal[2] : get(base, x0 + x, y0 + y);
+                put(base, x0 + x, y0 + y, c);
+                put(glow, x0 + x, y0 + y, c);
+            }
+        }
     }
 
     /** Латы: заклёпки по углам, гравированные полосы и медный кант. */
     static void plate(BufferedImage img, int x0, int y0, int pw, int ph, String kind) {
         int[] copper = {214, 136, 72}, copperDark = {120, 64, 30};
+        if (R == 1) {
+            // Пиксельные латы: медные заклёпки в углах и бороздки через 3 пикселя.
+            if (!kind.equals("top") && !kind.equals("bottom") && ph >= 5) {
+                for (int y = 2; y < ph - 1; y += 3) for (int x = 1; x < pw - 1; x++) put(img, x0 + x, y0 + y, scale(get(img, x0 + x, y0 + y), 0.78));
+            }
+            if (pw >= 4 && ph >= 4) {
+                for (int[] p : new int[][]{{1, 1}, {pw - 2, 1}, {1, ph - 2}, {pw - 2, ph - 2}}) put(img, x0 + p[0], y0 + p[1], copper);
+            }
+            return;
+        }
         for (int x = 3; x < pw - 3; x++) {
             put(img, x0 + x, y0 + 3, copperDark);
             put(img, x0 + x, y0 + ph - 4, copperDark);
@@ -370,9 +488,10 @@ public class ClayGolemGen {
 
     /** Швы между пластами глины — как будто голема лепили слоями. */
     static void seams(BufferedImage img, int x0, int y0, int pw, int ph, int[][] pal) {
-        for (int y = 10; y < ph - 4; y += 11) {
+        int step = Math.max(4, 11 * R / 4);
+        for (int y = step - 1; y < ph - 2; y += step) {
             for (int x = 1; x < pw - 1; x++) {
-                int dy = (int) Math.round(Math.sin(x * 0.4 + y) * 1.2);
+                int dy = R > 1 ? (int) Math.round(Math.sin(x * 0.4 + y) * 1.2) : 0;
                 put(img, x0 + x, y0 + y + dy, scale(pal[1], 0.9));
                 put(img, x0 + x, y0 + y + dy + 1, pal[2]);
             }
@@ -393,12 +512,13 @@ public class ClayGolemGen {
 
     /** Глаза: две светящиеся прорези с ореолом на основном слое и чистым светом на светящемся. */
     static void eyes(BufferedImage base, BufferedImage glow, int[] color, int x0, int y0, int pw, int ph, String mat) {
-        int ew = Math.max(4, pw / 5), eh = Math.max(3, ph / 7);
+        int ew = R > 1 ? Math.max(4, pw / 5) : Math.max(1, pw / 4), eh = Math.max(R > 1 ? 3 : 1, ph / 7);
+        int ring = R > 1 ? 2 : 1;
         int ey = ph * 2 / 5;
         for (int e = 0; e < 2; e++) {
             int ex = e == 0 ? pw / 4 - ew / 2 + 1 : pw * 3 / 4 - ew / 2 - 1;
-            for (int x = -2; x < ew + 2; x++) {
-                for (int y = -2; y < eh + 2; y++) {
+            for (int x = -ring; x < ew + ring; x++) {
+                for (int y = -ring; y < eh + ring; y++) {
                     boolean inside = x >= 0 && x < ew && y >= 0 && y < eh;
                     // Глубокая глазница вокруг.
                     if (!inside) {
@@ -449,7 +569,7 @@ public class ClayGolemGen {
 
     static void crack(double[][] tone, Random rnd, int pw, int ph, double depth) {
         double x = rnd.nextInt(pw), y = rnd.nextInt(ph), a = rnd.nextDouble() * Math.PI * 2;
-        int length = 6 + rnd.nextInt(Math.max(4, Math.min(pw, ph) / 2));
+        int length = (int) Math.max(2, (6 + rnd.nextInt(Math.max(4, Math.min(pw, ph) / 2))) / Math.max(1, K / 2));
         for (int i = 0; i < length; i++) {
             a += (rnd.nextDouble() - 0.5) * 0.9;
             x += Math.cos(a);

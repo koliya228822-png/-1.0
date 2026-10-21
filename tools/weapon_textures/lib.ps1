@@ -1,4 +1,4 @@
-# Векторная отрисовка оружия 256×256 (GDI+). Оружие рисуется в «своих» координатах: x поперёк, y вдоль
+# Векторная отрисовка оружия 128×128 (рисуется в координатах 256×256) (GDI+). Оружие рисуется в «своих» координатах: x поперёк, y вдоль
 # (y < 0 — к острию), затем поворачивается на холст. Все размеры — в пикселях итоговой текстуры.
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = 'Stop'
@@ -64,13 +64,15 @@ function Curve($g, [double[]]$xy, [string]$hex, [double]$w, [int]$a = 255) {
 }
 
 function NewCanvas([double]$angle) {
-    $bmp = New-Object System.Drawing.Bitmap 256, 256, $script:PF
+    $bmp = New-Object System.Drawing.Bitmap 128, 128, $script:PF
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
     $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-    $g.TranslateTransform(128, 128)
+    $g.TranslateTransform(64, 64)
+    # Рисуем в прежних координатах 256×256 и уменьшаем вдвое: иконки 128×128.
+    $g.ScaleTransform(0.5, 0.5)
     $g.RotateTransform([float]$angle)
     @($bmp, $g)
 }
