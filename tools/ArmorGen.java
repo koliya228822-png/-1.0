@@ -16,14 +16,15 @@ import java.util.Random;
 
 /**
  * Объёмная классовая броня: детали каждого комплекта (кубоиды на голове, теле, руках и ногах),
- * раскладка их развёрток по текстуре 128×128 и сама текстура (пиксель на единицу развёртки, R = 1).
+ * раскладка их развёрток по текстуре 128×128 и сама текстура: рисуется в 4 раза подробнее и уменьшается
+ * до 128×128 усреднением, чтобы мелкий рисунок (стёжка, кольчуга, узоры) не пропадал.
  * Пишет текстуры в textures/models/armor3d/ и данные моделей в client/armor/ArmorShapes.java.
  *
  * Координаты — как у моделей Minecraft: y вниз, лицо смотрит в −z; детали рук и ног задаются для правой
  * стороны и зеркалятся на левую. Запуск: java tools/ArmorGen.java .
  */
 public class ArmorGen {
-    static final int R = 1, TW = 128, TH = 128;
+    static final int R = 4, TW = 128, TH = 128;
     static final String[] BONES = {"head", "body", "right_arm", "left_arm", "right_leg", "left_leg"};
     static final String[] SLOTS = {"head", "chest", "legs", "feet"};
     static final String[] SETS = {"warrior_iron", "warrior", "warrior_damascus", "archer_leather", "archer",
@@ -51,7 +52,7 @@ public class ArmorGen {
                 default -> mage(b);
             }
             b.pack();
-            ImageIO.write(b.paint(), "png", texDir.resolve(set + ".png").toFile());
+            ImageIO.write(downscale(b.paint(), R), "png", texDir.resolve(set + ".png").toFile());
             for (String slot : SLOTS) {
                 String name = (set + "_" + slot).toUpperCase(Locale.ROOT);
                 java.append("    private static final float[][] ").append(name).append(" = {\n");
@@ -68,6 +69,34 @@ public class ArmorGen {
         Path out = root.resolve("src/main/java/com/heroicpaths/client/armor/ArmorShapes.java");
         Files.createDirectories(out.getParent());
         Files.writeString(out, java.toString(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Уменьшает картинку в k раз усреднением блоков k×k (цвет взвешен по прозрачности). Пиксель непрозрачен,
+     * если непрозрачна хотя бы половина блока: броня рисуется режимом cutout, полупрозрачность ей не нужна.
+     */
+    static BufferedImage downscale(BufferedImage src, int k) {
+        BufferedImage out = new BufferedImage(src.getWidth() / k, src.getHeight() / k, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < out.getHeight(); y++) {
+            for (int x = 0; x < out.getWidth(); x++) {
+                double r = 0, g = 0, b = 0, a = 0;
+                int solid = 0;
+                for (int dy = 0; dy < k; dy++) {
+                    for (int dx = 0; dx < k; dx++) {
+                        int c = src.getRGB(x * k + dx, y * k + dy);
+                        double alpha = (c >>> 24) / 255.0;
+                        if (alpha > 0.5) solid++;
+                        r += ((c >> 16) & 0xFF) * alpha;
+                        g += ((c >> 8) & 0xFF) * alpha;
+                        b += (c & 0xFF) * alpha;
+                        a += alpha;
+                    }
+                }
+                if (solid * 2 < k * k || a == 0) continue;
+                out.setRGB(x, y, 0xFF000000 | ((int) Math.round(r / a) << 16) | ((int) Math.round(g / a) << 8) | (int) Math.round(b / a));
+            }
+        }
+        return out;
     }
 
     // =====================================================================================
