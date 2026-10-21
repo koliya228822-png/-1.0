@@ -41,13 +41,13 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Удары длинным мечом и парными кинжалами: в покое — своя стойка, каждый удар — случайный из трёх
+ * Удары длинным мечом и парными кинжалами: в покое — своя стойка, каждый удар — случайный из своих (у меча три, у кинжалов четыре)
  * (тот же два раза подряд не выпадает).
  * <ul>
  *   <li>Длинный меч (стальной и дамасский) — в одной руке клинком вверх. Удары: вторая рука ложится на рукоять и широкий
  *       горизонтальный взмах справа налево; меч обеими руками над головой и удар сверху вниз; обычный косой удар одной рукой.</li>
  *   <li>Кинжалы парные: взятый в основную руку кинжал держат вместе со вторым таким же (вторая рука закрыта, второй кинжал
- *       рисуется здесь). Удары: укол одним кинжалом; оба кинжала над головой и удар сверху вниз; удар с разворотом
+ *       рисуется здесь). Удары: укол одним кинжалом; оба кинжала над головой и удар сверху вниз; серия «одной рукой, другой, обеими»; удар с разворотом
  *       на месте — разворот виден от третьего лица, от первого лица это широкий взмах.</li>
  * </ul>
  * Выбор удара каждый клиент делает сам по взмахам (их рассылает игра) с зерном из существа и игрового времени,
@@ -62,6 +62,9 @@ public final class WeaponMoves {
 
     /** Длительность одного удара (тиков). */
     static final float DURATION = 10;
+    /** Серия кинжалами — три укола подряд, поэтому дольше. */
+    static final int FLURRY = 3;
+    static final float FLURRY_DURATION = 18;
     /** Новый удар засчитывается, только когда предыдущий почти закончен — иначе удержание кнопки при копании дёргает удары. */
     static final float RESTART_AT = 0.7F;
 
@@ -87,6 +90,7 @@ public final class WeaponMoves {
 
     static final class State {
         int step = -1, start = -1000;
+        float duration = DURATION;
         /** Откуда начался текущий удар: прошлый удар и его ход в тот момент (fromP < 0 — из стойки). */
         int fromStep;
         float fromP = -1;
@@ -105,13 +109,25 @@ public final class WeaponMoves {
         s.fromP = s.step >= 0 && p < 1 ? p : -1;
         // Случайный удар, но не тот же, что только что. Зерно — существо и игровое время, одинаковые у всех клиентов.
         long seed = entity.getUUID().getLeastSignificantBits() ^ entity.level().getGameTime() * 0x9E3779B97F4A7C15L;
-        int roll = (int) Math.floorMod(seed ^ (seed >>> 29), s.step >= 0 ? 2L : 3L);
-        s.step = s.step >= 0 ? (s.step + 1 + roll) % 3 : roll;
+        Style style = style(entity.getMainHandItem());
+        int moves = moves(style), last = s.step < moves ? s.step : -1;
+        int roll = (int) Math.floorMod(seed ^ (seed >>> 29), last >= 0 ? moves - 1L : moves);
+        s.step = last >= 0 ? (last + 1 + roll) % moves : roll;
         s.start = entity.tickCount;
+        s.duration = duration(style, s.step);
+    }
+
+    /** Сколько видов ударов: у кинжалов ещё серия «одной рукой, другой, обеими». */
+    static int moves(Style style) {
+        return style == Style.DAGGERS ? 4 : 3;
+    }
+
+    static float duration(Style style, int step) {
+        return style == Style.DAGGERS && step == FLURRY ? FLURRY_DURATION : DURATION;
     }
 
     private static float progress(State s, int tick, float partial) {
-        return (tick - s.start + partial) / DURATION;
+        return (tick - s.start + partial) / s.duration;
     }
 
     private static float partial() {
@@ -227,6 +243,7 @@ public final class WeaponMoves {
     static Pose at(Style style, int step, float p, @Nullable Pose from) {
         Pose idle = idle(style), start = from != null ? from : idle;
         if (step < 0 || p >= 1) return idle;
+        if (style == Style.DAGGERS && step == FLURRY) return flurry(p, start);
         if (p < 0.3F) return start.lerp(swing(style, step, 0), ease(p / 0.3F));
         if (p < 0.62F) return swing(style, step, ease((p - 0.3F) / 0.32F));
         Pose end = swing(style, step, 1);
@@ -235,11 +252,24 @@ public final class WeaponMoves {
         return end.lerp(idle, ease((p - 0.62F) / 0.38F));
     }
 
-    private static float ease(float k) {
+    /** Серия кинжалами: укол основной рукой, потом второй, потом обеими сразу. */
+    private static Pose flurry(float p, Pose start) {
+        Pose idle = idle(Style.DAGGERS);
+        if (p < 0.1F) start = start.lerp(idle, ease(p / 0.1F));
+        else start = idle;
+        // Каждый укол — треть серии: рука выбрасывается вперёд и возвращается.
+        int hit = Math.min(2, (int) (p / 0.32F));
+        float k = Mth.sin(Mth.clamp((p - hit * 0.32F) / 0.32F, 0, 1) * Mth.PI);
+        boolean main = hit != 1, off = hit != 0;
+        Quaternionf q = blade(n(0, 0.05F, -1), LEFT);
+        Vector3f mainOut = arm(R_SHOULDER, n(0.15F, 0.05F, -1), 10), offOut = arm(L_SHOULDER, n(-0.15F, 0.05F, -1), 10);
+        return new Pose(main ? new Quaternionf(start.blade).slerp(q, k) : start.blade, off ? new Quaternionf(start.offBlade).slerp(q, k) : start.offBlade,
+                main ? new Vector3f(start.main).lerp(mainOut, k) : start.main, off ? new Vector3f(start.off).lerp(offOut, k) : start.off, 1, 0, 0);
+    }
+
         k = Mth.clamp(k, 0, 1);
         return k * k * (3 - 2 * k);
     }
-
 
     /** Текущее положение для существа (для правши; левше — зеркально). */
     static Pose pose(LivingEntity entity, float partial) {
