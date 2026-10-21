@@ -1106,6 +1106,8 @@
   "message.heroicpaths.already_casting": "You are already casting",
   "message.heroicpaths.cast_interrupted": "%s: casting interrupted",
   "hud.heroicpaths.casting": "%s — %s s",
+  "hud.heroicpaths.charge": "Charge %s%%",
+  "hud.heroicpaths.charge_full": "Full charge",
   "hud.heroicpaths.mob_level": "Lv. %s",
   "hud.heroicpaths.mob_base": "usually %s",
   "hud.heroicpaths.resist": "Resistant to %s",

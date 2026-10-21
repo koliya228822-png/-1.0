@@ -1106,6 +1106,8 @@
   "message.heroicpaths.already_casting": "Вы уже произносите заклинание",
   "message.heroicpaths.cast_interrupted": "%s: произнесение прервано",
   "hud.heroicpaths.casting": "%s — %s с",
+  "hud.heroicpaths.charge": "Заряд %s%%",
+  "hud.heroicpaths.charge_full": "Полный заряд",
   "hud.heroicpaths.mob_level": "Ур. %s",
   "hud.heroicpaths.mob_base": "обычно %s",
   "hud.heroicpaths.resist": "Сопротивление: %s",

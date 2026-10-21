@@ -1,6 +1,7 @@
 package com.heroicpaths.client;
 
 import com.heroicpaths.item.DaggerItem;
+import com.heroicpaths.item.FocusItem;
 import com.heroicpaths.registry.ModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -49,6 +50,8 @@ import java.util.WeakHashMap;
  *   <li>Кинжалы парные: взятый в основную руку кинжал держат вместе со вторым таким же (вторая рука закрыта, второй кинжал
  *       рисуется здесь). Удары: укол одним кинжалом; оба кинжала над головой и удар сверху вниз; серия «одной рукой, другой, обеими»; удар с разворотом
  *       на месте — разворот виден от третьего лица, от первого лица это широкий взмах.</li>
+ *   <li>Посох — в покое стоит вертикально, удары одной рукой размашисто: из-за спины снизу вперёд, выпад вперёд, сильный
+ *       удар из-за левого плеча. Пока посох заряжает стрелу (ПКМ), он в позе заряда из WeaponPoses.</li>
  * </ul>
  * Выбор удара каждый клиент делает сам по взмахам (их рассылает игра) с зерном из существа и игрового времени,
  * поэтому другие игроки обычно видят тот же удар без своих пакетов.
@@ -69,12 +72,13 @@ public final class WeaponMoves {
     static final float RESTART_AT = 0.7F;
 
     enum Style {
-        LONGSWORD, DAGGERS
+        LONGSWORD, DAGGERS, STAFF
     }
 
     @Nullable
     static Style style(ItemStack stack) {
         if (stack.is(ModItems.STEEL_SWORD.get()) || stack.is(ModItems.DAMASCUS_SWORD.get())) return Style.LONGSWORD;
+        if (stack.getItem() instanceof FocusItem focus && focus.isStaff()) return Style.STAFF;
         return stack.getItem() instanceof DaggerItem ? Style.DAGGERS : null;
     }
 
@@ -84,6 +88,11 @@ public final class WeaponMoves {
 
     static Item[] items() {
         return BuiltInRegistries.ITEM.stream().filter(item -> is(new ItemStack(item))).toArray(Item[]::new);
+    }
+
+    /** Посох сейчас заряжает магическую стрелу (ПКМ) — тогда он в позе заряда, а не в стойке для ударов. */
+    static boolean channeling(LivingEntity entity, ItemStack stack) {
+        return entity.isUsingItem() && entity.getUseItem() == stack;
     }
 
     // ---------------------------------------------------------------- выбор удара
@@ -173,9 +182,9 @@ public final class WeaponMoves {
             Quaternionf b = blade(n(0, -0.55F, -0.85F), LEFT);
             return new Pose(b, new Quaternionf(b), arm(R_SHOULDER, n(0.1F, 0.9F, -0.45F), 10), arm(L_SHOULDER, n(-0.1F, 0.9F, -0.45F), 10), 1, 0, 0);
         }
-        // Меч в правой руке клинком вверх, чуть вперёд; лезвия смотрят вперёд и назад.
+        // Меч в правой руке клинком вверх, чуть вперёд; лезвия смотрят вперёд и назад. Посох стоит вертикально.
         Vector3f main = arm(R_SHOULDER, n(0, 0.94F, -0.34F), 10);
-        Quaternionf b = blade(n(0, -1, -0.15F), LEFT);
+        Quaternionf b = blade(style == Style.STAFF ? n(0, -1, 0) : n(0, -1, -0.15F), LEFT);
         return new Pose(b, new Quaternionf(b), main, new Vector3f(main), 0, 0, 0);
     }
 
@@ -197,7 +206,31 @@ public final class WeaponMoves {
 
     /** Положение посреди взмаха: t от 0 (замах) до 1 (конец удара). */
     static Pose swing(Style style, int step, float t) {
-        return style == Style.DAGGERS ? daggerSwing(step, t) : longswordSwing(step, t);
+        return switch (style) {
+            case DAGGERS -> daggerSwing(step, t);
+            case STAFF -> staffSwing(step, t);
+            case LONGSWORD -> longswordSwing(step, t);
+        };
+    }
+
+    // Посох — размашисто одной рукой: из-за спины снизу вперёд-вверх, сильный удар из-за левого плеча.
+    private static final Swing STAFF_UNDERHAND = new Swing(n(0, 0.35F, 0.95F), new Vector3f(-1, 0, 0), 165);
+    private static final Swing STAFF_LEFT_SHOULDER = diagonal(n(0.55F, -0.75F, 0.35F), n(-0.6F, 0.5F, -0.6F), 15);
+
+    private static Pose staffSwing(int step, float t) {
+        if (step == 1) {
+            // Выпад: рука отводится назад и выбрасывается вперёд, посох навершием вперёд.
+            Vector3f u = new Vector3f(n(0, 0.9F, 0.45F)).lerp(n(0.1F, 0.05F, -1), t);
+            Quaternionf q = blade(new Vector3f(n(0, -0.3F, -0.95F)).lerp(n(0, 0.02F, -1), t), LEFT);
+            Vector3f main = arm(R_SHOULDER, u, 10);
+            return new Pose(q, q, main, new Vector3f(main), 0, 0, 0);
+        }
+        // Рука из-за спины вперёд или из-за левого плеча наискось вниз — рука идёт вслед за посохом.
+        Swing sw = step == 0 ? STAFF_UNDERHAND : STAFF_LEFT_SHOULDER;
+        Vector3f dir = sw.dir(t);
+        Quaternionf q = blade(dir, sw.axis);
+        Vector3f main = arm(R_SHOULDER, new Vector3f(dir).mul(step == 0 ? 0.75F : 0.6F).add(new Vector3f(FWD).mul(step == 0 ? 0.25F : 0.8F)), 10);
+        return new Pose(q, q, main, new Vector3f(main), 0, 0, 0);
     }
 
     private static Pose longswordSwing(int step, float t) {
@@ -461,7 +494,8 @@ public final class WeaponMoves {
         @Override
         public BakedModel applyTransform(ItemDisplayContext context, PoseStack pose, boolean leftHand) {
             LivingEntity entity = holder;
-            if (entity == null || context != ItemDisplayContext.THIRD_PERSON_RIGHT_HAND && context != ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+            if (entity == null || channeling(entity, entity.getMainHandItem())
+                    || context != ItemDisplayContext.THIRD_PERSON_RIGHT_HAND && context != ItemDisplayContext.THIRD_PERSON_LEFT_HAND
                     || !(Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity) instanceof LivingEntityRenderer<?, ?> renderer)
                     || !(renderer.getModel() instanceof HumanoidModel<?> model))
                 return super.applyTransform(context, pose, leftHand);

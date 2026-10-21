@@ -53,7 +53,7 @@ import java.util.List;
  *   <li>Двуручник — обеими руками у пояса; удар — замах над головой и рубящий удар обеими руками.</li>
  *   <li>Копьё и боевой молот — в стойке древко стоит вертикально до пола; копьё колет выпадом вперёд,
  *       молот бьёт сверху вниз обеими руками (положение оружия в руке плавно меняется — PolearmModels).</li>
- *   <li>Посох — вертикально, нижним концом на полу.</li>
+ *   <li>Посох — вертикально, нижним концом на полу; удары посохом — размашистые, вперемешку (WeaponMoves).</li>
  *   <li>Ручной арбалет — одной рукой, как пистолет: в покое стволом вниз-вперёд, заряженный — на прицеле.</li>
  *   <li>Мушкет — как ружьё: обе руки, приклад к плечу.</li>
  *   <li>Длинный меч — в покое одной рукой клинком вверх, три вида ударов вперемешку (WeaponMoves).</li>
@@ -249,13 +249,26 @@ public final class WeaponPoses {
         event.registerItem(new IClientItemExtensions() {
             @Override
             public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
-                return channeling(entity, stack) ? CHANNEL.getValue() : STAFF.getValue();
+                if (channeling(entity, stack)) return CHANNEL.getValue();
+                return hand == InteractionHand.MAIN_HAND ? MOVES.getValue() : STAFF.getValue();
             }
 
             @Override
             public boolean applyForgeHandTransform(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack stack,
                                                    float partialTick, float equip, float swing) {
-                return chargeTransform(pose, player, arm, stack, partialTick, equip);
+                int side = arm == HumanoidArm.RIGHT ? 1 : -1;
+                if (chargeTransform(pose, player, arm, stack, partialTick, equip)) {
+                    // Модель посоха от первого лица лишь ставит рукоять в начало координат — при заряде он лежит в руке
+                    // как прежде, по диагонали к прицелу.
+                    pose.translate(side * 0.9F / 16, 2.6F / 16, 0.4F / 16);
+                    pose.mulPose(new Quaternionf().rotationXYZ(0, -75 * side * DEG, 25 * side * DEG));
+                    pose.scale(0.68F, 0.68F, 0.68F);
+                    return true;
+                }
+                boolean main = stack == player.getMainHandItem();
+                WeaponMoves.Pose p = main ? WeaponMoves.pose(player, partialTick) : WeaponMoves.idle(WeaponMoves.Style.STAFF);
+                apply(pose, WeaponMoves.hold(p, WeaponMoves.Style.STAFF, main ? dip(stack, player, equip) : equip * 0.6F, side));
+                return true;
             }
         }, staves.toArray(Item[]::new));
         event.registerItem(new IClientItemExtensions() {
@@ -300,7 +313,7 @@ public final class WeaponPoses {
                 apply(pose, h);
                 return true;
             }
-        }, WeaponMoves.items());
+        }, java.util.Arrays.stream(WeaponMoves.items()).filter(item -> !(item instanceof FocusItem)).toArray(Item[]::new));
     }
 
     static void apply(PoseStack pose, Hold h) {
@@ -413,7 +426,8 @@ public final class WeaponPoses {
         LocalPlayer player = mc.player;
         if (player == null || player.isInvisible() || !event.getItemStack().isEmpty()) return;
         if (WeaponMoves.is(player.getMainHandItem())) {
-            moveArms(event, player);
+            // Пока посох заряжает стрелу, рука с ним — ванильная (без нарисованной руки), как и раньше.
+            if (!channeling(player, player.getMainHandItem())) moveArms(event, player);
             return;
         }
         Grip g = grip(player.getMainHandItem());

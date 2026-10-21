@@ -500,7 +500,7 @@ public class Weapon3DGen {
         double grip = -6.5;
         /** Двуручное: от первого лица хват и удар ставит код мода (WeaponPoses), модель только приводит рукоять в начало координат. */
         boolean twoHanded;
-        /** Длинный меч и парный кинжал: хват и удары от первого и третьего лица ставит код мода (WeaponMoves), как у двуручного. */
+        /** Длинный меч, парный кинжал и посох: хват и удары от первого и третьего лица ставит код мода (WeaponMoves), как у двуручного. */
         boolean heldByCode;
         /** Высота модели по y — для подгонки иконки и рамки. */
         double minY = 1e9, maxY = -1e9;
@@ -1384,6 +1384,7 @@ public class Weapon3DGen {
 
     static void staff(M m, Focus fc, String gem) {
         m.grip = -3.9;
+        m.heldByCode = true;
         rod(m, -20.0, 5.3, 0.46, fc.shaft());
         rod(m, -5.8, -2.0, 0.56, "grip_focus");
         for (double y : new double[]{5.05, -1.75, -6.05, -10.1, -15.2}) rod(m, y - 0.22, y + 0.22, 0.6, fc.trim());
