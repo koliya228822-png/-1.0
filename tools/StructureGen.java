@@ -122,9 +122,9 @@ public class StructureGen {
             Map.entry("minecraft:polished_blackstone_slab", "minecraft:quartz_slab"),
             Map.entry("minecraft:crying_obsidian", "minecraft:blue_ice"),
             Map.entry("minecraft:gilded_blackstone", "minecraft:diamond_block"),
-            Map.entry("minecraft:zombie", MODID + ":ice_golem"),
-            Map.entry("minecraft:skeleton", MODID + ":frozen_archer"),
-            Map.entry("minecraft:cave_spider", MODID + ":ice_golem"),
+            Map.entry("minecraft:zombie", MODID + ":undead_zombie"),
+            Map.entry("minecraft:skeleton", MODID + ":ghoul"),
+            Map.entry("minecraft:cave_spider", MODID + ":undead_zombie"),
             Map.entry(MODID + ":crypt_king", MODID + ":frost_lich"),
             Map.entry(MODID + ":chests/crypt", MODID + ":chests/frost"),
             Map.entry(MODID + ":chests/crypt_treasure", MODID + ":chests/frost_treasure")));

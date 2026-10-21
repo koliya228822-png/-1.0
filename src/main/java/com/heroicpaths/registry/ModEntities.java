@@ -133,7 +133,25 @@ public final class ModEntities {
                     .clientTrackingRange(12)
                     .build("frost_lich"));
 
-    // Ледяная цитадель: ледяной голем, замороженный лучник, снеговик-громила.
+    // Нежить Ледяной цитадели (по мотивам Плети из Warcraft): чумной зомби, вурдалак, банши, лоскут плоти.
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.UndeadZombie>> UNDEAD_ZOMBIE =
+            ENTITY_TYPES.register("undead_zombie", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.UndeadZombie>of(com.heroicpaths.entity.UndeadZombie::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.95f).eyeHeight(1.74f).ridingOffset(-0.7f).clientTrackingRange(8).build("undead_zombie"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.Ghoul>> GHOUL =
+            ENTITY_TYPES.register("ghoul", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.Ghoul>of(com.heroicpaths.entity.Ghoul::new, MobCategory.MONSTER)
+                    .sized(0.8f, 1.4f).eyeHeight(1.1f).clientTrackingRange(8).build("ghoul"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.Banshee>> BANSHEE =
+            ENTITY_TYPES.register("banshee", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.Banshee>of(com.heroicpaths.entity.Banshee::new, MobCategory.MONSTER)
+                    .sized(0.7f, 1.9f).eyeHeight(1.6f).clientTrackingRange(8).build("banshee"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.Abomination>> ABOMINATION =
+            ENTITY_TYPES.register("abomination", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.Abomination>of(com.heroicpaths.entity.Abomination::new, MobCategory.MONSTER)
+                    .sized(1.6f, 2.4f).eyeHeight(2.0f).clientTrackingRange(8).build("abomination"));
+
+    // Ледяные слуги Лича: ледяной голем, замороженный лучник, снеговик-громила.
     public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.IceGolem>> ICE_GOLEM =
             ENTITY_TYPES.register("ice_golem", () -> EntityType.Builder
                     .<com.heroicpaths.entity.IceGolem>of(com.heroicpaths.entity.IceGolem::new, MobCategory.MONSTER)
@@ -227,6 +245,10 @@ public final class ModEntities {
         event.put(LICH.get(), com.heroicpaths.entity.Lich.createAttributes().build());
         event.put(CLAY_COLOSSUS.get(), com.heroicpaths.entity.ClayColossus.createAttributes().build());
         event.put(FROST_LICH.get(), com.heroicpaths.entity.FrostLich.createAttributes().build());
+        event.put(UNDEAD_ZOMBIE.get(), com.heroicpaths.entity.UndeadZombie.createAttributes().build());
+        event.put(GHOUL.get(), com.heroicpaths.entity.Ghoul.createAttributes().build());
+        event.put(BANSHEE.get(), com.heroicpaths.entity.Banshee.createAttributes().build());
+        event.put(ABOMINATION.get(), com.heroicpaths.entity.Abomination.createAttributes().build());
         event.put(ICE_GOLEM.get(), com.heroicpaths.entity.IceGolem.createAttributes().build());
         event.put(FROZEN_ARCHER.get(), com.heroicpaths.entity.FrozenArcher.createAttributes().build());
         event.put(SNOW_BRUTE.get(), com.heroicpaths.entity.SnowBrute.createAttributes().build());

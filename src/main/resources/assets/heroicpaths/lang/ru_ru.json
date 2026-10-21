@@ -376,7 +376,7 @@
   "dungeon.heroicpaths.forge": "Пылающая кузня",
   "dungeon.heroicpaths.forge.desc": "Раскалённые залы, ифриты и Огненный Тиран.",
   "dungeon.heroicpaths.frost": "Ледяная цитадель",
-  "dungeon.heroicpaths.frost.desc": "Шесть ледяных этажей с големами, лучниками и снеговиками, внизу — Ледяной Лич.",
+  "dungeon.heroicpaths.frost.desc": "Шесть ледяных этажей нежити — зомби, вурдалаки, банши и лоскуты плоти, внизу — Ледяной Лич.",
   "entity.heroicpaths.flame_tyrant": "Огненный Тиран",
   "entity.heroicpaths.frost_lord": "Повелитель Мороза",
   "item.heroicpaths.flame_tyrant_spawn_egg": "Яйцо призыва Огненного Тирана",
@@ -1167,7 +1167,15 @@
   "item.heroicpaths.ice_golem_spawn_egg": "Яйцо призыва ледяного голема",
   "item.heroicpaths.frozen_archer_spawn_egg": "Яйцо призыва замороженного лучника",
   "item.heroicpaths.snow_brute_spawn_egg": "Яйцо призыва снеговика-громилы",
-  "message.heroicpaths.frost_lich_phase2": "Ледяные доспехи Лича раскалываются! Он начинает колдовать: ледяные вспышки, цепной мороз и замороженные лучники.",
+  "message.heroicpaths.frost_lich_phase2": "Ледяные доспехи Лича раскалываются! Он начинает колдовать: ледяные вспышки, цепной мороз, банши и замороженные лучники.",
   "message.heroicpaths.frost_lich_phase3": "Лич окутан вьюгой! Буран, морозная аура и скачки прочь — магия льда в полную силу.",
-  "message.heroicpaths.frost_lich_defeated": "Ледяной Лич рассыпался снежной пылью! Врата домой открыты."
+  "message.heroicpaths.frost_lich_defeated": "Ледяной Лич рассыпался снежной пылью! Врата домой открыты.",
+  "entity.heroicpaths.undead_zombie": "Чумной зомби",
+  "entity.heroicpaths.ghoul": "Вурдалак",
+  "entity.heroicpaths.banshee": "Банши",
+  "entity.heroicpaths.abomination": "Лоскут плоти",
+  "item.heroicpaths.undead_zombie_spawn_egg": "Яйцо призыва чумного зомби",
+  "item.heroicpaths.ghoul_spawn_egg": "Яйцо призыва вурдалака",
+  "item.heroicpaths.banshee_spawn_egg": "Яйцо призыва банши",
+  "item.heroicpaths.abomination_spawn_egg": "Яйцо призыва лоскута плоти"
 }

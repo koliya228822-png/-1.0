@@ -126,31 +126,35 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
     }
 
     /**
-     * Кто выходит из спавнера на этаже. В Глиняных копях и Ледяной цитадели состав зависит от этажа: на 1–2 только
-     * бойцы ближнего боя, на 3-м половина — стрелки, с 4-го каждый пятый — танк, остальные поровну ближние и дальние.
-     * Глиняные копи: глиняный голем, метатель, голем-танк. Ледяная цитадель: ледяной голем, замороженный лучник,
-     * снеговик-громила. В других данжах — монстр, записанный в спавнере. number — порядковый номер монстра на этаже.
+     * Кто выходит из спавнера на этаже. В Глиняных копях состав зависит от этажа: на 1–2 только глиняные големы,
+     * на 3-м половина — метатели, с 4-го каждый пятый — голем-танк, остальные поровну ближние и дальние.
+     * Ледяную цитадель заселяет нежить ({@link #undeadFloorMob}). В других данжах — монстр, записанный в спавнере.
+     * number — порядковый номер монстра на этаже.
      */
     public EntityType<?> floorMob(int floor, int number, EntityType<?> original) {
-        EntityType<?> melee, ranged, tank;
-        switch (this) {
+        return switch (this) {
             case CRYPT -> {
-                melee = ModEntities.CLAY_GOLEM.get();
-                ranged = ModEntities.CLAY_THROWER.get();
-                tank = ModEntities.CLAY_BRUTE.get();
+                if (floor >= 4 && number % 5 == 0) yield ModEntities.CLAY_BRUTE.get();
+                if (floor >= 3 && number % 2 == 1) yield ModEntities.CLAY_THROWER.get();
+                yield ModEntities.CLAY_GOLEM.get();
             }
-            case FROST -> {
-                melee = ModEntities.ICE_GOLEM.get();
-                ranged = ModEntities.FROZEN_ARCHER.get();
-                tank = ModEntities.SNOW_BRUTE.get();
-            }
-            default -> {
-                return original;
-            }
-        }
-        if (floor >= 4 && number % 5 == 0) return tank;
-        if (floor >= 3 && number % 2 == 1) return ranged;
-        return melee;
+            case FROST -> undeadFloorMob(floor, number);
+            default -> original;
+        };
+    }
+
+    /**
+     * Нежить Ледяной цитадели (по мотивам Плети из Warcraft): с каждым этажом добавляется новый вид.
+     * Этаж 1 — только чумные зомби; 2 — пополам зомби и вурдалаки; 3 — 40% зомби, 30% вурдалаков, 30% банши;
+     * с 4-го — 20% лоскутов плоти, 20% зомби, 30% вурдалаков и 30% банши.
+     */
+    private static EntityType<?> undeadFloorMob(int floor, int number) {
+        int slot = Math.floorMod(number, 10);
+        if (floor <= 1) return ModEntities.UNDEAD_ZOMBIE.get();
+        if (floor == 2) return slot % 2 == 0 ? ModEntities.UNDEAD_ZOMBIE.get() : ModEntities.GHOUL.get();
+        if (floor == 3) return slot < 4 ? ModEntities.UNDEAD_ZOMBIE.get() : slot < 7 ? ModEntities.GHOUL.get() : ModEntities.BANSHEE.get();
+        if (slot < 2) return ModEntities.ABOMINATION.get();
+        return slot < 4 ? ModEntities.UNDEAD_ZOMBIE.get() : slot < 7 ? ModEntities.GHOUL.get() : ModEntities.BANSHEE.get();
     }
 
     public boolean requiresScroll() {

@@ -6,11 +6,17 @@ import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
 
-/** Модель маленьких глиняных големов (ближнего боя, метателя и танка): косолапая походка и удар обеими руками. */
+/** Модель мобов данжей с телом, головой, двумя руками и ногами (големы, вурдалак, банши, лоскут плоти): походка и удар обеими руками. */
 public class ClayGolemModel<T extends ClayGolem> extends HierarchicalModel<T> {
     private final ModelPart root, body, head, armLeft, armRight, legLeft, legRight;
 
     public ClayGolemModel(ModelPart root) {
+        this(root, false);
+    }
+
+    /** translucent — рисовать полупрозрачным (призраки вроде банши). */
+    public ClayGolemModel(ModelPart root, boolean translucent) {
+        super(translucent ? net.minecraft.client.renderer.RenderType::entityTranslucent : net.minecraft.client.renderer.RenderType::entityCutoutNoCull);
         this.root = root;
         this.body = root.getChild("body");
         this.head = body.getChild("head");

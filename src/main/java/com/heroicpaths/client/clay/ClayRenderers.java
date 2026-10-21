@@ -6,6 +6,7 @@ import com.heroicpaths.entity.ClayDebris;
 import com.heroicpaths.entity.ClayGolem;
 import com.heroicpaths.entity.FrostLich;
 import com.heroicpaths.entity.FrozenArcher;
+import com.heroicpaths.entity.UndeadZombie;
 import com.heroicpaths.registry.ModEntities;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -34,6 +35,10 @@ public final class ClayRenderers {
     public static final ModelLayerLocation ICE_GOLEM = layer("ice_golem");
     public static final ModelLayerLocation ARCHER = layer("frozen_archer");
     public static final ModelLayerLocation SNOW_BRUTE = layer("snow_brute");
+    public static final ModelLayerLocation ZOMBIE = layer("undead_zombie");
+    public static final ModelLayerLocation GHOUL = layer("ghoul");
+    public static final ModelLayerLocation BANSHEE = layer("banshee");
+    public static final ModelLayerLocation ABOMINATION = layer("abomination");
 
     private ClayRenderers() {}
 
@@ -55,6 +60,10 @@ public final class ClayRenderers {
         event.registerLayerDefinition(ICE_GOLEM, ClayModels::iceGolem);
         event.registerLayerDefinition(ARCHER, ClayModels::frozenArcher);
         event.registerLayerDefinition(SNOW_BRUTE, ClayModels::snowBrute);
+        event.registerLayerDefinition(ZOMBIE, ClayModels::undeadZombie);
+        event.registerLayerDefinition(GHOUL, ClayModels::ghoul);
+        event.registerLayerDefinition(BANSHEE, ClayModels::banshee);
+        event.registerLayerDefinition(ABOMINATION, ClayModels::abomination);
     }
 
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -66,6 +75,10 @@ public final class ClayRenderers {
         event.registerEntityRenderer(ModEntities.ICE_GOLEM.get(), c -> new GolemRenderer<>(c, ICE_GOLEM, "frost/ice_golem", 0.95f, 0.5f));
         event.registerEntityRenderer(ModEntities.SNOW_BRUTE.get(), c -> new GolemRenderer<>(c, SNOW_BRUTE, "frost/snow_brute", 1.1f, 0.9f));
         event.registerEntityRenderer(ModEntities.FROZEN_ARCHER.get(), ArcherRenderer::new);
+        event.registerEntityRenderer(ModEntities.UNDEAD_ZOMBIE.get(), ZombieRenderer::new);
+        event.registerEntityRenderer(ModEntities.GHOUL.get(), c -> new GolemRenderer<>(c, GHOUL, "undead/ghoul", 0.95f, 0.5f));
+        event.registerEntityRenderer(ModEntities.BANSHEE.get(), c -> new GolemRenderer<>(c, BANSHEE, "undead/banshee", 1.0f, 0.3f, true));
+        event.registerEntityRenderer(ModEntities.ABOMINATION.get(), c -> new GolemRenderer<>(c, ABOMINATION, "undead/abomination", 1.1f, 1.0f));
         event.registerEntityRenderer(ModEntities.CLAY_DEBRIS.get(), DebrisRenderer::new);
         event.registerEntityRenderer(ModEntities.CLAY_SHOT.get(), c -> new ThrownItemRenderer<>(c, 1.0f, false));
         event.registerEntityRenderer(ModEntities.CLAY_BOULDER.get(), c -> new ThrownItemRenderer<>(c, 3.0f, false));
@@ -87,7 +100,13 @@ public final class ClayRenderers {
         private final float scale;
 
         public GolemRenderer(EntityRendererProvider.Context context, ModelLayerLocation layer, String name, float scale, float shadow) {
-            super(context, new ClayGolemModel<>(context.bakeLayer(layer)), shadow * scale);
+            this(context, layer, name, scale, shadow, false);
+        }
+
+        /** translucent — полупрозрачная модель (призраки). */
+        public GolemRenderer(EntityRendererProvider.Context context, ModelLayerLocation layer, String name, float scale, float shadow,
+                             boolean translucent) {
+            super(context, new ClayGolemModel<>(context.bakeLayer(layer), translucent), shadow * scale);
             this.texture = texture(name);
             this.scale = scale;
             addLayer(glow(this, name));
@@ -120,6 +139,27 @@ public final class ClayRenderers {
         @Override
         public ResourceLocation getTextureLocation(FrostLich entity) {
             return TEXTURE;
+        }
+    }
+
+    /** Чумной зомби: модель зомби (руки вперёд), но своя — гниющая нежить Плети. */
+    public static class ZombieRenderer extends net.minecraft.client.renderer.entity.HumanoidMobRenderer<UndeadZombie,
+            net.minecraft.client.model.ZombieModel<UndeadZombie>> {
+        private static final ResourceLocation TEXTURE = texture("undead/undead_zombie");
+
+        public ZombieRenderer(EntityRendererProvider.Context context) {
+            super(context, new net.minecraft.client.model.ZombieModel<>(context.bakeLayer(ZOMBIE)), 0.5f);
+            addLayer(glow(this, "undead/undead_zombie"));
+        }
+
+        @Override
+        public ResourceLocation getTextureLocation(UndeadZombie entity) {
+            return TEXTURE;
+        }
+
+        @Override
+        protected boolean isShaking(UndeadZombie entity) {
+            return false;
         }
     }
 

@@ -189,9 +189,20 @@ public class DungeonPortalGameTests {
         // Ледяная цитадель: та же схема, шесть этажей, свои ледяные мобы.
         DungeonType frost = DungeonType.FROST;
         helper.assertTrue(frost.floors() == 6 && clay.floors() == 5, "the Frost Citadel must have 6 floors, the Clay Pits 5");
-        helper.assertTrue(frost.floorMob(1, 1, any) == ModEntities.ICE_GOLEM.get(), "frost floor 1 must be ice golems");
-        helper.assertTrue(frost.floorMob(3, 1, any) == ModEntities.FROZEN_ARCHER.get(), "frost floor 3 must have frozen archers");
-        helper.assertTrue(frost.floorMob(6, 0, any) == ModEntities.SNOW_BRUTE.get(), "frost floor 6 must have snow brutes");
+        // Нежить: с каждым этажом добавляется новый вид — зомби, вурдалаки, банши, лоскуты плоти.
+        java.util.function.BiFunction<Integer, EntityType<?>, Integer> count = (floor, type) -> {
+            int n = 0;
+            for (int i = 0; i < 20; i++) if (frost.floorMob(floor, i, any) == type) n++;
+            return n;
+        };
+        helper.assertTrue(count.apply(1, ModEntities.UNDEAD_ZOMBIE.get()) == 20, "frost floor 1 must be only zombies");
+        helper.assertTrue(count.apply(2, ModEntities.GHOUL.get()) == 10, "frost floor 2 must add ghouls");
+        helper.assertTrue(count.apply(2, ModEntities.BANSHEE.get()) == 0, "banshees appear only from floor 3");
+        helper.assertTrue(count.apply(3, ModEntities.BANSHEE.get()) == 6, "frost floor 3 must add banshees");
+        helper.assertTrue(count.apply(3, ModEntities.ABOMINATION.get()) == 0, "abominations appear only from floor 4");
+        helper.assertTrue(count.apply(4, ModEntities.ABOMINATION.get()) == 4, "frost floor 4 must be 20% abominations");
+        helper.assertTrue(count.apply(6, ModEntities.UNDEAD_ZOMBIE.get()) > 0 && count.apply(6, ModEntities.GHOUL.get()) > 0
+                && count.apply(6, ModEntities.BANSHEE.get()) > 0, "deep floors keep all undead kinds");
         helper.assertTrue(frost.mobsPerSpawner(1, 6) > frost.mobsPerSpawner(1, 5), "floor 6 must be the most crowded");
         helper.succeed();
     }

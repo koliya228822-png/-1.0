@@ -93,6 +93,14 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.FROZEN_ARCHER, 0xC4CCD4, 0x6EDCFF, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SNOW_BRUTE_SPAWN_EGG = ITEMS.register("snow_brute_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.SNOW_BRUTE, 0xE8EEF4, 0x2C2C32, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> UNDEAD_ZOMBIE_SPAWN_EGG = ITEMS.register("undead_zombie_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.UNDEAD_ZOMBIE, 0x708A60, 0x60503C, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> GHOUL_SPAWN_EGG = ITEMS.register("ghoul_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.GHOUL, 0x80768C, 0xD6CCB2, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BANSHEE_SPAWN_EGG = ITEMS.register("banshee_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BANSHEE, 0xB0E4F0, 0xFFFFFF, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ABOMINATION_SPAWN_EGG = ITEMS.register("abomination_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ABOMINATION, 0xBC7A74, 0x962C36, new Item.Properties()));
     // Глиняные копи: колосс и его големы
     public static final DeferredItem<DeferredSpawnEggItem> CLAY_COLOSSUS_SPAWN_EGG = ITEMS.register("clay_colossus_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.CLAY_COLOSSUS, 0x8A4A2A, 0xFFB040, new Item.Properties()));

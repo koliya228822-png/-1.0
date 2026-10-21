@@ -117,7 +117,8 @@ public class ClayGolemGen {
         Path root = Path.of(args.length > 0 ? args[0] : ".");
         Path textures = root.resolve("src/main/resources/assets/heroicpaths/textures/entity");
         Files.createDirectories(textures);
-        List<Model> models = List.of(colossus(), golem(), thrower(), brute(), frostLich(), iceGolem(), frozenArcher(), snowBrute());
+        List<Model> models = List.of(colossus(), golem(), thrower(), brute(), frostLich(), iceGolem(), frozenArcher(), snowBrute(),
+                undeadZombie(), ghoul(), banshee(), abomination());
         StringBuilder java = new StringBuilder();
         java.append("package com.heroicpaths.client.clay;\n\n")
                 .append("import net.minecraft.client.model.geom.PartPose;\n")
@@ -553,6 +554,124 @@ public class ClayGolemGen {
         return m;
     }
 
+    // ---------------------------------------------------------------- Нежить Ледяной цитадели (по мотивам Плети из Warcraft)
+
+    static final int[] PLAGUE_GREEN = {150, 255, 90}, GHOST_WHITE = {200, 245, 255};
+
+    /** Чумной зомби: гниющая зелёная кожа, отвисшая челюсть, рваная рубаха, рёбра наружу, кость из руки. */
+    static Model undeadZombie() {
+        Model m = new Model("undead_zombie", PLAGUE_GREEN, "undead");
+        m.part("head", "root", 0, 0, 0)
+                .box(-4, -8, -4, 8, 8, 8, 0, "rotten", "face")
+                .box(-3, -1, -4.5, 6, 2, 4, 0, "rotten_dark", "")
+                .box(-4.5, -8.5, -2, 3, 2, 3, 0, "cloth", "")
+                .box(1, -9, 0, 2, 2, 2, 0, "rotten_dark", "");
+        m.part("hat", "root", 0, 0, 0);
+        m.part("body", "root", 0, 0, 0)
+                .box(-4, 0, -2, 8, 12, 4, 0, "cloth", "tatter")
+                .box(-3, 2, -2.6, 5, 5, 1, 0, "frost_bone", "ribs")
+                .box(-4.3, 7, -2.3, 3, 4, 1, 0, "rotten", "")
+                .box(-4.5, 9, -2.5, 9, 2, 5, 0, "rope", "band");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            Part arm = m.part(side + "_arm", "root", 5 * s, 2, 0)
+                    .box(s < 0 ? -3 : -1, -2, -2, 4, 12, 4, 0, "rotten", "")
+                    .box(s < 0 ? -3.3 : -1.3, -2.3, -2.3, 4, 5, 4, 0, "cloth", "tatter");
+            if (s > 0) arm.box(0, 6, -2.6, 1, 4, 1, 0, "frost_bone", "");
+            m.part(side + "_leg", "root", 1.9 * s, 12, 0)
+                    .box(-2, 0, -2, 4, 12, 4, 0, "cloth", "tatter")
+                    .box(-2, 9, -2, 4, 3, 4, 0, "rotten_dark", "");
+        }
+        return m;
+    }
+
+    /** Вурдалак: сгорбленный, тощий, серо-лиловый, огромная пасть с клыками, длинные руки с когтями. */
+    static Model ghoul() {
+        Model m = new Model("ghoul", RED, "undead");
+        m.part("body", "root", 0, 12, 2, 0.9, 0, 0)
+                .box(-4, -10, -3, 8, 10, 6, 0, "ghoul", "ribs")
+                .box(-1, -11, 2.5, 2, 9, 2, 0, "frost_bone", "")
+                .box(-3.5, -1, -3.5, 7, 3, 7, 0, "cloth", "tatter");
+        m.part("head", "body", 0, -10, -1, -0.7, 0, 0)
+                .box(-3.5, -6, -6, 7, 6, 7, 0, "ghoul", "face")
+                .box(-3, 0, -6.5, 6, 2, 5, 0, "ghoul_dark", "")
+                .box(-2.5, -0.5, -6.8, 1, 2, 1, 0, "frost_bone", "")
+                .box(1.5, -0.5, -6.8, 1, 2, 1, 0, "frost_bone", "")
+                .box(-5, -5, -2, 2, 3, 1, 0, "ghoul_dark", "")
+                .box(3, -5, -2, 2, 3, 1, 0, "ghoul_dark", "");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 5 * s, 5, -3)
+                    .box(-1.5, -1, -1.5, 3, 13, 3, "ghoul")
+                    .box(-2, 11, -2, 4, 2, 4, 0, "ghoul_dark", "")
+                    .box(-2, 13, -2.5, 1, 4, 1, 0, "frost_bone", "")
+                    .box(-0.5, 13, -2.5, 1, 5, 1, 0, "frost_bone", "")
+                    .box(1, 13, -2.5, 1, 4, 1, 0, "frost_bone", "");
+            m.part("leg_" + side, "root", 2.5 * s, 13, 1)
+                    .box(-1.5, 0, -1.5, 3, 11, 3, "ghoul")
+                    .box(-2, 9, -3.5, 4, 2, 5, 0, "ghoul_dark", "");
+        }
+        return m;
+    }
+
+    /** Банши: полупрозрачный призрак эльфийки — длинные белые волосы, тающая книзу мантия, тонкие руки. */
+    static Model banshee() {
+        Model m = new Model("banshee", GHOST_WHITE, "undead");
+        m.part("body", "root", 0, 7, 0)
+                .box(-3.5, -9, -2, 7, 9, 4, 0, "ghost", "")
+                .box(-4, 0, -2.5, 8, 6, 5, 0, "ghost", "")
+                .box(-3, 6, -2, 6, 5, 4, 0, "ghost", "tatter")
+                .box(-2, 11, -1.5, 4, 4, 3, 0, "ghost_dark", "tatter");
+        m.part("head", "body", 0, -9, 0)
+                .box(-3.5, -7, -3.5, 7, 7, 7, 0, "ghost", "face")
+                .box(-4, -8, 0.5, 8, 12, 3, 0, "ghost_hair", "tatter")
+                .box(-4, -8, -4, 8, 2, 5, 0, "ghost_hair", "")
+                .box(-4.2, -6, -3, 1, 8, 3, 0, "ghost_hair", "tatter")
+                .box(3.2, -6, -3, 1, 8, 3, 0, "ghost_hair", "tatter");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 4.5 * s, -1, 0)
+                    .box(-1, -1, -1, 2, 13, 2, "ghost")
+                    .box(-1.5, 0, -1.5, 3, 6, 3, 0, "ghost_dark", "tatter");
+            m.part("leg_" + side, "root", 1.5 * s, 21, 0)
+                    .box(-1, 0, -1, 2, 2, 2, 0, "ghost_dark", "");
+        }
+        return m;
+    }
+
+    /** Лоскут плоти: огромное сшитое брюхо с вывалившимися кишками, крюки в спине, рука-тесак и рука-крюк. */
+    static Model abomination() {
+        Model m = new Model("abomination", PLAGUE_GREEN, "undead");
+        m.part("body", "root", 0, 13, 0, 0.1, 0, 0)
+                .box(-8, -12, -6, 16, 13, 12, 0, "flesh", "stitches")
+                .box(-7, -18, -5, 14, 6, 10, 0, "flesh", "stitches")
+                .box(-3, -5, -6.6, 6, 4, 1, 0, "guts", "")
+                .box(-2, -1, -6.4, 2, 5, 1, 0, "guts", "")
+                .box(-5, -22, 2, 2, 5, 2, 0, "metal", "")
+                .box(3, -21, 2, 2, 4, 2, 0, "metal", "")
+                .box(-1, -20, 4, 2, 4, 2, 0, "frost_bone", "")
+                .box(-8.5, -3, -6.5, 17, 2, 13, 0, "rope", "band");
+        m.part("head", "body", 0, -18, -4)
+                .box(-3, -5, -3, 6, 5, 5, 0, "flesh", "face")
+                .box(-2.5, 0, -3.3, 5, 2, 3, 0, "flesh_dark", "")
+                .box(-3.5, -4, -2, 1, 3, 2, 0, "metal", "");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            Part arm = m.part("arm_" + side, "root", 9.5 * s, 0, 0)
+                    .box(-2.5, -2, -2.5, 5, 14, 5, 0, "flesh", "stitches")
+                    .box(-3, -3, -3, 6, 4, 6, 0, "flesh_dark", "");
+            if (s < 0) arm.box(-0.5, 10, -9, 1, 9, 12, 0, "metal", "")
+                    .box(-1.5, 10, -1.5, 3, 3, 3, 0, "rope", "");
+            else arm.box(-0.5, 12, -0.5, 1, 6, 1, 0, "metal", "")
+                    .box(-0.5, 17, -3, 1, 1, 3, 0, "metal", "")
+                    .box(-0.5, 15, -3, 1, 2, 1, 0, "metal", "");
+            m.part("leg_" + side, "root", 4 * s, 13, 0)
+                    .box(-3, 0, -3, 6, 11, 6, 0, "flesh", "stitches")
+                    .box(-3.5, 9, -4, 7, 2, 7, 0, "flesh_dark", "");
+        }
+        return m;
+    }
+
     // =====================================================================================
     // Текстуры
     // =====================================================================================
@@ -581,6 +700,19 @@ public class ClayGolemGen {
             case "robe_trim" -> new int[][]{{150, 200, 230}, {80, 120, 170}, {210, 236, 250}};
             case "coal" -> new int[][]{{44, 44, 50}, {16, 16, 20}, {84, 84, 96}};
             case "wood" -> new int[][]{{110, 80, 50}, {64, 44, 26}, {150, 112, 74}};
+            case "rotten" -> new int[][]{{112, 138, 96}, {58, 80, 52}, {152, 172, 126}};
+            case "rotten_dark" -> new int[][]{{84, 104, 70}, {40, 56, 36}, {120, 140, 98}};
+            case "cloth" -> new int[][]{{96, 76, 60}, {48, 36, 28}, {132, 106, 84}};
+            case "rope" -> new int[][]{{120, 96, 64}, {66, 50, 32}, {160, 132, 92}};
+            case "ghoul" -> new int[][]{{128, 118, 140}, {68, 60, 80}, {168, 158, 180}};
+            case "ghoul_dark" -> new int[][]{{94, 84, 106}, {48, 40, 58}, {130, 120, 142}};
+            case "ghost" -> new int[][]{{176, 228, 240}, {104, 164, 196}, {228, 250, 255}};
+            case "ghost_dark" -> new int[][]{{120, 180, 210}, {64, 112, 150}, {176, 222, 240}};
+            case "ghost_hair" -> new int[][]{{226, 240, 248}, {160, 190, 210}, {255, 255, 255}};
+            case "flesh" -> new int[][]{{188, 122, 116}, {118, 62, 60}, {224, 162, 150}};
+            case "flesh_dark" -> new int[][]{{150, 92, 90}, {90, 44, 44}, {190, 128, 120}};
+            case "guts" -> new int[][]{{156, 44, 54}, {84, 16, 26}, {204, 86, 96}};
+            case "metal" -> new int[][]{{150, 156, 166}, {78, 84, 96}, {212, 216, 226}};
             case "crystal" -> new int[][]{{255, 170, 60}, {200, 100, 20}, {255, 230, 150}};
             case "bone" -> new int[][]{{214, 204, 178}, {150, 138, 112}, {240, 234, 214}};
             case "clayball" -> new int[][]{{196, 130, 88}, {140, 84, 54}, {226, 170, 128}};
@@ -665,6 +797,23 @@ public class ClayGolemGen {
             for (int x = 0; x < pw; x++) {
                 int cut = tear.nextInt(Math.max(1, Math.min(3, ph / 2)) + 1);
                 for (int y = ph - cut; y < ph; y++) base.setRGB(x0 + x, y0 + y, 0);
+            }
+        }
+        if (b.feature.equals("stitches") && !kind.equals("bottom")) {
+            // Грубые швы: тёмная линия поперёк грани с поперечными стежками.
+            int sy = ph / 2, sx = pw / 3;
+            for (int x = 1; x < pw - 1; x++) put(base, x0 + x, y0 + sy, scale(pal[1], 0.6));
+            for (int x = 1; x < pw - 1; x += 2) {
+                put(base, x0 + x, y0 + sy - 1, scale(pal[1], 0.8));
+                put(base, x0 + x, y0 + sy + 1, scale(pal[1], 0.8));
+            }
+            for (int y = 1; y < ph - 1; y++) if (sx > 1 && pw > 6) put(base, x0 + sx, y0 + y, scale(pal[1], 0.6));
+        }
+        if (b.mat.startsWith("ghost")) {
+            // Призрак полупрозрачен.
+            for (int x = 0; x < pw; x++) for (int y = 0; y < ph; y++) {
+                int c = base.getRGB(x0 + x, y0 + y);
+                if ((c >>> 24) != 0) base.setRGB(x0 + x, y0 + y, (b.mat.equals("ghost_hair") ? 0xC8000000 : 0xA0000000) | (c & 0xFFFFFF));
             }
         }
         if (kind.equals("front") && b.feature.equals("cyclops")) {

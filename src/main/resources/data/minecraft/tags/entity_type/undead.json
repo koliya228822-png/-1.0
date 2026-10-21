@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:undead_zombie",
+    "heroicpaths:ghoul",
+    "heroicpaths:banshee",
+    "heroicpaths:abomination",
+    "heroicpaths:frozen_archer",
+    "heroicpaths:frost_lich"
+  ]
+}
