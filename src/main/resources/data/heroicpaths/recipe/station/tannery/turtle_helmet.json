@@ -1,8 +1,0 @@
-{
-  "type": "heroicpaths:station",
-  "station": "tannery",
-  "ingredients": [
-    { "item": "minecraft:turtle_scute", "count": 5 }
-  ],
-  "result": { "id": "minecraft:turtle_helmet", "count": 1 }
-}

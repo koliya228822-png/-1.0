@@ -55,6 +55,8 @@ public class HeroicPaths {
         ModRecipes.TYPES.register(modBus);
         ModEffects.EFFECTS.register(modBus);
         ModLoot.FUNCTIONS.register(modBus);
+        ModLoot.LOOT_MODIFIERS.register(modBus);
+        modBus.addListener(com.heroicpaths.item.VanillaGear::onBuildCreativeTabs);
         modBus.addListener(ModNetwork::registerPayloads);
         modBus.addListener(ModEntities::registerAttributes);
 
@@ -77,6 +79,9 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.addListener(RpgCommand::register);
         NeoForge.EVENT_BUS.addListener(PartyCommand::register);
         NeoForge.EVENT_BUS.addListener(MentorTrades::onVillagerTrades);
+        // После сделок наставников: фильтр ванильного оружия и брони оборачивает уже все сделки.
+        NeoForge.EVENT_BUS.register(com.heroicpaths.item.VanillaGear.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.village.VillageSpawn.class);
         NeoForge.EVENT_BUS.addListener(VillageInjector::onServerAboutToStart);
         NeoForge.EVENT_BUS.addListener(DelayedTasks::onServerTick);
         NeoForge.EVENT_BUS.addListener(DelayedTasks::onServerStopped);

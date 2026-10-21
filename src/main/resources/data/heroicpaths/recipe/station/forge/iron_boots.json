@@ -1,8 +1,0 @@
-{
-  "type": "heroicpaths:station",
-  "station": "forge",
-  "ingredients": [
-    { "tag": "c:ingots/iron", "count": 4 }
-  ],
-  "result": { "id": "minecraft:iron_boots", "count": 1 }
-}

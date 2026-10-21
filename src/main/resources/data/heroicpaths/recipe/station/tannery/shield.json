@@ -1,9 +1,0 @@
-{
-  "type": "heroicpaths:station",
-  "station": "tannery",
-  "ingredients": [
-    { "tag": "minecraft:planks", "count": 6 },
-    { "tag": "c:ingots/iron", "count": 1 }
-  ],
-  "result": { "id": "minecraft:shield", "count": 1 }
-}

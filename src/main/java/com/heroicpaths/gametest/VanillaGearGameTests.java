@@ -29,32 +29,37 @@ import java.util.List;
 public class VanillaGearGameTests {
     private static final String ARENA = "gametest_arena";
 
-    /** Все перенесённые рецепты и станки, на которых они теперь делаются. */
-    static List<String[]> moved() {
-        List<String[]> moved = new ArrayList<>();
+    /** Ванильные инструменты: делаются и на верстаке, и на станке ремёсел (там — с редкостью и опытом ремесла). */
+    static List<String[]> tools() {
+        List<String[]> tools = new ArrayList<>();
         for (String material : List.of("wooden", "stone", "iron", "golden", "diamond")) {
             String station = material.equals("wooden") || material.equals("stone") ? "tannery" : "forge";
-            for (String tool : List.of("sword", "axe", "pickaxe", "shovel", "hoe")) moved.add(new String[]{material + "_" + tool, station});
+            for (String tool : List.of("axe", "pickaxe", "shovel", "hoe")) tools.add(new String[]{material + "_" + tool, station});
         }
-        for (String material : List.of("leather", "iron", "golden", "diamond")) {
-            String station = material.equals("leather") ? "tannery" : "forge";
-            for (String piece : List.of("helmet", "chestplate", "leggings", "boots")) moved.add(new String[]{material + "_" + piece, station});
-        }
-        for (String name : List.of("turtle_helmet", "bow", "crossbow", "shield")) moved.add(new String[]{name, "tannery"});
-        return moved;
+        return tools;
     }
 
     @GameTest(template = ARENA)
-    public static void vanillaGearRecipesMovedToStations(GameTestHelper helper) {
+    public static void vanillaToolsOnBenchAndStations(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
-        for (String[] entry : moved()) {
-            helper.assertTrue(manager.byKey(ResourceLocation.withDefaultNamespace(entry[0])).isEmpty(),
-                    "the crafting table still makes " + entry[0]);
+        for (String[] entry : tools()) {
+            helper.assertTrue(manager.byKey(ResourceLocation.withDefaultNamespace(entry[0])).isPresent(),
+                    "the crafting table must make " + entry[0]);
             var station = manager.byKey(HeroicPaths.id("station/" + entry[1] + "/" + entry[0])).orElse(null);
             helper.assertTrue(station != null && station.value() instanceof StationRecipe recipe
                     && recipe.station() == Station.byId(entry[1])
                     && recipe.result().getItem().builtInRegistryHolder().key().location().getPath().equals(entry[0]),
                     entry[0] + " is not made at the " + entry[1]);
+        }
+        // Ванильный лук — лук I грейда — делается на дубильне.
+        helper.assertTrue(manager.byKey(ResourceLocation.withDefaultNamespace("bow")).isEmpty()
+                && manager.byKey(HeroicPaths.id("station/tannery/bow")).isPresent(), "the vanilla bow is made at the tannery");
+        // Ванильное оружие и броня не делаются нигде: ни на верстаке, ни на станках, ни на кузнечном столе.
+        for (var holder : manager.getRecipes()) {
+            // Отделка брони ничего не создаёт: её «результат» — просто пример.
+            if (holder.value() instanceof net.minecraft.world.item.crafting.SmithingTrimRecipe) continue;
+            var result = holder.value().getResultItem(helper.getLevel().registryAccess());
+            helper.assertTrue(!com.heroicpaths.item.VanillaGear.isRemoved(result), holder.id() + " still makes " + result);
         }
         // Оружие мода тоже делается только на станках.
         for (String[] entry : List.of(new String[]{"iron_dagger", "forge"}, new String[]{"diamond_greatsword", "forge"},
@@ -65,7 +70,7 @@ public class VanillaGearGameTests {
         // Остальные ванильные рецепты на месте.
         helper.assertTrue(manager.byKey(ResourceLocation.withDefaultNamespace("crafting_table")).isPresent()
                 && manager.byKey(ResourceLocation.withDefaultNamespace("stick")).isPresent()
-                && manager.byKey(ResourceLocation.withDefaultNamespace("netherite_sword_smithing")).isPresent(),
+                && manager.byKey(ResourceLocation.withDefaultNamespace("netherite_pickaxe_smithing")).isPresent(),
                 "unrelated vanilla recipes must stay");
         helper.succeed();
     }
@@ -93,16 +98,39 @@ public class VanillaGearGameTests {
         helper.assertTrue(StationCrafting.craft(player, HeroicPaths.id("station/forge/iron_pickaxe"), tannery, false) == 0,
                 "forge recipes must not work at the tannery");
 
-        helper.assertTrue(StationCrafting.craft(player, HeroicPaths.id("station/tannery/wooden_sword"), tannery, false) == 1,
-                "the tannery must make wooden swords");
-        helper.assertTrue(professions.xp(Profession.CARPENTER) == 2, "a wooden sword must give only 2 craft XP");
-        helper.assertTrue(StationCrafting.craft(player, HeroicPaths.id("station/tannery/shield"), tannery, false) == 1
-                && player.getInventory().countItem(Items.SHIELD) == 1, "the tannery must make shields");
+        helper.assertTrue(StationCrafting.craft(player, HeroicPaths.id("station/tannery/wooden_pickaxe"), tannery, false) == 1,
+                "the tannery must make wooden pickaxes");
+        helper.assertTrue(professions.xp(Profession.CARPENTER) == 2, "a wooden pickaxe must give only 2 craft XP");
 
         // Станки выводят сначала материалы, потом снаряжение по грейдам.
         var recipes = StationCrafting.recipes(level.getRecipeManager(), Station.FORGE);
         helper.assertTrue(recipes.get(0).value().result().is(com.heroicpaths.registry.ModItems.STEEL_PLATE.get()),
                 "forge materials must come first");
+        helper.succeed();
+    }
+
+    /** Ванильного оружия и брони нет ни у монстров, ни в добыче; слуги игрока вместо меча берут кинжал. */
+    @GameTest(template = ARENA)
+    public static void vanillaGearRemovedFromMobsAndLoot(GameTestHelper helper) {
+        net.minecraft.world.entity.monster.Zombie zombie = net.minecraft.world.entity.EntityType.ZOMBIE.create(helper.getLevel());
+        zombie.moveTo(helper.absolutePos(new BlockPos(2, 2, 2)), 0f, 0f);
+        zombie.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        zombie.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+        zombie.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(Items.TORCH));
+        helper.getLevel().addFreshEntity(zombie);
+        helper.assertTrue(zombie.getMainHandItem().isEmpty() && zombie.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).isEmpty(),
+                "monsters must not carry vanilla weapons or armor");
+        helper.assertTrue(zombie.getOffhandItem().is(Items.TORCH), "other items stay");
+
+        var loot = new it.unimi.dsi.fastutil.objects.ObjectArrayList<ItemStack>();
+        loot.add(new ItemStack(Items.IRON_CHESTPLATE));
+        loot.add(new ItemStack(Items.GOLDEN_SWORD));
+        loot.add(new ItemStack(Items.TRIDENT));
+        loot.add(new ItemStack(Items.IRON_PICKAXE));
+        loot.add(new ItemStack(Items.BOW));
+        loot.removeIf(com.heroicpaths.item.VanillaGear::isRemoved);
+        helper.assertTrue(loot.size() == 2, "loot keeps tools and the bow but loses weapons and armor, got " + loot);
+        zombie.discard();
         helper.succeed();
     }
 }

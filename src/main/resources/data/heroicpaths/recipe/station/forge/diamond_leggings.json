@@ -1,8 +1,0 @@
-{
-  "type": "heroicpaths:station",
-  "station": "forge",
-  "ingredients": [
-    { "tag": "c:gems/diamond", "count": 7 }
-  ],
-  "result": { "id": "minecraft:diamond_leggings", "count": 1 }
-}
