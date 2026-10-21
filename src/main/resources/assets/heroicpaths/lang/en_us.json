@@ -1167,7 +1167,7 @@
   "item.heroicpaths.ice_golem_spawn_egg": "Ice Golem Spawn Egg",
   "item.heroicpaths.frozen_archer_spawn_egg": "Frozen Archer Spawn Egg",
   "item.heroicpaths.snow_brute_spawn_egg": "Snow Brute Spawn Egg",
-  "message.heroicpaths.frost_lich_phase2": "The Lich's ice armor shatters! He starts casting: frost novas, chain frost, banshees and frozen archers.",
+  "message.heroicpaths.frost_lich_phase2": "The Lich gathers power! He starts casting: frost novas, chain frost, banshees and frozen archers.",
   "message.heroicpaths.frost_lich_phase3": "The Lich is wrapped in a blizzard! Hailstorms, a freezing aura and blinks away: frost magic at full strength.",
   "message.heroicpaths.frost_lich_defeated": "The Frost Lich crumbles into snow dust! The way home is open.",
   "entity.heroicpaths.undead_zombie": "Plague Zombie",

@@ -207,7 +207,7 @@ public class DungeonPortalGameTests {
         helper.succeed();
     }
 
-    /** Лич: ледяные доспехи гасят урон, на 2/3 и 1/3 здоровья они раскалываются, магия и урон растут. */
+    /** Лич: щит гасит урон, на 2/3 и 1/3 здоровья он копит силу (доспехи не отпадают), магия и урон растут. */
     @GameTest(template = ARENA, timeoutTicks = 200)
     public static void frostLichHasThreePhases(GameTestHelper helper) {
         com.heroicpaths.entity.FrostLich lich = helper.spawn(ModEntities.FROST_LICH.get(), new BlockPos(4, 2, 4));
@@ -216,11 +216,11 @@ public class DungeonPortalGameTests {
         lich.setHealth(lich.getMaxHealth() * 0.6f);
         helper.runAfterDelay(3, () -> {
             helper.assertTrue(lich.phase() == 2, "below 2/3 health the Lich must enter phase 2, got " + lich.phase());
-            helper.assertTrue(lich.action() == com.heroicpaths.entity.FrostLich.SHATTER, "phase change must shatter the ice armor");
+            helper.assertTrue(lich.action() == com.heroicpaths.entity.FrostLich.SHATTER, "phase change must be a power surge");
             helper.assertTrue(!lich.hurt(lich.damageSources().generic(), 5f), "the Lich must be invulnerable while shattering");
             int debris = helper.getLevel().getEntitiesOfClass(com.heroicpaths.entity.ClayDebris.class, lich.getBoundingBox().inflate(10),
-                    d -> d.model() == com.heroicpaths.entity.ClayDebris.LICH).size();
-            helper.assertTrue(debris == 4, "phase 2 must drop 4 ice armor parts, got " + debris);
+                    d -> true).size();
+            helper.assertTrue(debris == 0, "the Lich must not shed armor, got " + debris + " debris");
             lich.setHealth(lich.getMaxHealth() * 0.2f);
             helper.runAfterDelay(3, () -> {
                 helper.assertTrue(lich.phase() == 3 && lich.armorReduction() == 0f, "below 1/3 health the Lich must be bare in phase 3");

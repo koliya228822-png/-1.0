@@ -12,17 +12,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Отвалившаяся часть босса — рука или кусок лат Глиняного колосса, осколок ледяных доспехов Лича. Только зрелище:
+ * Отвалившаяся часть босса — рука или кусок лат Глиняного колосса. Только зрелище:
  * падает, кувыркаясь, лежит на полу арены и через несколько секунд рассыпается.
  */
 public class ClayDebris extends Entity {
-    /** Чья это часть: модель колосса или Лича. */
-    public static final int COLOSSUS = 0, LICH = 1;
+    /** Чья это часть (номер модели в PARTS); пока отваливаются части только у колосса. */
+    public static final int COLOSSUS = 0;
     /** Части, которые могут отвалиться (имена частей модели), для каждой модели. */
     public static final String[][] PARTS = {
             {"arm_lower_left", "arm_lower_right", "chest_plate", "pauldron_left", "pauldron_right",
-                    "arm_mid_left", "arm_mid_right", "helmet", "belt_plate"},
-            {"pauldron_left", "pauldron_right", "crown", "chest_armor", "belt"}};
+                    "arm_mid_left", "arm_mid_right", "helmet", "belt_plate"}};
     public static final int LIFE = 160;
     private static final EntityDataAccessor<Integer> MODEL = SynchedEntityData.defineId(ClayDebris.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> PART = SynchedEntityData.defineId(ClayDebris.class, EntityDataSerializers.INT);

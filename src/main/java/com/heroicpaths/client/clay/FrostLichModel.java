@@ -10,7 +10,7 @@ import java.util.Map;
 
 /**
  * Модель Лича (в стиле Аинза из «Повелителя»): парит над полом, покачиваясь, мантия колышется, вокруг кружат тёмно-красные сферы
- * (два, три, четыре — по фазе). Сброшенные части скрыты. Колдуя, Лич вскидывает руки; на смене фазы раскидывает их.
+ * (две, три, четыре — по фазе). Колдуя, Лич вскидывает руки с посохом; на смене фазы раскидывает их.
  */
 public class FrostLichModel extends HierarchicalModel<FrostLich> {
     private static final String[] NAMES = {"body", "chest_armor", "belt", "robe", "head", "crown", "arm_left", "arm_right",
@@ -46,11 +46,6 @@ public class FrostLichModel extends HierarchicalModel<FrostLich> {
     public void setupAnim(FrostLich entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
         root.getAllParts().forEach(ModelPart::resetPose);
         int phase = entity.phase();
-        part("pauldron_left").visible = phase < 2;
-        part("pauldron_right").visible = phase < 2;
-        part("crown").visible = phase < 2;
-        part("chest_armor").visible = phase < 2;
-        part("belt").visible = phase < 3;
 
         ModelPart body = part("body"), head = part("head");
         body.y += Mth.sin(ageInTicks * 0.08f) * 1.2f;

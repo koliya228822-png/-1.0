@@ -203,24 +203,20 @@ public final class ClayRenderers {
         }
     }
 
-    /** Отвалившаяся часть босса: та же деталь его модели в том же масштабе, кувыркается в полёте и рассыпается в конце. */
+    /** Отвалившаяся часть колосса: та же деталь его модели в том же масштабе, кувыркается в полёте и рассыпается в конце. */
     public static class DebrisRenderer extends EntityRenderer<ClayDebris> {
         private static final ResourceLocation COLOSSUS_TEXTURE = texture("clay_colossus");
-        private static final ResourceLocation LICH_TEXTURE = texture("frost/frost_lich");
         private final ClayColossusModel colossus;
-        private final FrostLichModel lich;
 
         public DebrisRenderer(EntityRendererProvider.Context context) {
             super(context);
             this.colossus = new ClayColossusModel(context.bakeLayer(COLOSSUS));
-            this.lich = new FrostLichModel(context.bakeLayer(LICH));
             this.shadowRadius = 0.6f;
         }
 
         @Override
         public void render(ClayDebris entity, float yaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int light) {
-            boolean isLich = entity.model() == ClayDebris.LICH;
-            ModelPart part = isLich ? lich.part(entity.part()) : colossus.part(entity.part());
+            ModelPart part = colossus.part(entity.part());
             if (part == null) return;
             float age = entity.tickCount + partialTick;
             float fade = Math.max(0f, (age - (ClayDebris.LIFE - 30)) / 30f);
@@ -238,7 +234,7 @@ public final class ClayRenderers {
                 box[4] = Math.max(box[4], cube.maxY);
                 box[5] = Math.max(box[5], cube.maxZ);
             });
-            float s = (isLich ? FrostLich.MODEL_SCALE : ClayColossus.MODEL_SCALE) * (1 - 0.3f * fade);
+            float s = ClayColossus.MODEL_SCALE * (1 - 0.3f * fade);
             // В полёте деталь кувыркается; упав, ложится плашмя: угол округляется до 90° и больше не меняется.
             boolean landed = entity.landedTick >= 0;
             float angle = (landed ? Math.min(entity.landedTick, 25) : Math.min(age, 25f)) * entity.spin();
@@ -251,14 +247,14 @@ public final class ClayRenderers {
             poseStack.mulPose(Axis.XP.rotationDegrees(angle));
             poseStack.scale(-s, -s, s);
             poseStack.translate(-(box[0] + box[3]) / 32f, -(box[1] + box[4]) / 32f, -(box[2] + box[5]) / 32f);
-            part.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(isLich ? LICH_TEXTURE : COLOSSUS_TEXTURE)), light, OverlayTexture.NO_OVERLAY);
+            part.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(COLOSSUS_TEXTURE)), light, OverlayTexture.NO_OVERLAY);
             poseStack.popPose();
             super.render(entity, yaw, partialTick, poseStack, buffers, light);
         }
 
         @Override
         public ResourceLocation getTextureLocation(ClayDebris entity) {
-            return entity.model() == ClayDebris.LICH ? LICH_TEXTURE : COLOSSUS_TEXTURE;
+            return COLOSSUS_TEXTURE;
         }
     }
 }

@@ -53,15 +53,15 @@ import java.util.Set;
  * мантии с золотом, с посохом и красной сферой в рёбрах.
  * <ul>
  *   <li>Фаза 1 (здоровье выше 2/3): только дальние атаки — ледяные стрелы, каждая третья — веером из трёх.
- *       Ледяные доспехи гасят 30% урона.</li>
- *   <li>Фаза 2: спадают наплечники, золотой воротник и нагрудная накидка. Добавляется магия: Ледяная вспышка — круг
+ *       Магический щит гасит 30% урона.</li>
+ *   <li>Фаза 2: щит слабеет (15%). Добавляется магия: Ледяная вспышка — круг
  *       под врагом взрывается льдом, Цепной мороз — скачет между игроками, призыв банши и замороженного лучника.
  *       Стрелы веером из трёх, быстрее (+15%).</li>
- *   <li>Фаза 3 (ниже 1/3): рвётся пояс, Лич окутан вьюгой. Ещё больше магии: Буран — град ледяных глыб по меткам
+ *   <li>Фаза 3 (ниже 1/3): щита больше нет, Лич окутан вьюгой. Ещё больше магии: Буран — град ледяных глыб по меткам
  *       вокруг каждого игрока, Цепной мороз скачет 7 раз, Морозная аура замедляет и ранит рядом, Скачок прочь от
  *       подошедших вплотную, призыв ледяных слуг — голема и снеговика. Стрелы веером из пяти, урон +40%.</li>
  * </ul>
- * На смене фазы Лич 1.5 секунды неуязвим: доспехи разлетаются осколками, всех вокруг отбрасывает.
+ * На смене фазы Лич 1.5 секунды неуязвим: копит силу, всех вокруг отбрасывает вьюгой. Доспехи и мантия на нём остаются.
  */
 public class FrostLich extends Monster implements DungeonBoss, RangedAttackMob {
     public static final int NONE = 0, CAST = 1, SHATTER = 2;
@@ -381,57 +381,29 @@ public class FrostLich extends Monster implements DungeonBoss, RangedAttackMob {
 
     // ================================================================ фазы
 
-    /** Смена фазы: ледяные доспехи раскалываются и разлетаются, Лич неуязвим и отбрасывает всех вокруг. */
+    /**
+     * Смена фазы: Лич копит силу — полторы секунды неуязвим, вокруг взрывается вьюга, всех отбрасывает и сковывает
+     * холодом. Доспехи и мантия остаются на нём: меняется только магия.
+     */
     private void startShatter(int phase) {
         entityData.set(PHASE, phase);
         applyPhaseBonuses();
         setAction(SHATTER);
         if (!(level() instanceof ServerLevel level)) return;
-        String[] parts = phase == 2 ? new String[]{"pauldron_left", "pauldron_right", "crown", "chest_armor"} : new String[]{"belt"};
-        for (String part : parts) dropPart(level, part);
         for (Player player : controller.playersInRadius(7)) {
             Vec3 push = player.position().subtract(position()).multiply(1, 0, 1).normalize().scale(1.1);
             player.setDeltaMovement(push.x, 0.45, push.z);
             player.hurtMarked = true;
             player.setTicksFrozen(Math.max(player.getTicksFrozen(), 100));
         }
-        playSound(SoundEvents.GLASS_BREAK, 3f, 0.5f);
+        level.sendParticles(ParticleTypes.SNOWFLAKE, getX(), getY() + 2, getZ(), 120, 1.5, 1.5, 1.5, 0.15);
+        Fx.burst(level, Palette.FROST, position().add(0, 2.2, 0), 2.5);
         playSound(SoundEvents.WITHER_AMBIENT, 2f, 1.6f);
+        playSound(SoundEvents.EVOKER_PREPARE_SUMMON, 2f, 0.6f);
         Fx.shockwave(level, Palette.FROST, position().add(0, 0.2, 0), 7, 10);
         controller.bossEvent().setColor(phase == 3 ? BossEvent.BossBarColor.PURPLE : BossEvent.BossBarColor.BLUE);
         controller.message("message.heroicpaths.frost_lich_phase" + phase, phase == 3 ? ChatFormatting.DARK_PURPLE : ChatFormatting.AQUA);
     }
-
-    /** Где у модели часть (в пикселях модели: x вправо от Лича, высота от земли, z вперёд). */
-    private static double[] partOffset(String part) {
-        return switch (part) {
-            case "pauldron_left" -> new double[]{-7, 35, 0};
-            case "pauldron_right" -> new double[]{7, 35, 0};
-            case "crown" -> new double[]{0, 47, 1};
-            case "chest_armor" -> new double[]{0, 30, 3};
-            default -> new double[]{0, 22, 3}; // belt
-        };
-    }
-
-    private void dropPart(ServerLevel level, String part) {
-        ClayDebris debris = ModEntities.CLAY_DEBRIS.get().create(level);
-        if (debris == null) return;
-        double[] o = partOffset(part);
-        double scale = MODEL_SCALE / 16.0;
-        float yaw = yBodyRot * Mth.DEG_TO_RAD;
-        double sideX = -Math.cos(yaw), sideZ = -Math.sin(yaw);
-        double fwdX = -Math.sin(yaw), fwdZ = Math.cos(yaw);
-        double x = getX() + (o[0] * sideX + o[2] * fwdX) * scale;
-        double z = getZ() + (o[0] * sideZ + o[2] * fwdZ) * scale;
-        Vec3 out = new Vec3(x - getX(), 0, z - getZ());
-        out = (out.lengthSqr() < 0.01 ? new Vec3(fwdX, 0, fwdZ) : out.normalize()).scale(0.25 + random.nextDouble() * 0.15);
-        debris.moveTo(x, getY() + o[1] * scale, z, yBodyRot, 0);
-        debris.setup(ClayDebris.LICH, part, yBodyRot, out.add(0, 0.3, 0));
-        level.addFreshEntity(debris);
-        level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.BLUE_ICE.defaultBlockState()),
-                x, getY() + o[1] * scale, z, 20, 0.3, 0.3, 0.3, 0.15);
-    }
-
     private void applyPhaseBonuses() {
         int i = Mth.clamp(phase(), 1, 3) - 1;
         modifier(Attributes.MOVEMENT_SPEED, PHASE_SPEED, SPEED_BONUS[i]);

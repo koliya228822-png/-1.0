@@ -425,8 +425,11 @@ public class ClayGolemGen {
                 .box(-6, -12, 3, 12, 30, 1, 0, "robe_purple", "")
                 .box(-6.5, -12.5, 3.5, 13, 31, 1, 0, "robe_black", "");
         m.part("head", "body", 0, -12, -1.5)
-                .box(-4, -8, -4.5, 8, 8, 8, 0, "frost_bone", "face")
-                .box(-3, -1, -4.8, 6, 2, 5, 0, "frost_bone", "")
+                .box(-4, -8, -4.5, 8, 8, 8, 0, "frost_bone", "skull")
+                .box(-4.5, -8.5, -4, 9, 4, 8, 0, "frost_bone", "")
+                .box(-4.4, -3.5, -4.6, 1, 1, 3, 0, "frost_bone", "")
+                .box(3.4, -3.5, -4.6, 1, 1, 3, 0, "frost_bone", "")
+                .box(-3, -1, -4.8, 6, 2, 5, 0, "frost_bone", "teeth")
                 .box(-3.5, 0, -2.5, 7, 2, 4, 0, "robe_black", "");
         m.part("crown", "head", 0, 0, 0)
                 .box(-6, -6, 2, 12, 9, 1, 0, "robe_purple", "")
@@ -513,7 +516,7 @@ public class ClayGolemGen {
     static Model frozenArcher() {
         Model m = new Model("frozen_archer", ICE_BLUE, "frost");
         m.part("head", "root", 0, 0, 0)
-                .box(-4, -8, -4, 8, 8, 8, 0, "frost_bone", "face")
+                .box(-4, -8, -4, 8, 8, 8, 0, "frost_bone", "skull")
                 .box(-4.5, -9, -4.5, 9, 3, 9, 0, "ice", "facets")
                 .box(-3, -11, -2, 2, 3, 2, 0, "crystal", "")
                 .box(1, -12, 0, 2, 4, 2, 0, "crystal", "")
@@ -583,8 +586,8 @@ public class ClayGolemGen {
     static Model undeadZombie() {
         Model m = new Model("undead_zombie", PLAGUE_GREEN, "undead");
         m.part("head", "root", 0, 0, 0)
-                .box(-4, -8, -4, 8, 8, 8, 0, "rotten", "face")
-                .box(-3, -1, -4.5, 6, 2, 4, 0, "rotten_dark", "")
+                .box(-4, -8, -4, 8, 8, 8, 0, "rotten", "corpse")
+                .box(-3, -1, -4.5, 6, 2, 4, 0, "rotten_dark", "teeth")
                 .box(-4.5, -8.5, -2, 3, 2, 3, 0, "cloth", "")
                 .box(1, -9, 0, 2, 2, 2, 0, "rotten_dark", "");
         m.part("hat", "root", 0, 0, 0);
@@ -614,8 +617,8 @@ public class ClayGolemGen {
                 .box(-1, -11, 2.5, 2, 9, 2, 0, "frost_bone", "")
                 .box(-3.5, -1, -3.5, 7, 3, 7, 0, "cloth", "tatter");
         m.part("head", "body", 0, -10, -1, -0.7, 0, 0)
-                .box(-3.5, -6, -6, 7, 6, 7, 0, "ghoul", "face")
-                .box(-3, 0, -6.5, 6, 2, 5, 0, "ghoul_dark", "")
+                .box(-3.5, -6, -6, 7, 6, 7, 0, "ghoul", "corpse")
+                .box(-3, 0, -6.5, 6, 2, 5, 0, "ghoul_dark", "teeth")
                 .box(-2.5, -0.5, -6.8, 1, 2, 1, 0, "frost_bone", "")
                 .box(1.5, -0.5, -6.8, 1, 2, 1, 0, "frost_bone", "")
                 .box(-5, -5, -2, 2, 3, 1, 0, "ghoul_dark", "")
@@ -644,7 +647,7 @@ public class ClayGolemGen {
                 .box(-3, 6, -2, 6, 5, 4, 0, "ghost", "tatter")
                 .box(-2, 11, -1.5, 4, 4, 3, 0, "ghost_dark", "tatter");
         m.part("head", "body", 0, -9, 0)
-                .box(-3.5, -7, -3.5, 7, 7, 7, 0, "ghost", "face")
+                .box(-3.5, -7, -3.5, 7, 7, 7, 0, "ghost", "wail")
                 .box(-4, -8, 0.5, 8, 12, 3, 0, "ghost_hair", "tatter")
                 .box(-4, -8, -4, 8, 2, 5, 0, "ghost_hair", "")
                 .box(-4.2, -6, -3, 1, 8, 3, 0, "ghost_hair", "tatter")
@@ -673,8 +676,8 @@ public class ClayGolemGen {
                 .box(-1, -20, 4, 2, 4, 2, 0, "frost_bone", "")
                 .box(-8.5, -3, -6.5, 17, 2, 13, 0, "rope", "band");
         m.part("head", "body", 0, -18, -4)
-                .box(-3, -5, -3, 6, 5, 5, 0, "flesh", "face")
-                .box(-2.5, 0, -3.3, 5, 2, 3, 0, "flesh_dark", "")
+                .box(-3, -5, -3, 6, 5, 5, 0, "flesh", "corpse")
+                .box(-2.5, 0, -3.3, 5, 2, 3, 0, "flesh_dark", "teeth")
                 .box(-3.5, -4, -2, 1, 3, 2, 0, "metal", "");
         for (int s = -1; s <= 1; s += 2) {
             String side = s < 0 ? "right" : "left";
@@ -848,6 +851,10 @@ public class ClayGolemGen {
             }
         }
         if (kind.equals("front") && b.feature.equals("face")) eyes(base, glow, m.glow, x0, y0, pw, ph, b.mat);
+        if (kind.equals("front") && (b.feature.equals("corpse") || b.feature.equals("skull") || b.feature.equals("wail"))) {
+            deadFace(base, glow, m.glow, x0, y0, pw, ph, pal, b.feature, rnd);
+        }
+        if (kind.equals("front") && b.feature.equals("teeth")) teeth(base, x0, y0, pw, ph, pal);
         if (kind.equals("front") && b.feature.equals("core")) core(base, glow, m.glow, x0, y0, pw, ph, rnd);
         if (b.feature.equals("fist") && (kind.equals("front") || kind.equals("bottom"))) knuckles(base, x0, y0, pw, ph, pal);
         if (b.feature.equals("band") && !kind.equals("top") && !kind.equals("bottom")) {
@@ -923,6 +930,73 @@ public class ClayGolemGen {
                 put(img, x0 + x, y0 + y, scale(pal[1], 0.8));
                 put(img, x0 + x + 1, y0 + y, pal[2]);
             }
+        }
+    }
+
+    /**
+     * Лицо мертвеца (по пикселю на единицу модели). corpse — гниющий труп: впалые тёмные глазницы с огоньком зрачка,
+     * тень от надбровья, провал носа, оскал с зубами, трупные пятна и кость, проступившая на скуле. skull — человеческий
+     * череп: большие чёрные глазницы с огоньком, скулы, треугольная носовая впадина, ряд верхних зубов. wail — призрак:
+     * пустые глазницы и широко раскрытый в вое рот.
+     */
+    static void deadFace(BufferedImage base, BufferedImage glow, int[] color, int x0, int y0, int pw, int ph, int[][] pal,
+                         String style, Random rnd) {
+        boolean skull = style.equals("skull");
+        int[] hole = skull ? new int[]{18, 14, 16} : scale(pal[1], 0.35);
+        int[] shadow = scale(pal[1], 0.75);
+        int sw = Math.max(1, pw / 4), sh = ph >= 7 ? 2 : 1;
+        int eyeY = Math.max(1, ph * 3 / 8);
+        int left = Math.max(1, pw / 2 - sw - (pw >= 8 ? 1 : 0)), right = pw - left - sw;
+        // Надбровье: тень над глазницами (у черепа — светлый край кости).
+        for (int x = left - 1; x < right + sw + 1; x++) put(base, x0 + x, y0 + eyeY - 1, skull ? pal[2] : shadow);
+        for (int ex : new int[]{left, right}) {
+            for (int x = 0; x < sw; x++) for (int y = 0; y < sh; y++) put(base, x0 + ex + x, y0 + eyeY + y, hole);
+            if (!style.equals("wail")) {
+                // Огонёк зрачка в глубине глазницы.
+                int px = x0 + ex + (ex == left ? sw - 1 : 0), py = y0 + eyeY + sh - 1;
+                put(base, px, py, color);
+                put(glow, px, py, color);
+            }
+        }
+        int noseY = eyeY + sh + (ph >= 7 ? 1 : 0);
+        if (noseY < ph - 1) {
+            for (int x = pw / 2 - 1; x <= pw / 2 - (pw % 2 == 0 ? 0 : 1); x++) put(base, x0 + x, y0 + noseY, hole);
+            if (skull && noseY + 1 < ph - 1) put(base, x0 + pw / 2 - (pw % 2 == 0 ? 1 : 1), y0 + noseY + 1, hole);
+        }
+        if (skull) {
+            // Скулы и впалые виски.
+            for (int y = eyeY + sh; y < Math.min(ph - 1, eyeY + sh + 2); y++) {
+                put(base, x0, y0 + y, shadow);
+                put(base, x0 + pw - 1, y0 + y, shadow);
+                put(base, x0 + 1, y0 + y, pal[2]);
+                put(base, x0 + pw - 2, y0 + y, pal[2]);
+            }
+            teeth(base, x0 + 1, y0 + ph - 1, pw - 2, 1, palette("frost_bone"));
+            return;
+        }
+        int mouthY = ph - 2;
+        if (style.equals("wail")) {
+            // Раскрытый в вое рот — тёмный овал.
+            for (int x = pw / 2 - 1; x <= pw / 2; x++) for (int y = mouthY - 1; y <= mouthY + 1 && y < ph; y++) put(base, x0 + x, y0 + y, hole);
+            return;
+        }
+        // Оскал: тёмная щель губ и зубы.
+        for (int x = 1; x < pw - 1; x++) put(base, x0 + x, y0 + mouthY, x % 2 == 0 ? palette("bone")[0] : hole);
+        // Трупные пятна и кость, проступившая сквозь кожу.
+        for (int i = 0; i < 3; i++) {
+            int x = rnd.nextInt(pw), y = rnd.nextInt(ph);
+            if (y >= eyeY - 1 && y <= eyeY + sh && x >= left - 1 && x <= right + sw) continue;
+            put(base, x0 + x, y0 + y, scale(pal[1], 0.6 + rnd.nextDouble() * 0.2));
+        }
+        if (pw >= 7) put(base, x0 + pw - 2, y0 + noseY, palette("bone")[2]);
+    }
+
+    /** Зубы: верхний ряд чередует кость и щели, под ним челюсть цвета материала с тёмной кромкой. */
+    static void teeth(BufferedImage img, int x0, int y0, int pw, int ph, int[][] pal) {
+        int[][] bone = palette("bone");
+        for (int x = 0; x < pw; x++) {
+            put(img, x0 + x, y0, x % 2 == 0 ? bone[2] : scale(pal[1], 0.4));
+            for (int y = 1; y < ph; y++) put(img, x0 + x, y0 + y, y == ph - 1 ? scale(pal[0], 0.85) : scale(pal[1], 0.5));
         }
     }
 

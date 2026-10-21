@@ -1167,7 +1167,7 @@
   "item.heroicpaths.ice_golem_spawn_egg": "Яйцо призыва ледяного голема",
   "item.heroicpaths.frozen_archer_spawn_egg": "Яйцо призыва замороженного лучника",
   "item.heroicpaths.snow_brute_spawn_egg": "Яйцо призыва снеговика-громилы",
-  "message.heroicpaths.frost_lich_phase2": "Ледяные доспехи Лича раскалываются! Он начинает колдовать: ледяные вспышки, цепной мороз, банши и замороженные лучники.",
+  "message.heroicpaths.frost_lich_phase2": "Лич набирает силу! Он начинает колдовать: ледяные вспышки, цепной мороз, банши и замороженные лучники.",
   "message.heroicpaths.frost_lich_phase3": "Лич окутан вьюгой! Буран, морозная аура и скачки прочь — магия льда в полную силу.",
   "message.heroicpaths.frost_lich_defeated": "Ледяной Лич рассыпался снежной пылью! Врата домой открыты.",
   "entity.heroicpaths.undead_zombie": "Чумной зомби",
