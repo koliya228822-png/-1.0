@@ -215,7 +215,13 @@ public class ClayGolemGen {
                     .box(fx + 0.5, 9, -3.5, 7, 4, 7, 0, "copper", "band")
                     .box(fx, 22, -4, 2, 2, 2, 0, "clay_dark", "")
                     .box(fx + 3, 22, -4, 2, 2, 2, 0, "clay_dark", "")
-                    .box(fx + 6, 22, -4, 2, 2, 2, 0, "clay_dark", "");
+                    .box(fx + 6, 22, -4, 2, 2, 2, 0, "clay_dark", "")
+                    // Светящиеся наросты на внешней стороне руки и на плече (плечевые видны, когда спадут наплечники).
+                    .box(s < 0 ? -6 : 4, 1, -1.5, 2, 3, 2, 0, "crystal", "")
+                    .box(s < 0 ? -6.5 : 5.5, 5, 0, 1, 2, 1, 0, "crystal", "")
+                    .box(s < 0 ? -6 : 4, 13, -1, 2, 2, 2, 0, "crystal", "")
+                    .box(s < 0 ? -3 : 0, -4, -1, 2, 2, 2, 0, "crystal", "")
+                    .box(s < 0 ? -4.5 : 2.5, -3.5, 1, 2, 2, 1, 0, "crystal", "");
             m.part("pauldron_" + side, "arm_" + side, 0, 0, 0)
                     .box(s < 0 ? -6 : -2, -4, -4, 8, 6, 8, 0.4, "fired", "plate")
                     .box(s < 0 ? -4 : 0, -6, -2, 4, 2, 4, 0, "fired", "plate")
@@ -239,7 +245,9 @@ public class ClayGolemGen {
                     .box(-4, 12, -6.5, 2, 2, 2, 0, "clay_dark", "")
                     .box(-1, 12, -6.5, 2, 2, 2, 0, "clay_dark", "")
                     .box(2, 12, -6.5, 2, 2, 2, 0, "clay_dark", "")
-                    .box(-4, -1, -4, 8, 2, 8, 0, "clay_dark", "");
+                    .box(-4, -1, -4, 8, 2, 8, 0, "clay_dark", "")
+                    .box(s < 0 ? -4.5 : 2.5, 6, -1, 2, 3, 2, 0, "crystal", "")
+                    .box(s < 0 ? -4.2 : 3.2, 9, 1, 1, 2, 1, 0, "crystal", "");
         }
         return m;
     }
@@ -252,7 +260,12 @@ public class ClayGolemGen {
                 .box(-4.5, -2, -3.5, 9, 2, 7, 0, "leather", "")
                 .box(2, -2.5, -4.3, 2, 2, 1, 0, "leather", "")
                 .box(-1, -6, -3.6, 2, 2, 1, 0, "crystal", "")
-                .box(-3, -9, 1, 6, 2, 3, 0, "clay_dark", "");
+                .box(-3, -9, 1, 6, 2, 3, 0, "clay_dark", "")
+                // Светящиеся наросты на спине.
+                .box(-2, -11, 1.5, 2, 3, 2, 0, "crystal", "")
+                .box(1, -10, 2, 1, 2, 1, 0, "crystal", "")
+                .box(-3.5, -6, 3, 1, 2, 1, 0, "crystal", "")
+                .box(1.5, -5, 3, 2, 2, 1, 0, "crystal", "");
         m.part("head", "body", 0, -8, -1)
                 .box(-3, -5, -3, 6, 5, 6, 0, "clay", "face")
                 .box(-3.5, -4, -3.6, 7, 1, 1, 0, "clay_dark", "")
@@ -266,7 +279,9 @@ public class ClayGolemGen {
                     .box(-2.5, 7, -2.5, 5, 4, 5, 0, "clay_dark", "fist")
                     .box(-2.5, -2, -2.5, 5, 3, 5, 0, "clay_dark", "")
                     .box(-2, 11, -2.5, 1, 1, 1, 0, "clay_dark", "")
-                    .box(1, 11, -2.5, 1, 1, 1, 0, "clay_dark", "");
+                    .box(1, 11, -2.5, 1, 1, 1, 0, "clay_dark", "")
+                    .box(-1, -4, -0.5, 2, 2, 2, 0, "crystal", "")
+                    .box(s < 0 ? -2.6 : 1.6, 3, 0, 1, 2, 1, 0, "crystal", "");
             m.part("leg_" + side, "root", 2 * s, 12, 0)
                     .box(-2, 0, -2, 4, 12, 4, "clay")
                     .box(-2.5, 10, -3, 5, 2, 5, 0, "clay_dark", "")
@@ -287,14 +302,20 @@ public class ClayGolemGen {
                 .box(-3.8, -9, -2.8, 2, 9, 1, 0, "leather", "")
                 .box(-3.8, -9, 1.8, 2, 9, 1, 0, "leather", "")
                 .box(-4, -1.5, -3, 8, 2, 6, 0, "leather", "")
-                .box(-3, -10, 0.5, 6, 3, 2, 0, "leather", "");
+                .box(-3, -10, 0.5, 6, 3, 2, 0, "leather", "")
+                .box(-1.5, -12, 1, 2, 3, 2, 0, "crystal", "")
+                .box(1, -11, 1.5, 1, 2, 1, 0, "crystal", "")
+                .box(-3, -5, 2.6, 1, 2, 1, 0, "crystal", "");
         m.part("head", "body", 0, -9, -1)
                 .box(-3, -6, -3, 6, 6, 6, 0, "pale", "face")
                 .box(-3.5, -7, -3.5, 7, 2, 7, 0, "leather", "")
                 .box(-3.5, -5, -4, 7, 1, 1, 0, "leather", "")
                 .box(-3.6, -5, -3, 1, 4, 6, 0, "leather", "")
                 .box(2.6, -5, -3, 1, 4, 6, 0, "leather", "")
-                .box(-2, -8, -1, 4, 1, 4, 0, "leather", "");
+                .box(-2, -8, -1, 4, 1, 4, 0, "leather", "")
+                // Светящиеся наросты пробиваются сквозь капюшон.
+                .box(-1, -10, 0, 1, 2, 1, 0, "crystal", "")
+                .box(0.5, -9.5, 1.5, 1, 2, 1, 0, "crystal", "");
         for (int s = -1; s <= 1; s += 2) {
             String side = s < 0 ? "right" : "left";
             Part arm = m.part("arm_" + side, "root", 5 * s, 4, 0)
@@ -323,7 +344,13 @@ public class ClayGolemGen {
                 .box(-6, -14, 2, 5, 4, 4, 0, "clay_dark", "")
                 .box(1, -13, 2.5, 5, 3, 4, 0, "clay_dark", "")
                 .box(-2, -16, 3, 2, 3, 2, 0, "fired", "")
-                .box(2, -15, 3.5, 2, 2, 2, 0, "fired", "");
+                .box(2, -15, 3.5, 2, 2, 2, 0, "fired", "")
+                // Светящиеся наросты между валунами и на боках.
+                .box(-1, -18, 2, 2, 4, 2, 0, "crystal", "")
+                .box(-5, -15, 4, 1, 2, 1, 0, "crystal", "")
+                .box(4, -14, 4, 2, 3, 2, 0, "crystal", "")
+                .box(-7.6, -5, -1, 1, 2, 2, 0, "crystal", "")
+                .box(6.6, -6, 0, 1, 3, 2, 0, "crystal", "");
         m.part("head", "body", 0, -10, -3)
                 .box(-3, -4, -3.5, 6, 5, 6, 0, "dark", "face")
                 .box(-3.5, -3, -4.2, 7, 1, 1, 0, "fired", "")
@@ -342,7 +369,8 @@ public class ClayGolemGen {
                     .box(x0 + 0.5, 12, -4.5, 1, 1, 1, 0, "bone", "")
                     .box(x0 + 2.5, 12, -4.5, 1, 1, 1, 0, "bone", "")
                     .box(x0 + 4.5, 12, -4.5, 1, 1, 1, 0, "bone", "")
-                    .box(x0, 5, -3, 6, 2, 6, 0, "copper", "band");
+                    .box(x0, 5, -3, 6, 2, 6, 0, "copper", "band")
+                    .box(s < 0 ? x0 - 0.6 : x0 + 5.6, 1, -1, 1, 3, 2, 0, "crystal", "");
             m.part("leg_" + side, "root", 3.5 * s, 12, 0)
                     .box(-2.5, 0, -2.5, 5, 12, 5, "dark")
                     .box(-3, 2, -3.6, 6, 4, 2, 0, "fired", "plate")
@@ -354,6 +382,10 @@ public class ClayGolemGen {
     // =====================================================================================
     // Текстуры
     // =====================================================================================
+
+    static int[][] glowPalette(int[] c) {
+        return new int[][]{c, scale(c, 0.65), {Math.min(255, c[0] + 60), Math.min(255, c[1] + 60), Math.min(255, c[2] + 60)}};
+    }
 
     /** Основной цвет, тёмный и светлый оттенки материала. */
     static int[][] palette(String mat) {
@@ -397,7 +429,8 @@ public class ClayGolemGen {
     static void face(BufferedImage base, BufferedImage glow, Model m, Box b, String kind, int u, int v, int fw, int fh, Random rnd) {
         int x0 = u * R, y0 = v * R, pw = fw * R, ph = fh * R;
         if (pw <= 0 || ph <= 0) return;
-        int[][] pal = palette(b.mat);
+        // Светящиеся наросты окрашены в цвет глаз модели.
+        int[][] pal = b.mat.equals("crystal") ? glowPalette(m.glow) : palette(b.mat);
         boolean fired = b.mat.equals("fired");
         long seed = rnd.nextLong();
         double[][] tone = new double[pw][ph];

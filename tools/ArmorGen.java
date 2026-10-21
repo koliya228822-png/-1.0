@@ -16,14 +16,14 @@ import java.util.Random;
 
 /**
  * Объёмная классовая броня: детали каждого комплекта (кубоиды на голове, теле, руках и ногах),
- * раскладка их развёрток по текстуре 128×128 и сама текстура в 4 раза подробнее (512×512).
+ * раскладка их развёрток по текстуре 128×128 и сама текстура (пиксель на единицу развёртки, R = 1).
  * Пишет текстуры в textures/models/armor3d/ и данные моделей в client/armor/ArmorShapes.java.
  *
  * Координаты — как у моделей Minecraft: y вниз, лицо смотрит в −z; детали рук и ног задаются для правой
  * стороны и зеркалятся на левую. Запуск: java tools/ArmorGen.java .
  */
 public class ArmorGen {
-    static final int R = 4, TW = 128, TH = 128;
+    static final int R = 1, TW = 128, TH = 128;
     static final String[] BONES = {"head", "body", "right_arm", "left_arm", "right_leg", "left_leg"};
     static final String[] SLOTS = {"head", "chest", "legs", "feet"};
     static final String[] SETS = {"warrior_iron", "warrior", "warrior_damascus", "archer_leather", "archer",
