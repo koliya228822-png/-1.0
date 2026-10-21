@@ -124,18 +124,34 @@ public final class ClayRenderers {
             ModelPart part = model.part(entity.part());
             if (part == null) return;
             float age = entity.tickCount + partialTick;
-            float spin = entity.onGround() ? 0 : entity.spin();
             float fade = Math.max(0f, (age - (ClayDebris.LIFE - 30)) / 30f);
-            poseStack.pushPose();
-            poseStack.translate(0, 0.3 - fade * 0.6, 0);
-            poseStack.mulPose(Axis.YP.rotationDegrees(180 - entity.getYRot()));
-            poseStack.mulPose(Axis.XP.rotationDegrees(Math.min(age, 25f) * spin));
-            float s = ClayColossus.MODEL_SCALE * (1 - 0.3f * fade);
-            poseStack.scale(-s, -s, s);
             part.resetPose();
             part.x = part.y = part.z = 0;
             part.xRot = part.yRot = part.zRot = 0;
             part.visible = true;
+            // Границы детали в пикселях модели: её рисуем по центру, а не вокруг шарнира.
+            float[] box = {Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+            part.visit(new PoseStack(), (pose, path, index, cube) -> {
+                box[0] = Math.min(box[0], cube.minX);
+                box[1] = Math.min(box[1], cube.minY);
+                box[2] = Math.min(box[2], cube.minZ);
+                box[3] = Math.max(box[3], cube.maxX);
+                box[4] = Math.max(box[4], cube.maxY);
+                box[5] = Math.max(box[5], cube.maxZ);
+            });
+            float s = ClayColossus.MODEL_SCALE * (1 - 0.3f * fade);
+            // В полёте деталь кувыркается; упав, ложится плашмя: угол округляется до 90° и больше не меняется.
+            boolean landed = entity.landedTick >= 0;
+            float angle = (landed ? Math.min(entity.landedTick, 25) : Math.min(age, 25f)) * entity.spin();
+            if (landed) angle = Math.round(angle / 90f) * 90f;
+            boolean onSide = Math.floorMod(Math.round(angle / 90f), 2) == 1;
+            float height = (onSide ? box[5] - box[2] : box[4] - box[1]) * s / 16f;
+            poseStack.pushPose();
+            poseStack.translate(0, height / 2 + 0.01 - (landed ? fade * height : 0), 0);
+            poseStack.mulPose(Axis.YP.rotationDegrees(180 - entity.getYRot()));
+            poseStack.mulPose(Axis.XP.rotationDegrees(angle));
+            poseStack.scale(-s, -s, s);
+            poseStack.translate(-(box[0] + box[3]) / 32f, -(box[1] + box[4]) / 32f, -(box[2] + box[5]) / 32f);
             part.render(poseStack, buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), light, OverlayTexture.NO_OVERLAY);
             poseStack.popPose();
             super.render(entity, yaw, partialTick, poseStack, buffers, light);

@@ -132,6 +132,11 @@ public class DungeonPortalGameTests {
                 helper.assertTrue(count(names, theme + "/floor_hub") == 1, type.id() + " floor " + floor + " must have one hub: " + names);
                 helper.assertTrue(count(names, theme + "/descent") == 1, type.id() + " floor " + floor + " must have one way down: " + names);
             }
+            // Проёмы в пустоту заделаны при постройке: повторная проверка не находит ни одного.
+            for (List<PoolElementStructurePiece> floorPieces : built.floors()) {
+                int open = DungeonManager.sealOpenings(level, floorPieces);
+                helper.assertTrue(open == 0, type.id() + " has " + open + " doorways open to the void");
+            }
             // Шахта: лестница доходит до низа каждой площадки спуска и до зала у арены.
             helper.assertTrue(level.getBlockState(built.bossArrival()).is(net.minecraft.world.level.block.Blocks.LADDER),
                     type.id() + " shaft does not reach the arena");

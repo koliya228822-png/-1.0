@@ -150,7 +150,7 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayDebris>> CLAY_DEBRIS =
             ENTITY_TYPES.register("clay_debris", () -> EntityType.Builder
                     .<com.heroicpaths.entity.ClayDebris>of(com.heroicpaths.entity.ClayDebris::new, MobCategory.MISC)
-                    .sized(1.0f, 0.6f).clientTrackingRange(8).updateInterval(2).noSave().build("clay_debris"));
+                    .sized(1.0f, 0.6f).clientTrackingRange(8).updateInterval(1).noSave().build("clay_debris"));
 
     // Зверь охотника растёт вместе с ним: пёс → волк → кабан → медведь → совомедведь.
     public static final DeferredHolder<EntityType<?>, EntityType<CompanionWolf>> COMPANION_DOG = wolf("companion_dog");

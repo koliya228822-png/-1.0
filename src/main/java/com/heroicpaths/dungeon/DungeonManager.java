@@ -223,6 +223,8 @@ public final class DungeonManager {
                 HeroicPaths.LOGGER.error("Dungeon {} floor {} was not generated", type.id(), floor);
                 return null;
             }
+            int sealed = sealOpenings(level, pieces);
+            if (sealed > 0) HeroicPaths.LOGGER.info("Dungeon {} floor {}: sealed {} doorways open to the void", type.id(), floor, sealed);
             floors.add(pieces);
             if (floor == 1) {
                 BoundingBox start = pieces.get(0).getBoundingBox();
@@ -238,6 +240,42 @@ public final class DungeonManager {
             shaftTop = descentHole(pieces);
         }
         return new Built(floors, arrival, bossArrival, monsters);
+    }
+
+    /**
+     * Заделывает проёмы в пустоту. Jigsaw-генератор оставляет проход открытым, если за ним ничего не поместилось
+     * (кончилась глубина, дальность или место) — тогда в стене зияет дыра 3×3. Проём, перед которым нет ни одной
+     * комнаты этажа, закладывается той же кладкой, что стена рядом. Возвращает число заделанных проёмов.
+     */
+    public static int sealOpenings(ServerLevel level, List<PoolElementStructurePiece> pieces) {
+        int sealed = 0;
+        for (PoolElementStructurePiece piece : pieces) {
+            var jigsaws = piece.getElement().getShuffledJigsawBlocks(level.getStructureManager(), piece.getPosition(),
+                    piece.getRotation(), level.getRandom());
+            for (var jigsaw : jigsaws) {
+                Direction front = net.minecraft.world.level.block.JigsawBlock.getFrontFacing(jigsaw.state());
+                // Вертикальные якоря этажей и уже заложенные проёмы пропускаем.
+                if (front.getAxis().isVertical() || !level.getBlockState(jigsaw.pos()).isAir()) continue;
+                BlockPos outside = jigsaw.pos().relative(front);
+                boolean connected = false;
+                for (PoolElementStructurePiece other : pieces) {
+                    if (other.getBoundingBox().isInside(outside)) {
+                        connected = true;
+                        break;
+                    }
+                }
+                if (connected) continue;
+                Direction side = front.getClockWise();
+                BlockState wall = level.getBlockState(jigsaw.pos().relative(side, 2));
+                if (wall.isAir()) wall = level.getBlockState(jigsaw.pos().relative(side, 2).above());
+                if (wall.isAir()) wall = Blocks.STONE_BRICKS.defaultBlockState();
+                for (int d = -1; d <= 1; d++) {
+                    for (int y = 0; y <= 2; y++) level.setBlock(jigsaw.pos().relative(side, d).above(y), wall, Block.UPDATE_CLIENTS);
+                }
+                sealed++;
+            }
+        }
+        return sealed;
     }
 
     /** Проём в полу зала спуска (центр пола); если зал не поместился — центр первой комнаты этажа. */
