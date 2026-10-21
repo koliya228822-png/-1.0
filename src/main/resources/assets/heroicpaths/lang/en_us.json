@@ -376,7 +376,7 @@
   "dungeon.heroicpaths.forge": "Blazing Forge",
   "dungeon.heroicpaths.forge.desc": "Scorching halls, blazes and the Flame Tyrant.",
   "dungeon.heroicpaths.frost": "Frost Citadel",
-  "dungeon.heroicpaths.frost.desc": "Frozen halls and the Frost Lord.",
+  "dungeon.heroicpaths.frost.desc": "Six icy floors of golems, archers and snowmen, and the Frost Lich below.",
   "entity.heroicpaths.flame_tyrant": "Flame Tyrant",
   "entity.heroicpaths.frost_lord": "Frost Lord",
   "item.heroicpaths.flame_tyrant_spawn_egg": "Flame Tyrant Spawn Egg",
@@ -1158,5 +1158,16 @@
   "message.heroicpaths.clay_colossus_phase2": "The Clay Colossus sheds its breastplate and lower arms! It grows faster and angrier and starts hurling boulders.",
   "message.heroicpaths.clay_colossus_phase3": "The Colossus loses its helmet and another pair of arms, its core glows red-hot! No armor left, but it rages and leaps at its foes.",
   "message.heroicpaths.clay_colossus_defeated": "The Clay Colossus crumbles! The way home is open.",
-  "message.heroicpaths.dungeon_floor": "Floor %s of %s"
+  "message.heroicpaths.dungeon_floor": "Floor %s of %s",
+  "entity.heroicpaths.frost_lich": "Frost Lich",
+  "entity.heroicpaths.ice_golem": "Ice Golem",
+  "entity.heroicpaths.frozen_archer": "Frozen Archer",
+  "entity.heroicpaths.snow_brute": "Snow Brute",
+  "item.heroicpaths.frost_lich_spawn_egg": "Frost Lich Spawn Egg",
+  "item.heroicpaths.ice_golem_spawn_egg": "Ice Golem Spawn Egg",
+  "item.heroicpaths.frozen_archer_spawn_egg": "Frozen Archer Spawn Egg",
+  "item.heroicpaths.snow_brute_spawn_egg": "Snow Brute Spawn Egg",
+  "message.heroicpaths.frost_lich_phase2": "The Lich's ice armor shatters! He starts casting: frost novas, chain frost and frozen archers.",
+  "message.heroicpaths.frost_lich_phase3": "The Lich is wrapped in a blizzard! Hailstorms, a freezing aura and blinks away: frost magic at full strength.",
+  "message.heroicpaths.frost_lich_defeated": "The Frost Lich crumbles into snow dust! The way home is open."
 }

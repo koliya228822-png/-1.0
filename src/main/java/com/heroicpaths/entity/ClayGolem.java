@@ -58,10 +58,10 @@ public class ClayGolem extends Monster {
         goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.1, false));
     }
 
-    /** Свои — другие големы и колосс — глину не ранят. */
+    /** Свои — другие монстры данжа и босс — не ранят (существа игроков ранят как обычно). */
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (source.getEntity() instanceof ClayGolem || source.getEntity() instanceof ClayColossus) return false;
+        if (DungeonBoss.ignoresDamage(source)) return false;
         return super.hurt(source, amount);
     }
 

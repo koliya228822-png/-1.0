@@ -380,7 +380,7 @@ public class ClayColossus extends Monster implements DungeonBoss {
         double z = getZ() + (o[0] * sideZ + o[2] * fwdZ) * scale;
         Vec3 out = new Vec3(x - getX(), 0, z - getZ()).normalize().scale(0.25 + random.nextDouble() * 0.15);
         debris.moveTo(x, getY() + o[1] * scale, z, yBodyRot, 0);
-        debris.setup(part, yBodyRot, out.add(0, 0.25, 0));
+        debris.setup(ClayDebris.COLOSSUS, part, yBodyRot, out.add(0, 0.25, 0));
         level.addFreshEntity(debris);
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.TERRACOTTA.defaultBlockState()),
                 x, getY() + o[1] * scale, z, 20, 0.4, 0.4, 0.4, 0.15);

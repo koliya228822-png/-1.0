@@ -119,12 +119,12 @@ public class DungeonPortalGameTests {
             String theme = type.theme();
             DungeonManager.Built built = DungeonManager.build(level, type, origin.offset(index++ * 260, 0, 0), 1);
             helper.assertTrue(built != null, type.id() + " was not built");
-            helper.assertTrue(built.floors().size() == DungeonType.FLOORS + 1, type.id() + " must have 5 floors and an arena");
-            for (int floor = 1; floor <= DungeonType.FLOORS + 1; floor++) {
+            helper.assertTrue(built.floors().size() == type.floors() + 1, type.id() + " must have all its floors and an arena");
+            for (int floor = 1; floor <= type.floors() + 1; floor++) {
                 List<String> names = built.floors().get(floor - 1).stream().map(p -> p.getElement().toString()).toList();
                 helper.assertTrue(names.stream().allMatch(n -> n.contains(HeroicPaths.MODID + ":" + theme + "/")),
                         type.id() + " mixes pieces of other dungeons: " + names);
-                if (floor > DungeonType.FLOORS) {
+                if (floor > type.floors()) {
                     helper.assertTrue(count(names, theme + "/arena") == 1, type.id() + " arena missing: " + names);
                     continue;
                 }
@@ -145,7 +145,7 @@ public class DungeonPortalGameTests {
             BoundingBox hall = built.floors().get(0).get(0).getBoundingBox();
             helper.assertTrue(countBlocks(level, hall, ModBlocks.DUNGEON_PORTAL.get()) == 0, type.id() + " arrival hall must not have a way back");
             // Босс посреди арены.
-            BoundingBox arena = built.floors().get(DungeonType.FLOORS).get(0).getBoundingBox();
+            BoundingBox arena = built.floors().get(type.floors()).get(0).getBoundingBox();
             String bossId = HeroicPaths.MODID + ":" + type.bossId();
             boolean boss = !level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, net.minecraft.world.phys.AABB.of(arena),
                     m -> EntityType.getKey(m.getType()).toString().equals(bossId)).isEmpty();
@@ -186,7 +186,39 @@ public class DungeonPortalGameTests {
         helper.assertTrue(tanks == 4, "floor 4 must be 20% tanks, got " + tanks + " of 20");
         helper.assertTrue(ranged == 8, "floor 4 must split the rest between melee and ranged, got " + ranged + " throwers");
         helper.assertTrue(DungeonType.FORGE.floorMob(4, 0, any) == any, "other dungeons keep their own monsters");
+        // Ледяная цитадель: та же схема, шесть этажей, свои ледяные мобы.
+        DungeonType frost = DungeonType.FROST;
+        helper.assertTrue(frost.floors() == 6 && clay.floors() == 5, "the Frost Citadel must have 6 floors, the Clay Pits 5");
+        helper.assertTrue(frost.floorMob(1, 1, any) == ModEntities.ICE_GOLEM.get(), "frost floor 1 must be ice golems");
+        helper.assertTrue(frost.floorMob(3, 1, any) == ModEntities.FROZEN_ARCHER.get(), "frost floor 3 must have frozen archers");
+        helper.assertTrue(frost.floorMob(6, 0, any) == ModEntities.SNOW_BRUTE.get(), "frost floor 6 must have snow brutes");
+        helper.assertTrue(frost.mobsPerSpawner(1, 6) > frost.mobsPerSpawner(1, 5), "floor 6 must be the most crowded");
         helper.succeed();
+    }
+
+    /** Лич: ледяные доспехи гасят урон, на 2/3 и 1/3 здоровья они раскалываются, магия и урон растут. */
+    @GameTest(template = ARENA, timeoutTicks = 200)
+    public static void frostLichHasThreePhases(GameTestHelper helper) {
+        com.heroicpaths.entity.FrostLich lich = helper.spawn(ModEntities.FROST_LICH.get(), new BlockPos(4, 2, 4));
+        helper.assertTrue(lich.phase() == 1 && lich.armorReduction() > 0.2f, "phase 1 must be armored with ice");
+        double damage = lich.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        lich.setHealth(lich.getMaxHealth() * 0.6f);
+        helper.runAfterDelay(3, () -> {
+            helper.assertTrue(lich.phase() == 2, "below 2/3 health the Lich must enter phase 2, got " + lich.phase());
+            helper.assertTrue(lich.action() == com.heroicpaths.entity.FrostLich.SHATTER, "phase change must shatter the ice armor");
+            helper.assertTrue(!lich.hurt(lich.damageSources().generic(), 5f), "the Lich must be invulnerable while shattering");
+            int debris = helper.getLevel().getEntitiesOfClass(com.heroicpaths.entity.ClayDebris.class, lich.getBoundingBox().inflate(10),
+                    d -> d.model() == com.heroicpaths.entity.ClayDebris.LICH).size();
+            helper.assertTrue(debris == 4, "phase 2 must drop 4 ice armor parts, got " + debris);
+            lich.setHealth(lich.getMaxHealth() * 0.2f);
+            helper.runAfterDelay(3, () -> {
+                helper.assertTrue(lich.phase() == 3 && lich.armorReduction() == 0f, "below 1/3 health the Lich must be bare in phase 3");
+                helper.assertTrue(lich.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) > damage * 1.3,
+                        "phase 3 spells must hit harder");
+                lich.discard();
+                helper.succeed();
+            });
+        });
     }
 
     /** Колосс: латы гасят урон, на 2/3 и 1/3 здоровья он сбрасывает части и становится быстрее и сильнее. */
@@ -226,7 +258,7 @@ public class DungeonPortalGameTests {
                 "each extra player must add one monster per spawner");
         // Этажи людней с глубиной: второй вдвое людней первого, дальше ещё больше.
         int previous = 0;
-        for (int floor = 1; floor <= DungeonType.FLOORS; floor++) {
+        for (int floor = 1; floor <= DungeonType.CRYPT.floors(); floor++) {
             int crowd = DungeonType.CRYPT.mobsPerSpawner(1, floor);
             helper.assertTrue(crowd > previous, "floor " + floor + " must have more monsters than the one above, got " + crowd);
             previous = crowd;

@@ -207,8 +207,8 @@ public final class DungeonManager {
         List<List<PoolElementStructurePiece>> floors = new ArrayList<>();
         BlockPos arrival = null, bossArrival = null, shaftTop = null;
         int monsters = 0;
-        for (int floor = 1; floor <= DungeonType.FLOORS + 1; floor++) {
-            boolean arena = floor > DungeonType.FLOORS;
+        for (int floor = 1; floor <= type.floors() + 1; floor++) {
+            boolean arena = floor > type.floors();
             List<PoolElementStructurePiece> pieces;
             BlockPos anchor = null;
             if (floor == 1) {
@@ -506,15 +506,15 @@ public final class DungeonManager {
         int floor = floorAt(instance, player.getBlockY());
         if (player.getPersistentData().getInt(LAST_FLOOR) == floor) return;
         player.getPersistentData().putInt(LAST_FLOOR, floor);
-        player.displayClientMessage(Component.translatable("message.heroicpaths.dungeon_floor", floor, DungeonType.FLOORS + 1)
-                .withStyle(floor > DungeonType.FLOORS ? ChatFormatting.RED : ChatFormatting.GOLD), true);
+        player.displayClientMessage(Component.translatable("message.heroicpaths.dungeon_floor", floor, instance.type.floors() + 1)
+                .withStyle(floor > instance.type.floors() ? ChatFormatting.RED : ChatFormatting.GOLD), true);
     }
 
     /** Номер этажа по высоте: этажи 1–5 через FLOOR_STEP от верхнего, ниже пятого — арена. */
     public static int floorAt(DungeonInstance instance, int y) {
-        if (y < instance.bossArrival.getY() + 30) return DungeonType.FLOORS + 1;
+        if (y < instance.bossArrival.getY() + 30) return instance.type.floors() + 1;
         int floor = 1 + Math.floorDiv(instance.arrival.getY() + 8 - y, FLOOR_STEP);
-        return Math.max(1, Math.min(DungeonType.FLOORS, floor));
+        return Math.max(1, Math.min(instance.type.floors(), floor));
     }
 
     /** Враги в данже крепче: сложность данжа, +30% здоровья и +10% урона за каждого игрока группы сверх первого. */

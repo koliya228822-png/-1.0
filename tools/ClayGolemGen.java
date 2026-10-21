@@ -58,8 +58,15 @@ public class ClayGolemGen {
         int texW = 128, texH;
         /** Цвет глаз и светящихся трещин. */
         final int[] glow;
+        /** Папка текстур в textures/entity: clay — Глиняные копи, frost — Ледяная цитадель. */
+        final String dir;
 
         Model(String name, int[] glow) {
+            this(name, glow, "clay");
+        }
+
+        Model(String name, int[] glow, String dir) {
+            this.dir = dir;
             this.name = name;
             this.glow = glow;
         }
@@ -108,9 +115,9 @@ public class ClayGolemGen {
 
     public static void main(String[] args) throws IOException {
         Path root = Path.of(args.length > 0 ? args[0] : ".");
-        Path tex = root.resolve("src/main/resources/assets/heroicpaths/textures/entity/clay");
-        Files.createDirectories(tex);
-        List<Model> models = List.of(colossus(), golem(), thrower(), brute());
+        Path textures = root.resolve("src/main/resources/assets/heroicpaths/textures/entity");
+        Files.createDirectories(textures);
+        List<Model> models = List.of(colossus(), golem(), thrower(), brute(), frostLich(), iceGolem(), frozenArcher(), snowBrute());
         StringBuilder java = new StringBuilder();
         java.append("package com.heroicpaths.client.clay;\n\n")
                 .append("import net.minecraft.client.model.geom.PartPose;\n")
@@ -127,6 +134,8 @@ public class ClayGolemGen {
         for (Model m : models) {
             m.pack();
             BufferedImage[] img = paint(m);
+            Path tex = textures.resolve(m.dir);
+            Files.createDirectories(tex);
             ImageIO.write(img[0], "png", tex.resolve(m.name + ".png").toFile());
             ImageIO.write(img[1], "png", tex.resolve(m.name + "_glow.png").toFile());
             java.append("\n    public static LayerDefinition ").append(camel(m.name)).append("() {\n")
@@ -379,6 +388,171 @@ public class ClayGolemGen {
         return m;
     }
 
+    // ---------------------------------------------------------------- Ледяная цитадель
+
+    static final int[] ICE_BLUE = {110, 220, 255};
+
+    /**
+     * Ледяной Лич в духе Лича из Dota 2: парящий скелет в обрывках мантии, череп с высоким ледяным венцом,
+     * ледяные наплечники с шипами, нагрудник с кристаллом и когтистые костяные руки; вокруг кружат ледяные осколки.
+     * Во второй фазе ледяные доспехи (наплечники, венец, нагрудник) раскалываются, в третьей рвётся пояс.
+     */
+    static Model frostLich() {
+        Model m = new Model("frost_lich", ICE_BLUE, "frost");
+        m.part("body", "root", 0, 2, 0, 0.18, 0, 0)
+                .box(-5, -12, -3, 10, 12, 6, 0, "frost_bone", "ribs")
+                .box(-1, -12, 2.6, 2, 12, 1, 0, "frost_bone", "")
+                .box(-2, -6, -1, 4, 6, 3, 0, "crystal", "");
+        m.part("chest_armor", "body", 0, 0, 0)
+                .box(-5.5, -12.5, -3.5, 11, 6, 7, 0.4, "ice", "plate")
+                .box(-1.5, -11, -4.6, 3, 3, 1, 0, "crystal", "")
+                .box(-4, -13.5, 2, 8, 3, 2, 0, "ice", "facets");
+        m.part("belt", "body", 0, 0, 0)
+                .box(-5.5, -1, -3.5, 11, 2, 7, 0, "robe_dark", "band")
+                .box(-1, -1.5, -4.2, 2, 3, 1, 0, "crystal", "");
+        m.part("robe", "body", 0, 0, 0)
+                .box(-5, 0, -3.5, 10, 6, 7, 0, "robe", "")
+                .box(-6, 6, -4, 12, 6, 8, 0, "robe", "")
+                .box(-7, 12, -4.5, 14, 6, 9, 0, "robe_dark", "tatter")
+                .box(-6.5, 3, -4.6, 3, 14, 1, 0, "robe_trim", "tatter")
+                .box(3.5, 3, -4.6, 3, 14, 1, 0, "robe_trim", "tatter");
+        m.part("head", "body", 0, -12, -1.5)
+                .box(-4, -8, -4.5, 8, 8, 8, 0, "frost_bone", "face")
+                .box(-3, -1, -4.8, 6, 2, 5, 0, "frost_bone", "")
+                .box(-2, 1, -4.6, 1, 3, 1, 0, "ice", "")
+                .box(1, 1, -4.6, 1, 3, 1, 0, "ice", "")
+                .box(-0.5, 1, -4.6, 1, 4, 1, 0, "ice", "");
+        m.part("crown", "head", 0, 0, 0)
+                .box(-4.5, -9, -5, 9, 2, 9, 0, "ice", "band")
+                .box(-1, -18, -2, 2, 9, 2, 0, "crystal", "")
+                .box(-4, -14, -1, 2, 5, 2, 0, "ice", "facets")
+                .box(2, -14, -1, 2, 5, 2, 0, "ice", "facets")
+                .box(-3, -15, 1, 6, 6, 2, 0, "ice", "facets")
+                .box(-6, -12, 0, 2, 3, 2, 0, "crystal", "")
+                .box(4, -12, 0, 2, 3, 2, 0, "crystal", "");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "body", 6.5 * s, -10, 0)
+                    .box(-1.5, 0, -1.5, 3, 11, 3, "frost_bone")
+                    .box(-2.5, -1, -2.5, 5, 7, 5, 0, "robe", "tatter")
+                    .box(-2, 10, -2, 4, 2, 4, 0, "frost_bone", "")
+                    .box(-2, 12, -2.5, 1, 4, 1, 0, "frost_bone", "")
+                    .box(-0.5, 12, -2.5, 1, 5, 1, 0, "frost_bone", "")
+                    .box(1, 12, -2.5, 1, 4, 1, 0, "frost_bone", "")
+                    .box(-0.5, 7, -2, 1, 2, 4, 0, "ice", "");
+            m.part("pauldron_" + side, "arm_" + side, 0, 0, 0)
+                    .box(-4, -3, -3.5, 8, 4, 7, 0.2, "ice", "plate")
+                    .box(s < 0 ? -4 : 2, -8, -1, 2, 5, 2, 0, "crystal", "")
+                    .box(s < 0 ? -1 : -1, -6, -2.5, 2, 3, 2, 0, "ice", "facets")
+                    .box(s < 0 ? -3 : 1, -5, 1, 2, 2, 2, 0, "crystal", "");
+        }
+        for (int i = 1; i <= 4; i++) {
+            m.part("shard_" + i, "root", 0, 0, 0)
+                    .box(-1, -3, -1, 2, 6, 2, 0, "crystal", "");
+        }
+        return m;
+    }
+
+    /**
+     * Ледяной голем: сгорбленная глыба из кристаллов без шеи, один светящийся глаз, длинные руки с сосульками-когтями
+     * и ледяные шипы, растущие из спины и плеч.
+     */
+    static Model iceGolem() {
+        Model m = new Model("ice_golem", ICE_BLUE, "frost");
+        m.part("body", "root", 0, 12, 1, 0.4, 0, 0)
+                .box(-5, -10, -4, 10, 10, 8, 0, "ice", "facets")
+                .box(-3, -8, -4.8, 6, 5, 1, 0, "ice_dark", "")
+                .box(-1, -7, -5.2, 2, 2, 1, 0, "crystal", "")
+                .box(-4, -14, 0, 2, 5, 2, 0, "crystal", "")
+                .box(0, -16, 1, 2, 7, 2, 0, "crystal", "")
+                .box(3, -13, 0, 2, 4, 2, 0, "crystal", "")
+                .box(-2, -12, 3, 2, 3, 2, 0, "ice", "")
+                .box(-5.5, -3, -4.5, 11, 3, 9, 0, "ice_dark", "facets");
+        m.part("head", "body", 0, -10, -3)
+                .box(-2.5, -3, -2.5, 5, 3, 4, 0, "ice_dark", "cyclops");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 6.5 * s, 4, -1)
+                    .box(-2, -2, -2, 4, 12, 4, 0, "ice", "facets")
+                    .box(-2.5, -3, -2.5, 5, 4, 5, 0, "ice_dark", "")
+                    .box(s < 0 ? -2 : 0, -6, -1, 2, 4, 2, 0, "crystal", "")
+                    .box(-2, 10, -2, 1, 4, 1, 0, "ice_light", "")
+                    .box(-0.5, 10, -2, 1, 5, 1, 0, "ice_light", "")
+                    .box(1, 10, -2, 1, 4, 1, 0, "ice_light", "")
+                    .box(-0.5, 10, 1, 1, 3, 1, 0, "ice_light", "");
+            m.part("leg_" + side, "root", 2.5 * s, 14, 0)
+                    .box(-2, 0, -2, 4, 10, 4, 0, "ice_dark", "facets")
+                    .box(-2.5, 8, -3, 5, 2, 5, 0, "ice", "");
+        }
+        return m;
+    }
+
+    /** Замороженный лучник: скелет во льду — ледяная корка на черепе, сосульки-борода, ледяной нагрудник и наручи. */
+    static Model frozenArcher() {
+        Model m = new Model("frozen_archer", ICE_BLUE, "frost");
+        m.part("head", "root", 0, 0, 0)
+                .box(-4, -8, -4, 8, 8, 8, 0, "frost_bone", "face")
+                .box(-4.5, -9, -4.5, 9, 3, 9, 0, "ice", "facets")
+                .box(-3, -11, -2, 2, 3, 2, 0, "crystal", "")
+                .box(1, -12, 0, 2, 4, 2, 0, "crystal", "")
+                .box(-2, 0, -4.2, 1, 2, 1, 0, "ice", "")
+                .box(1, 0, -4.2, 1, 3, 1, 0, "ice", "");
+        m.part("hat", "root", 0, 0, 0);
+        m.part("body", "root", 0, 0, 0)
+                .box(-4, 0, -2, 8, 12, 4, 0, "frost_bone", "ribs")
+                .box(-4.5, 0, -2.5, 9, 6, 5, 0, "ice", "plate")
+                .box(-4.5, 9, -2.5, 9, 3, 5, 0, "robe", "tatter")
+                .box(-3, 0, 2.2, 3, 9, 2, 0, "leather", "");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part(side + "_arm", "root", 5 * s, 2, 0)
+                    .box(-1, -2, -1, 2, 12, 2, "frost_bone")
+                    .box(-1.5, 4, -1.5, 3, 4, 3, 0, "ice", "band")
+                    .box(s < 0 ? -2 : -1, -3, -2, 3, 3, 4, 0, "ice", "facets");
+            m.part(side + "_leg", "root", 2 * s, 12, 0)
+                    .box(-1, 0, -1, 2, 12, 2, "frost_bone")
+                    .box(-1.5, 8, -1.5, 3, 4, 3, 0, "ice", "facets");
+        }
+        return m;
+    }
+
+    /**
+     * Снеговик-громила: три снежных кома, обмотанных ледяными плитами, угольные пуговицы и сосулька вместо носа,
+     * руки-брёвна, вмёрзшие в ледяные кулаки, и ледяной венец.
+     */
+    static Model snowBrute() {
+        Model m = new Model("snow_brute", ICE_BLUE, "frost");
+        m.part("body", "root", 0, 20, 0)
+                .box(-7, -10, -6, 14, 10, 12, 0, "snow", "")
+                .box(-6, -19, -5, 12, 9, 10, 0, "snow", "")
+                .box(-6.5, -19, -5.5, 13, 4, 1, 0, "ice", "plate")
+                .box(-7.5, -6, -6.5, 15, 2, 13, 0, "ice", "band")
+                .box(-1, -14, -5.6, 2, 2, 1, 0, "coal", "")
+                .box(-1, -10.5, -6.6, 2, 2, 1, 0, "coal", "")
+                .box(-1, -6.5, -6.6, 2, 2, 1, 0, "coal", "")
+                .box(-5, -21, -1, 3, 3, 3, 0, "crystal", "")
+                .box(3, -21, 0, 2, 4, 2, 0, "crystal", "");
+        m.part("head", "body", 0, -19, -1)
+                .box(-4.5, -9, -4.5, 9, 9, 9, 0, "snow", "face")
+                .box(-0.5, -5, -7, 1, 1, 3, 0, "ice_light", "")
+                .box(-5, -10, -5, 10, 2, 10, 0, "ice", "band")
+                .box(-1, -14, -1, 2, 4, 2, 0, "crystal", "")
+                .box(-4, -12, -1, 2, 2, 2, 0, "ice", "")
+                .box(2, -12, -1, 2, 2, 2, 0, "ice", "");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 8.5 * s, 5, 0)
+                    .box(-1.5, -1, -1.5, 3, 13, 3, "wood")
+                    .box(s < 0 ? -3 : 1, 3, -1, 2, 1, 2, 0, "wood", "")
+                    .box(-3, 11, -3, 6, 6, 6, 0, "ice", "facets")
+                    .box(-2, 16, -3.5, 1, 2, 1, 0, "ice_light", "")
+                    .box(1, 16, -3.5, 1, 2, 1, 0, "ice_light", "");
+            m.part("leg_" + side, "root", 3.5 * s, 20, 0)
+                    .box(-2.5, 0, -2.5, 5, 4, 5, 0, "ice_dark", "facets");
+        }
+        return m;
+    }
+
     // =====================================================================================
     // Текстуры
     // =====================================================================================
@@ -397,6 +571,16 @@ public class ClayGolemGen {
             case "dark" -> new int[][]{{110, 70, 52}, {62, 36, 26}, {150, 100, 76}};
             case "leather" -> new int[][]{{110, 74, 44}, {64, 40, 22}, {150, 106, 66}};
             case "copper" -> new int[][]{{184, 104, 56}, {104, 52, 26}, {238, 170, 110}};
+            case "ice" -> new int[][]{{146, 204, 236}, {62, 118, 172}, {226, 246, 255}};
+            case "ice_dark" -> new int[][]{{92, 150, 200}, {36, 74, 124}, {160, 210, 240}};
+            case "ice_light" -> new int[][]{{206, 238, 255}, {140, 196, 232}, {250, 254, 255}};
+            case "snow" -> new int[][]{{232, 238, 244}, {170, 186, 206}, {255, 255, 255}};
+            case "frost_bone" -> new int[][]{{196, 204, 212}, {120, 132, 150}, {232, 238, 244}};
+            case "robe" -> new int[][]{{58, 84, 140}, {26, 38, 76}, {98, 132, 196}};
+            case "robe_dark" -> new int[][]{{40, 56, 100}, {16, 22, 48}, {70, 96, 150}};
+            case "robe_trim" -> new int[][]{{150, 200, 230}, {80, 120, 170}, {210, 236, 250}};
+            case "coal" -> new int[][]{{44, 44, 50}, {16, 16, 20}, {84, 84, 96}};
+            case "wood" -> new int[][]{{110, 80, 50}, {64, 44, 26}, {150, 112, 74}};
             case "crystal" -> new int[][]{{255, 170, 60}, {200, 100, 20}, {255, 230, 150}};
             case "bone" -> new int[][]{{214, 204, 178}, {150, 138, 112}, {240, 234, 214}};
             case "clayball" -> new int[][]{{196, 130, 88}, {140, 84, 54}, {226, 170, 128}};
@@ -464,6 +648,32 @@ public class ClayGolemGen {
 
         if (fired && b.feature.equals("plate")) plate(base, x0, y0, pw, ph, kind);
         if (b.feature.equals("seams") && !kind.equals("bottom")) seams(base, x0, y0, pw, ph, pal);
+        if (b.feature.equals("facets")) {
+            // Лёд: косые светлые грани и редкие искры.
+            for (int x = 0; x < pw; x++) for (int y = 0; y < ph; y++) {
+                if ((x + y * 2) % 5 == 0) put(base, x0 + x, y0 + y, mix(pal, 1.18));
+                else if ((x * 3 + y) % 11 == 0) put(base, x0 + x, y0 + y, pal[2]);
+            }
+        }
+        if (b.feature.equals("ribs") && !kind.equals("top") && !kind.equals("bottom")) {
+            // Рёбра: тёмные щели между костями.
+            for (int y = 1; y < ph - 1; y += 2) for (int x = 1; x < pw - 1; x++) put(base, x0 + x, y0 + y, scale(pal[1], 0.55));
+        }
+        if (b.feature.equals("tatter") && !kind.equals("top") && !kind.equals("bottom")) {
+            // Рваный подол: снизу клочья, сквозь которые видно насквозь.
+            Random tear = new Random((long) x0 * 31 + y0);
+            for (int x = 0; x < pw; x++) {
+                int cut = tear.nextInt(Math.max(1, Math.min(3, ph / 2)) + 1);
+                for (int y = ph - cut; y < ph; y++) base.setRGB(x0 + x, y0 + y, 0);
+            }
+        }
+        if (kind.equals("front") && b.feature.equals("cyclops")) {
+            int cx = pw / 2 - 1;
+            for (int x = cx; x <= cx + 1; x++) {
+                put(base, x0 + x, y0 + ph / 2, m.glow);
+                put(glow, x0 + x, y0 + ph / 2, m.glow);
+            }
+        }
         if (kind.equals("front") && b.feature.equals("face")) eyes(base, glow, m.glow, x0, y0, pw, ph, b.mat);
         if (kind.equals("front") && b.feature.equals("core")) core(base, glow, m.glow, x0, y0, pw, ph, rnd);
         if (b.feature.equals("fist") && (kind.equals("front") || kind.equals("bottom"))) knuckles(base, x0, y0, pw, ph, pal);

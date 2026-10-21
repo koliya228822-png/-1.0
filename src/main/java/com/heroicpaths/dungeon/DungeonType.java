@@ -57,13 +57,16 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
         return id();
     }
 
-    /** Этажей с монстрами; под последним — арена босса. */
-    public static final int FLOORS = 5;
 
     /**
      * Папка шаблонов и пулов данжа. Первый данж за вратами — Глиняные копи (id остался «crypt», чтобы старые
      * сохранения, контракты и заказы гильдии не сломались); склеп в мире со своим Королём Склепа остался прежним.
      */
+    /** Этажей с монстрами; под последним — арена босса. В Ледяной цитадели их шесть, в остальных данжах — пять. */
+    public int floors() {
+        return this == FROST ? 6 : 5;
+    }
+
     public String theme() {
         return this == CRYPT ? "clay" : id();
     }
@@ -75,7 +78,7 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
             case SPIDER_LAIR -> "spider_queen";
             case FORGE -> "flame_tyrant";
             case SUNKEN_TEMPLE -> "drowned_prophet";
-            case FROST -> "frost_lord";
+            case FROST -> "frost_lich";
             case NECROPOLIS -> "lich";
         };
     }
@@ -116,22 +119,38 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
     }
 
     /** Чем глубже этаж, тем больше монстров: второй этаж вдвое людней первого, дальше ещё больше. */
-    private static final float[] FLOOR_CROWD = {1f, 2f, 2.5f, 3f, 3.5f};
+    private static final float[] FLOOR_CROWD = {1f, 2f, 2.5f, 3f, 3.5f, 4f};
 
     public int mobsPerSpawner(int partySize, int floor) {
-        return Math.round(mobsPerSpawner(partySize) * FLOOR_CROWD[Math.max(1, Math.min(FLOORS, floor)) - 1]);
+        return Math.round(mobsPerSpawner(partySize) * FLOOR_CROWD[Math.max(1, Math.min(FLOOR_CROWD.length, floor)) - 1]);
     }
 
     /**
-     * Кто выходит из спавнера на этаже. В Глиняных копях состав зависит от этажа: на 1–2 только големы ближнего боя,
-     * на 3-м половина — метатели, на 4–5 каждый пятый — голем-танк, остальные поровну ближние и дальние.
-     * В других данжах — монстр, записанный в спавнере. number — порядковый номер монстра на этаже.
+     * Кто выходит из спавнера на этаже. В Глиняных копях и Ледяной цитадели состав зависит от этажа: на 1–2 только
+     * бойцы ближнего боя, на 3-м половина — стрелки, с 4-го каждый пятый — танк, остальные поровну ближние и дальние.
+     * Глиняные копи: глиняный голем, метатель, голем-танк. Ледяная цитадель: ледяной голем, замороженный лучник,
+     * снеговик-громила. В других данжах — монстр, записанный в спавнере. number — порядковый номер монстра на этаже.
      */
     public EntityType<?> floorMob(int floor, int number, EntityType<?> original) {
-        if (this != CRYPT) return original;
-        if (floor >= 4 && number % 5 == 0) return ModEntities.CLAY_BRUTE.get();
-        if (floor >= 3 && number % 2 == 1) return ModEntities.CLAY_THROWER.get();
-        return ModEntities.CLAY_GOLEM.get();
+        EntityType<?> melee, ranged, tank;
+        switch (this) {
+            case CRYPT -> {
+                melee = ModEntities.CLAY_GOLEM.get();
+                ranged = ModEntities.CLAY_THROWER.get();
+                tank = ModEntities.CLAY_BRUTE.get();
+            }
+            case FROST -> {
+                melee = ModEntities.ICE_GOLEM.get();
+                ranged = ModEntities.FROZEN_ARCHER.get();
+                tank = ModEntities.SNOW_BRUTE.get();
+            }
+            default -> {
+                return original;
+            }
+        }
+        if (floor >= 4 && number % 5 == 0) return tank;
+        if (floor >= 3 && number % 2 == 1) return ranged;
+        return melee;
     }
 
     public boolean requiresScroll() {

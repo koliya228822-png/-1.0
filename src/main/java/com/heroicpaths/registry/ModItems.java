@@ -84,6 +84,15 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.DROWNED_PROPHET, 0x2A6A6A, 0x8AF0E0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> LICH_SPAWN_EGG = ITEMS.register("lich_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.LICH, 0x1A1A22, 0x60E0FF, new Item.Properties()));
+    // Ледяная цитадель: Лич и его слуги
+    public static final DeferredItem<DeferredSpawnEggItem> FROST_LICH_SPAWN_EGG = ITEMS.register("frost_lich_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FROST_LICH, 0x2A3A6A, 0x8AE8FF, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> ICE_GOLEM_SPAWN_EGG = ITEMS.register("ice_golem_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.ICE_GOLEM, 0x92CCEC, 0x3E76AC, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> FROZEN_ARCHER_SPAWN_EGG = ITEMS.register("frozen_archer_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.FROZEN_ARCHER, 0xC4CCD4, 0x6EDCFF, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> SNOW_BRUTE_SPAWN_EGG = ITEMS.register("snow_brute_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.SNOW_BRUTE, 0xE8EEF4, 0x2C2C32, new Item.Properties()));
     // Глиняные копи: колосс и его големы
     public static final DeferredItem<DeferredSpawnEggItem> CLAY_COLOSSUS_SPAWN_EGG = ITEMS.register("clay_colossus_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.CLAY_COLOSSUS, 0x8A4A2A, 0xFFB040, new Item.Properties()));

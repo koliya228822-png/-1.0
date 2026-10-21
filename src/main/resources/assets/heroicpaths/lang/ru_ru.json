@@ -376,7 +376,7 @@
   "dungeon.heroicpaths.forge": "Пылающая кузня",
   "dungeon.heroicpaths.forge.desc": "Раскалённые залы, ифриты и Огненный Тиран.",
   "dungeon.heroicpaths.frost": "Ледяная цитадель",
-  "dungeon.heroicpaths.frost.desc": "Замёрзшие чертоги и Повелитель Мороза.",
+  "dungeon.heroicpaths.frost.desc": "Шесть ледяных этажей с големами, лучниками и снеговиками, внизу — Ледяной Лич.",
   "entity.heroicpaths.flame_tyrant": "Огненный Тиран",
   "entity.heroicpaths.frost_lord": "Повелитель Мороза",
   "item.heroicpaths.flame_tyrant_spawn_egg": "Яйцо призыва Огненного Тирана",
@@ -1158,5 +1158,16 @@
   "message.heroicpaths.clay_colossus_phase2": "С Глиняного колосса осыпаются латы и нижние руки! Он стал быстрее и злее и начинает швырять валуны.",
   "message.heroicpaths.clay_colossus_phase3": "Колосс теряет шлем и ещё пару рук, его ядро раскалилось! Брони больше нет, но он в ярости и прыгает на врагов.",
   "message.heroicpaths.clay_colossus_defeated": "Глиняный колосс рассыпался! Врата домой открыты.",
-  "message.heroicpaths.dungeon_floor": "Этаж %s из %s"
+  "message.heroicpaths.dungeon_floor": "Этаж %s из %s",
+  "entity.heroicpaths.frost_lich": "Ледяной Лич",
+  "entity.heroicpaths.ice_golem": "Ледяной голем",
+  "entity.heroicpaths.frozen_archer": "Замороженный лучник",
+  "entity.heroicpaths.snow_brute": "Снеговик-громила",
+  "item.heroicpaths.frost_lich_spawn_egg": "Яйцо призыва Ледяного Лича",
+  "item.heroicpaths.ice_golem_spawn_egg": "Яйцо призыва ледяного голема",
+  "item.heroicpaths.frozen_archer_spawn_egg": "Яйцо призыва замороженного лучника",
+  "item.heroicpaths.snow_brute_spawn_egg": "Яйцо призыва снеговика-громилы",
+  "message.heroicpaths.frost_lich_phase2": "Ледяные доспехи Лича раскалываются! Он начинает колдовать: ледяные вспышки, цепной мороз и замороженные лучники.",
+  "message.heroicpaths.frost_lich_phase3": "Лич окутан вьюгой! Буран, морозная аура и скачки прочь — магия льда в полную силу.",
+  "message.heroicpaths.frost_lich_defeated": "Ледяной Лич рассыпался снежной пылью! Врата домой открыты."
 }

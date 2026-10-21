@@ -123,6 +123,33 @@ public final class ModEntities {
                     .clientTrackingRange(12)
                     .build("clay_colossus"));
 
+    /** Босс Ледяной цитадели: парящий Ледяной Лич. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.FrostLich>> FROST_LICH =
+            ENTITY_TYPES.register("frost_lich", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.FrostLich>of(com.heroicpaths.entity.FrostLich::new, MobCategory.MONSTER)
+                    .immuneTo(Blocks.POWDER_SNOW)
+                    .sized(1.2f, 3.4f)
+                    .eyeHeight(3.0f)
+                    .clientTrackingRange(12)
+                    .build("frost_lich"));
+
+    // Ледяная цитадель: ледяной голем, замороженный лучник, снеговик-громила.
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.IceGolem>> ICE_GOLEM =
+            ENTITY_TYPES.register("ice_golem", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.IceGolem>of(com.heroicpaths.entity.IceGolem::new, MobCategory.MONSTER)
+                    .immuneTo(Blocks.POWDER_SNOW)
+                    .sized(0.9f, 1.5f).eyeHeight(1.2f).clientTrackingRange(8).build("ice_golem"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.FrozenArcher>> FROZEN_ARCHER =
+            ENTITY_TYPES.register("frozen_archer", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.FrozenArcher>of(com.heroicpaths.entity.FrozenArcher::new, MobCategory.MONSTER)
+                    .immuneTo(Blocks.POWDER_SNOW)
+                    .sized(0.6f, 1.99f).eyeHeight(1.74f).ridingOffset(-0.7f).clientTrackingRange(8).build("frozen_archer"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.SnowBrute>> SNOW_BRUTE =
+            ENTITY_TYPES.register("snow_brute", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.SnowBrute>of(com.heroicpaths.entity.SnowBrute::new, MobCategory.MONSTER)
+                    .immuneTo(Blocks.POWDER_SNOW)
+                    .sized(1.4f, 2.4f).eyeHeight(2.0f).clientTrackingRange(8).build("snow_brute"));
+
     // Глиняные големы Глиняных копей: ближнего боя, метатель и танк.
     public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayGolem>> CLAY_GOLEM =
             ENTITY_TYPES.register("clay_golem", () -> EntityType.Builder
@@ -199,6 +226,10 @@ public final class ModEntities {
         event.put(DROWNED_PROPHET.get(), com.heroicpaths.entity.DrownedProphet.createAttributes().build());
         event.put(LICH.get(), com.heroicpaths.entity.Lich.createAttributes().build());
         event.put(CLAY_COLOSSUS.get(), com.heroicpaths.entity.ClayColossus.createAttributes().build());
+        event.put(FROST_LICH.get(), com.heroicpaths.entity.FrostLich.createAttributes().build());
+        event.put(ICE_GOLEM.get(), com.heroicpaths.entity.IceGolem.createAttributes().build());
+        event.put(FROZEN_ARCHER.get(), com.heroicpaths.entity.FrozenArcher.createAttributes().build());
+        event.put(SNOW_BRUTE.get(), com.heroicpaths.entity.SnowBrute.createAttributes().build());
         event.put(CLAY_GOLEM.get(), com.heroicpaths.entity.ClayGolem.createAttributes().build());
         event.put(CLAY_THROWER.get(), com.heroicpaths.entity.ClayThrower.createAttributes().build());
         event.put(CLAY_BRUTE.get(), com.heroicpaths.entity.ClayBrute.createAttributes().build());

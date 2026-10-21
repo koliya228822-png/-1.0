@@ -25,6 +25,10 @@
     "heroicpaths:clay_colossus",
     "heroicpaths:clay_golem",
     "heroicpaths:clay_thrower",
-    "heroicpaths:clay_brute"
+    "heroicpaths:clay_brute",
+    "heroicpaths:frost_lich",
+    "heroicpaths:ice_golem",
+    "heroicpaths:frozen_archer",
+    "heroicpaths:snow_brute"
   ]
 }
