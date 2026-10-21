@@ -56,7 +56,7 @@ import java.util.List;
  *   <li>Посох — вертикально, нижним концом на полу.</li>
  *   <li>Ручной арбалет — одной рукой, как пистолет: в покое стволом вниз-вперёд, заряженный — на прицеле.</li>
  *   <li>Мушкет — как ружьё: обе руки, приклад к плечу.</li>
- *   <li>Длинный меч — в покое одной рукой клинком вверх, удары серией из трёх (LongswordCombo).</li>
+ *   <li>Длинный меч — в покое одной рукой клинком вверх, три вида ударов вперемешку (LongswordCombo).</li>
  * </ul>
  * Новые позы — значения ArmPose через META-INF/enumextensions.json. Слот второй руки при двуручном оружии закрыт.
  */
@@ -72,7 +72,7 @@ public final class WeaponPoses {
     /** Жезл или посох заряжает магическую стрелу: рука вытянута к цели (у посоха вторая рука поддерживает). */
     public static final EnumProxy<HumanoidModel.ArmPose> CHANNEL =
             new EnumProxy<>(HumanoidModel.ArmPose.class, false, (IArmPoseTransformer) WeaponPoses::channel);
-    /** Длинный меч: в покое одной рукой клинком вверх, удары — серия из трёх (LongswordCombo). */
+    /** Длинный меч: в покое одной рукой клинком вверх, удары — три вида вперемешку (LongswordCombo). */
     public static final EnumProxy<HumanoidModel.ArmPose> LONGSWORD =
             new EnumProxy<>(HumanoidModel.ArmPose.class, true, (IArmPoseTransformer) LongswordCombo::armPose);
 

@@ -64,7 +64,7 @@ public class HeroicPathsClient {
         // Копьё и молот плавно переходят из стойки (древко на полу) в удар и обратно.
         modBus.addListener(PolearmModels::registerAdditional);
         modBus.addListener(PolearmModels::modifyBaking);
-        // Длинный меч: в руке клинком вверх, серия из трёх ударов.
+        // Длинный меч: в руке клинком вверх, три вида ударов вперемешку.
         modBus.addListener(LongswordCombo::modifyBaking);
         NeoForge.EVENT_BUS.addListener(LongswordCombo::onEntityTick);
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onRenderHand);
