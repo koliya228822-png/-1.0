@@ -29,6 +29,12 @@
       "name": "HEROICPATHS_CHANNEL",
       "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
       "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "CHANNEL" }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "HEROICPATHS_LONGSWORD",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "LONGSWORD" }
     }
   ]
 }

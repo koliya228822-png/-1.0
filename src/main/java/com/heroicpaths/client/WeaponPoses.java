@@ -5,6 +5,7 @@ import com.heroicpaths.item.FocusItem;
 import com.heroicpaths.item.HandCrossbowItem;
 import com.heroicpaths.item.MeleeWeaponItem;
 import com.heroicpaths.item.MusketItem;
+import com.heroicpaths.registry.ModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -55,6 +56,7 @@ import java.util.List;
  *   <li>Посох — вертикально, нижним концом на полу.</li>
  *   <li>Ручной арбалет — одной рукой, как пистолет: в покое стволом вниз-вперёд, заряженный — на прицеле.</li>
  *   <li>Мушкет — как ружьё: обе руки, приклад к плечу.</li>
+ *   <li>Длинный меч — в покое одной рукой клинком вверх, удары серией из трёх (LongswordCombo).</li>
  * </ul>
  * Новые позы — значения ArmPose через META-INF/enumextensions.json. Слот второй руки при двуручном оружии закрыт.
  */
@@ -70,6 +72,9 @@ public final class WeaponPoses {
     /** Жезл или посох заряжает магическую стрелу: рука вытянута к цели (у посоха вторая рука поддерживает). */
     public static final EnumProxy<HumanoidModel.ArmPose> CHANNEL =
             new EnumProxy<>(HumanoidModel.ArmPose.class, false, (IArmPoseTransformer) WeaponPoses::channel);
+    /** Длинный меч: в покое одной рукой клинком вверх, удары — серия из трёх (LongswordCombo). */
+    public static final EnumProxy<HumanoidModel.ArmPose> LONGSWORD =
+            new EnumProxy<>(HumanoidModel.ArmPose.class, true, (IArmPoseTransformer) LongswordCombo::armPose);
 
     private WeaponPoses() {}
 
@@ -277,6 +282,24 @@ public final class WeaponPoses {
                 return HumanoidModel.ArmPose.CROSSBOW_HOLD;
             }
         }, muskets.toArray(Item[]::new));
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
+                return hand == InteractionHand.MAIN_HAND ? LONGSWORD.getValue() : null;
+            }
+
+            @Override
+            public boolean applyForgeHandTransform(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack stack,
+                                                   float partialTick, float equip, float swing) {
+                // Во второй руке меч просто стоит клинком вверх — серия ударов только у основной.
+                LongswordCombo.Pose p = stack == player.getMainHandItem() ? LongswordCombo.pose(player, partialTick) : LongswordCombo.idle();
+                Hold h = LongswordCombo.hold(p, stack == player.getMainHandItem() ? dip(stack, player, equip) : equip * 0.6F, arm == HumanoidArm.RIGHT ? 1 : -1);
+                pose.translate(h.grip.x, h.grip.y, h.grip.z);
+                pose.mulPose(h.rot);
+                pose.scale(h.scale, h.scale, h.scale);
+                return true;
+            }
+        }, ModItems.STEEL_SWORD.get(), ModItems.DAMASCUS_SWORD.get());
     }
 
     // ---------------------------------------------------------------- от первого лица
@@ -382,6 +405,10 @@ public final class WeaponPoses {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || player.isInvisible() || !event.getItemStack().isEmpty()) return;
+        if (LongswordCombo.is(player.getMainHandItem())) {
+            longswordArms(event, player);
+            return;
+        }
         Grip g = grip(player.getMainHandItem());
         if (g == null) return;
         if (!(mc.getEntityRenderDispatcher().getRenderer(player) instanceof PlayerRenderer renderer)) return;
@@ -396,6 +423,22 @@ public final class WeaponPoses {
         PoseStack pose = event.getPoseStack();
         arm(pose, event, renderer, player, main, h.at(h.mainAt), mainShoulder);
         arm(pose, event, renderer, player, main.getOpposite(), h.at(h.offAt), offShoulder);
+    }
+
+    /** Длинный меч: основная рука держит рукоять всегда, вторая подходит снизу и берётся за неё на двуручных ударах. */
+    private static void longswordArms(RenderHandEvent event, LocalPlayer player) {
+        if (!(mc().getEntityRenderDispatcher().getRenderer(player) instanceof PlayerRenderer renderer)) return;
+        HumanoidArm main = player.getMainArm();
+        int side = main == HumanoidArm.RIGHT ? 1 : -1;
+        LongswordCombo.Pose p = LongswordCombo.pose(player, event.getPartialTick());
+        Hold h = LongswordCombo.hold(p, mainDip, side);
+        Vector3f mainShoulder = v(0.7 * side, -0.95, -0.35), offShoulder = v(-0.35 * side, -1.0, -0.4);
+        PoseStack pose = event.getPoseStack();
+        arm(pose, event, renderer, player, main, h.at(h.mainAt), mainShoulder);
+        if (p.offW() <= 0.01F) return;
+        // Пока вторая рука не на рукояти, она поднимается из-под нижнего края экрана.
+        Vector3f below = v(-0.2 * side, -1.1, -0.7), fist = below.lerp(h.at(h.offAt), p.offW());
+        arm(pose, event, renderer, player, main.getOpposite(), fist, offShoulder);
     }
 
     /** Рука кулаком в точке fist, вытянута от плеча; повёрнута как пустая рука в ванильной игре, чтобы выглядеть привычно. */

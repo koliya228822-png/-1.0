@@ -500,6 +500,8 @@ public class Weapon3DGen {
         double grip = -6.5;
         /** Двуручное: от первого лица хват и удар ставит код мода (WeaponPoses), модель только приводит рукоять в начало координат. */
         boolean twoHanded;
+        /** Длинный меч: хват и комбо ударов от первого и третьего лица ставит код мода (LongswordCombo), как у двуручного. */
+        boolean heldByCode;
         /** Высота модели по y — для подгонки иконки и рамки. */
         double minY = 1e9, maxY = -1e9;
     }
@@ -877,6 +879,7 @@ public class Weapon3DGen {
     /** Длинный одноручный меч: дисковое навершие, рукоять на ладонь, узкая прямая гарда, клинок ×12 своей ширины. */
     static void sword(M m, S s) {
         m.grip = -6.4;
+        m.heldByCode = true;
         wheelPommel(m, s, -9.75, 0.95, 1.0, true);
         grip(m, s, -8.85, -4.0, 0.5);
         crossGuard(m, s, -3.72, 3.3, 0.5, 0.4, true, 0.26);
@@ -1436,7 +1439,7 @@ public class Weapon3DGen {
      * уводит клинок в рост за край экрана), рукоять — точно в кулаке.
      */
     static String firstPerson(M m) {
-        if (m.twoHanded) {
+        if (m.twoHanded || m.heldByCode) {
             String t = "\"rotation\": [0, 0, 0], \"translation\": [0, " + f(-m.grip) + ", 0], \"scale\": [1, 1, 1]";
             return "                        \"firstperson_righthand\": {" + t + "},\n"
                     + "                        \"firstperson_lefthand\": {" + t + "},";
@@ -1449,8 +1452,18 @@ public class Weapon3DGen {
 
     /** Ручное оружие: как ванильный меч от третьего лица, свой хват от первого. */
     static String hands(M m) {
-        return "                        \"thirdperson_righthand\": {\"rotation\": [0, -90, 10], \"translation\": [0, 4, 0.5], \"scale\": [0.85, 0.85, 0.85]},\n"
+        // Двуручное оружие держат обе руки (позы в WeaponPoses и PolearmModels) — его положение не трогаем.
+        if (m.twoHanded) return "                        \"thirdperson_righthand\": {\"rotation\": [0, -90, 10], \"translation\": [0, 4, 0.5], \"scale\": [0.85, 0.85, 0.85]},\n"
                 + "                        \"thirdperson_lefthand\": {\"rotation\": [0, 90, -10], \"translation\": [0, 4, 0.5], \"scale\": [0.85, 0.85, 0.85]},\n"
+                + firstPerson(m);
+        // Модель стоит вертикально, а ванильный спрайт меча нарисован по диагонали: наклон на −45° и сдвиг, чтобы рукоять
+        // (m.grip) попала в кулак — туда, где кулак держит рукоять ванильного меча (≈ (−4.5, −4.5) от центра спрайта).
+        double s = 0.85, g = m.grip * 0.7071, dx = -4.5 - g, dy = -4.5 - g;
+        double c = Math.cos(Math.toRadians(10)), sn = Math.sin(Math.toRadians(10));
+        // Поворот ванильного положения Ry(−90)·Rz(10) переводит (x, y, 0) в (0, x·sin + y·cos, x·cos − y·sin).
+        String t = "[0, " + f(4 + s * (dx * sn + dy * c)) + ", " + f(0.5 + s * (dx * c - dy * sn)) + "]";
+        return "                        \"thirdperson_righthand\": {\"rotation\": [0, -90, -35], \"translation\": " + t + ", \"scale\": [0.85, 0.85, 0.85]},\n"
+                + "                        \"thirdperson_lefthand\": {\"rotation\": [0, 90, 35], \"translation\": " + t + ", \"scale\": [0.85, 0.85, 0.85]},\n"
                 + firstPerson(m);
     }
 
