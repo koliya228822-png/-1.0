@@ -4,6 +4,8 @@ import com.heroicpaths.HeroicPaths;
 import com.heroicpaths.item.ClassArmorItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.Model;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
@@ -16,6 +18,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
@@ -66,7 +69,33 @@ public final class ArmorModels {
                 HumanoidModel<?> model = model(armor.setName(), slot);
                 return model == null ? original : model;
             }
+
+            @Override
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            public Model getGenericArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
+                HumanoidModel<?> model = getHumanoidArmorModel(entity, stack, slot, original);
+                if (model == original) return original;
+                ClientHooks.copyModelProperties((HumanoidModel) original, model);
+                // Когда рука согнута в локте, рукава брони рисует слой согнутых рук — здесь они прямые и не нужны.
+                if (com.heroicpaths.client.BentArms.active(entity)) {
+                    model.rightArm.visible = false;
+                    model.leftArm.visible = false;
+                }
+                return model;
+            }
         }, items.toArray(Item[]::new));
+    }
+
+    /** Детали брони на руке (прямые потомки кости руки) и высота их середины от плеча — для согнутой руки. */
+    public static List<Map.Entry<ModelPart, Float>> armPieces(ClassArmorItem armor, boolean right) {
+        float[][] data = ArmorShapes.get(armor.setName() + "/chest");
+        HumanoidModel<?> model = model(armor.setName(), EquipmentSlot.CHEST);
+        List<Map.Entry<ModelPart, Float>> out = new ArrayList<>();
+        if (data == null || model == null) return out;
+        ModelPart bone = right ? model.rightArm : model.leftArm;
+        for (int i = 0; i < data.length; i++)
+            if (data[i][1] < 0 && (int) data[i][0] == (right ? 2 : 3)) out.add(Map.entry(bone.getChild("p" + i), data[i][3] + data[i][11] + data[i][14] / 2));
+        return out;
     }
 
     private static HumanoidModel<?> model(String set, EquipmentSlot slot) {

@@ -182,10 +182,27 @@ public final class WeaponMoves {
             Quaternionf b = blade(n(0, -0.55F, -0.85F), LEFT);
             return new Pose(b, new Quaternionf(b), arm(R_SHOULDER, n(0.1F, 0.9F, -0.45F), 10), arm(L_SHOULDER, n(-0.1F, 0.9F, -0.45F), 10), 1, 0, 0);
         }
-        // Меч в правой руке клинком вверх, чуть вперёд; лезвия смотрят вперёд и назад. Посох стоит вертикально.
+        if (style == Style.LONGSWORD) {
+            // Меч в правой руке клинком вверх, локоть согнут, кулак перед поясом; лезвия смотрят вперёд и назад.
+            Vector3f main = new Vector3f(-5, 9, -5);
+            Quaternionf b = blade(n(0, -1, -0.25F), LEFT);
+            return new Pose(b, new Quaternionf(b), main, new Vector3f(main), 0, 0, 0);
+        }
+        // Посох стоит вертикально, рука чуть вперёд.
         Vector3f main = arm(R_SHOULDER, n(0, 0.94F, -0.34F), 10);
-        Quaternionf b = blade(style == Style.STAFF ? n(0, -1, 0) : n(0, -1, -0.15F), LEFT);
+        Quaternionf b = blade(n(0, -1, 0), LEFT);
         return new Pose(b, new Quaternionf(b), main, new Vector3f(main), 0, 0, 0);
+    }
+
+    /**
+     * Стойки длинного меча перед ударом (как в фехтовании на длинных мечах): перед горизонтальным — «с крыши» у правого
+     * плеча, перед ударом сверху — меч высоко над головой. Обе руки на рукояти, локти согнуты.
+     */
+    private static Pose guard(int step) {
+        Vector3f dir = step == 0 ? n(0.2F, -0.85F, 0.5F) : n(0, -0.55F, 0.85F);
+        Vector3f main = step == 0 ? new Vector3f(-6, -1, -4) : new Vector3f(-1, -5, -2);
+        Quaternionf q = blade(dir, LEFT);
+        return new Pose(q, q, main, new Vector3f(main).sub(new Vector3f(dir).mul(2.5F)), 1, 0, 0);
     }
 
     /** Взмах: начальное направление клинка, ось поворота (по правилу правой руки) и угол в градусах. */
@@ -238,16 +255,18 @@ public final class WeaponMoves {
             // Косой удар справа сверху налево вниз одной рукой.
             Vector3f dir = DIAGONAL.dir(t);
             Quaternionf q = blade(dir, DIAGONAL.axis);
-            Vector3f main = arm(R_SHOULDER, new Vector3f(dir).mul(0.6F).add(new Vector3f(FWD).mul(0.8F)), 10);
+            // В замахе локоть согнут у уха, к концу удара рука выпрямляется.
+            Vector3f main = arm(R_SHOULDER, new Vector3f(dir).mul(0.6F).add(new Vector3f(FWD).mul(0.8F)), Mth.lerp(t, 6.5F, 10));
             return new Pose(q, q, main, new Vector3f(main), 0, 0, 0);
         }
         // Обеими руками: горизонтально справа-сзади через перед налево или из-за головы вперёд-вниз.
         Swing sw = step == 0 ? LONG_HORIZONTAL : OVERHEAD;
         Vector3f dir = sw.dir(t);
         Quaternionf q = blade(dir, sw.axis);
-        // Кулаки перед грудью, сдвинуты в сторону клинка; вторая рука ниже по рукояти, ближе к навершию.
-        Vector3f center = step == 0 ? new Vector3f(0, 7, -7) : new Vector3f(0, 4, -6);
-        Vector3f main = center.add(new Vector3f(dir).mul(step == 0 ? 3 : 5));
+        // Кулаки перед грудью (сверху — над головой), сдвинуты в сторону клинка; вторая рука ниже по рукояти,
+        // ближе к навершию. Пока кулаки близко к телу, локти согнуты; в конце удара руки выпрямляются.
+        Vector3f center = step == 0 ? new Vector3f(0, 5, -6) : new Vector3f(0, 1, -4);
+        Vector3f main = center.add(new Vector3f(dir).mul(step == 0 ? 3 : 6));
         Vector3f off = new Vector3f(main).sub(new Vector3f(dir).mul(2.5F));
         return new Pose(q, q, main, off, 1, 0, 0);
     }
@@ -277,6 +296,11 @@ public final class WeaponMoves {
         Pose idle = idle(style), start = from != null ? from : idle;
         if (step < 0 || p >= 1) return idle;
         if (style == Style.DAGGERS && step == FLURRY) return flurry(p, start);
+        if (style == Style.LONGSWORD && step < 2 && p < 0.3F) {
+            // Двуручные удары длинным мечом идут через стойку: сначала меч в стойку, потом замах.
+            Pose guard = guard(step);
+            return p < 0.15F ? start.lerp(guard, ease(p / 0.15F)) : guard.lerp(swing(style, step, 0), ease((p - 0.15F) / 0.15F));
+        }
         if (p < 0.3F) return start.lerp(swing(style, step, 0), ease(p / 0.3F));
         if (p < 0.62F) return swing(style, step, ease((p - 0.3F) / 0.32F));
         Pose end = swing(style, step, 1);
@@ -325,7 +349,7 @@ public final class WeaponMoves {
     }
 
     /** Направить руку (вниз от плеча в покое) из плеча на точку. */
-    private static void aim(ModelPart arm, Vector3f shoulder, Vector3f target) {
+    static void aim(ModelPart arm, Vector3f shoulder, Vector3f target) {
         Vector3f u = new Vector3f(target).sub(shoulder).normalize();
         float x = -(float) Math.acos(Mth.clamp(u.y, -1, 1)), sx = Mth.sin(x);
         arm.xRot = x;
@@ -405,13 +429,52 @@ public final class WeaponMoves {
         boolean left = arm == HumanoidArm.LEFT;
         ModelPart main = left ? model.leftArm : model.rightArm, off = left ? model.rightArm : model.leftArm;
         Pose p = pose(entity, partial());
-        aim(main, mirror(R_SHOULDER, left), mirror(p.main, left));
+        // Корпус поворачивается вслед за клинком длинного меча, плечи — вместе с ним.
+        float twist = twist(entity, p);
+        model.body.yRot = twist;
+        model.rightArm.x = -5 * Mth.cos(twist);
+        model.rightArm.z = 5 * Mth.sin(twist);
+        model.leftArm.x = 5 * Mth.cos(twist);
+        model.leftArm.z = -5 * Mth.sin(twist);
+        aim(main, pivot(main), reach(pivot(main), mirror(p.main, left)));
         if (p.offW <= 0 || !entity.getOffhandItem().isEmpty()) return;
         float ox = off.xRot, oy = off.yRot, oz = off.zRot;
-        aim(off, mirror(L_SHOULDER, left), mirror(p.off, left));
+        aim(off, pivot(off), reach(pivot(off), mirror(p.off, left)));
         off.xRot = Mth.lerp(p.offW, ox, off.xRot);
         off.yRot = Mth.lerp(p.offW, oy, off.yRot);
         off.zRot = Mth.lerp(p.offW, oz, off.zRot);
+    }
+
+    /** Длина руки от плеча до кулака (пикселей модели): дальше рука не дотягивается, ближе — сгибается в локте. */
+    static final float ARM_REACH = 10;
+
+    static Vector3f pivot(ModelPart arm) {
+        return new Vector3f(arm.x, arm.y, arm.z);
+    }
+
+    /** Точка, до которой дотягивается рука из плеча. */
+    static Vector3f reach(Vector3f shoulder, Vector3f target) {
+        Vector3f d = new Vector3f(target).sub(shoulder);
+        return d.length() <= ARM_REACH ? new Vector3f(target) : d.normalize().mul(ARM_REACH).add(shoulder);
+    }
+
+    /** Поворот корпуса (радианы): у длинного меча — в сторону, куда смотрит клинок. */
+    static float twist(LivingEntity entity, Pose p) {
+        if (style(entity.getMainHandItem()) != Style.LONGSWORD) return 0;
+        float x = p.blade.transform(new Vector3f(0, 1, 0)).x * -0.5F;
+        return entity.getMainArm() == HumanoidArm.LEFT ? -x : x;
+    }
+
+    /**
+     * Куда тянется кулак руки (в пространстве модели, с учётом левши) или null, если рука висит по-обычному.
+     * По нему рука сгибается в локте (BentArms) и оружие ставится в кулак (Held).
+     */
+    @Nullable
+    static Vector3f handTarget(LivingEntity entity, boolean rightArm) {
+        Pose p = pose(entity, partial());
+        boolean left = entity.getMainArm() == HumanoidArm.LEFT, mainArm = rightArm != left;
+        if (mainArm) return mirror(p.main, left);
+        return p.offW >= 0.5F && entity.getOffhandItem().isEmpty() ? mirror(p.off, left) : null;
     }
 
     private static final Map<LivingEntity, Boolean> SPINNING = new WeakHashMap<>();
@@ -505,6 +568,10 @@ public final class WeaponMoves {
             Pose p = pose(entity, partial());
             boolean leftHanded = entity.getMainArm() == HumanoidArm.LEFT, mainArm = leftHand == leftHanded;
             Quaternionf want = mirror(mainArm ? p.blade : p.offBlade, leftHanded);
+            // Согнутая рука короче прямой: слой предмета ставит его на конце прямой руки, сдвигаем к кулаку.
+            Vector3f target = handTarget(entity, !leftHand);
+            float d = target == null ? ARM_REACH : reach(pivot(arm), target).distance(pivot(arm));
+            pose.translate(0, 0, (ARM_REACH - d) / 16);
             pose.mulPose(hand.conjugate().mul(want));
             float s = 0.85F, grip = -originalModel.getTransforms().firstPersonRightHand.translation.y() * 16;
             pose.scale(s, s, s);
