@@ -13,7 +13,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 /**
  * Двуручное оружие держат обеими руками: пока оно в основной руке, слот второй руки закрыт.
  * Предмет, оказавшийся во второй руке, сразу убирается в инвентарь (или падает, если места нет),
- * а само двуручное оружие нельзя переложить во вторую руку.
+ * а само двуручное оружие нельзя переложить во вторую руку. Так же вторую руку занимает кинжал в основной руке:
+ * кинжалы парные, во второй руке — такой же второй.
  */
 public final class TwoHandedGrip {
     private TwoHandedGrip() {}
@@ -21,11 +22,13 @@ public final class TwoHandedGrip {
     /** Освобождает вторую руку, если она занята при двуручном оружии. Возвращает true, если что-то убрано. */
     public static boolean enforce(Player player) {
         ItemStack off = player.getOffhandItem();
-        if (off.isEmpty() || !(WeaponType.isTwoHanded(player.getMainHandItem()) || WeaponType.isTwoHanded(off))) return false;
+        ItemStack main = player.getMainHandItem();
+        if (off.isEmpty() || !(WeaponType.locksOffhand(main) || WeaponType.isTwoHanded(off))) return false;
         ItemStack moved = off.copy();
         player.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
         if (!player.getInventory().add(moved)) player.drop(moved, false);
-        player.displayClientMessage(Component.translatable("message.heroicpaths.two_handed_offhand").withStyle(ChatFormatting.YELLOW), true);
+        String key = WeaponType.isPaired(main) && !WeaponType.isTwoHanded(off) ? "paired_offhand" : "two_handed_offhand";
+        player.displayClientMessage(Component.translatable("message.heroicpaths." + key).withStyle(ChatFormatting.YELLOW), true);
         return true;
     }
 

@@ -32,9 +32,9 @@
     },
     {
       "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
-      "name": "HEROICPATHS_LONGSWORD",
+      "name": "HEROICPATHS_WEAPON_MOVES",
       "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
-      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "LONGSWORD" }
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "MOVES" }
     }
   ]
 }

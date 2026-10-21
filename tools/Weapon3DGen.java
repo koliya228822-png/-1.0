@@ -500,7 +500,7 @@ public class Weapon3DGen {
         double grip = -6.5;
         /** Двуручное: от первого лица хват и удар ставит код мода (WeaponPoses), модель только приводит рукоять в начало координат. */
         boolean twoHanded;
-        /** Длинный меч: хват и комбо ударов от первого и третьего лица ставит код мода (LongswordCombo), как у двуручного. */
+        /** Длинный меч и парный кинжал: хват и удары от первого и третьего лица ставит код мода (WeaponMoves), как у двуручного. */
         boolean heldByCode;
         /** Высота модели по y — для подгонки иконки и рамки. */
         double minY = 1e9, maxY = -1e9;
@@ -870,6 +870,7 @@ public class Weapon3DGen {
 
     static void dagger(M m, S s) {
         m.grip = -4.8;
+        m.heldByCode = true;
         wheelPommel(m, s, -7.05, 0.72, 0.85, true);
         grip(m, s, -6.4, -3.2, 0.45);
         crossGuard(m, s, -2.95, 1.75, 0.45, 0.34, false, 0);

@@ -236,4 +236,27 @@ public class CombatGameTests {
         helper.assertTrue(Math.abs(busy - 4f) < 0.01f, "a two-handed weapon with a busy off hand must deal half, got " + busy);
         helper.succeed();
     }
+
+    @GameTest(template = ARENA)
+    public static void daggersArePaired(GameTestHelper helper) {
+        ServerPlayer player = fighter(helper);
+        Mob pig = dummy(helper, EntityType.PIG, 3, 1);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.IRON_DAGGER.get()));
+        player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.IRON_BUCKLER.get()));
+        helper.assertTrue(WeaponType.locksOffhand(player.getMainHandItem()) && TwoHandedGrip.enforce(player) && player.getOffhandItem().isEmpty(),
+                "a dagger in the main hand must free the off hand");
+        helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.IRON_BUCKLER.get())), "the buckler must go to the inventory");
+        helper.assertTrue(WeaponCombat.isDualWielding(player) && WeaponCombat.secondWeapon(player) == player.getMainHandItem(),
+                "a dagger is held as a pair");
+        // Железный кинжал бьёт на 4, второй такой же добавляет половину — 2.
+        float paired = hit(player, pig, 4);
+        helper.assertTrue(Math.abs(paired - 6f) < 0.01f, "paired daggers: " + paired);
+        helper.assertTrue(player.getMainHandItem().getDamageValue() == 0, "the pair must not spend durability twice");
+
+        // Кинжал во второй руке к мечу — по-прежнему обычная пара разного оружия, вторая рука не закрыта.
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.STEEL_SWORD.get()));
+        player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.IRON_DAGGER.get()));
+        helper.assertTrue(!TwoHandedGrip.enforce(player) && WeaponCombat.isDualWielding(player), "sword + off-hand dagger stays allowed");
+        helper.succeed();
+    }
 }

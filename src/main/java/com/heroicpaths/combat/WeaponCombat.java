@@ -102,15 +102,16 @@ public final class WeaponCombat {
 
         boolean ability = AbilityLogic.isAbilityDamage();
         ItemStack main = player.getMainHandItem();
-        ItemStack off = player.getOffhandItem();
+        ItemStack off = secondWeapon(player);
         boolean dual = !ability && isDualWielding(player);
         float amount = event.getAmount();
         if (!ability) {
-            if (WeaponType.isTwoHanded(main) && !off.isEmpty()) amount *= TWO_HANDED_BUSY_FACTOR;
+            if (WeaponType.isTwoHanded(main) && !player.getOffhandItem().isEmpty()) amount *= TWO_HANDED_BUSY_FACTOR;
             if (dual) {
                 amount += (float) offhandDamage(off) * dualFactor(player) * Math.max(0.2f, strength(player))
                         + PlayerStats.get(player).get(Stat.FLAT_DUAL_WIELD_DAMAGE);
-                strikeWithOffhand(player, off);
+                // Парный кинжал — тот же предмет, что в основной руке: прочность тратится один раз, взмах рисует анимация пары.
+                if (!WeaponType.isPaired(main)) strikeWithOffhand(player, off);
             }
         }
         WeaponType mainType = WeaponType.of(main);
@@ -159,7 +160,7 @@ public final class WeaponCombat {
         boolean ability = AbilityLogic.isAbilityDamage();
         if (!ability && strength(player) < STRONG_HIT) return;
         rollEffect(player, target, WeaponType.of(player.getMainHandItem()));
-        if (!ability && isDualWielding(player)) rollEffect(player, target, WeaponType.of(player.getOffhandItem()));
+        if (!ability && isDualWielding(player)) rollEffect(player, target, WeaponType.of(secondWeapon(player)));
     }
 
     private static void rollEffect(ServerPlayer player, LivingEntity target, @Nullable WeaponType type) {
@@ -178,9 +179,15 @@ public final class WeaponCombat {
         return ATTACK_STRENGTH.getOrDefault(player, 1f);
     }
 
-    /** В обеих руках одноручное оружие ближнего боя. */
+    /** В обеих руках одноручное оружие ближнего боя — или парные кинжалы. */
     public static boolean isDualWielding(Player player) {
-        return WeaponType.isOneHanded(player.getMainHandItem()) && WeaponType.isOneHanded(player.getOffhandItem());
+        return WeaponType.isPaired(player.getMainHandItem())
+                || WeaponType.isOneHanded(player.getMainHandItem()) && WeaponType.isOneHanded(player.getOffhandItem());
+    }
+
+    /** Оружие второй руки: у парных кинжалов это второй такой же кинжал, иначе — предмет во второй руке. */
+    public static ItemStack secondWeapon(Player player) {
+        return WeaponType.isPaired(player.getMainHandItem()) ? player.getMainHandItem() : player.getOffhandItem();
     }
 
     public static boolean isBloodless(LivingEntity entity) {

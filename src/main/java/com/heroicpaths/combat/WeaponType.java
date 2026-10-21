@@ -67,6 +67,16 @@ public enum WeaponType {
         return stack.is(TWO_HANDED_TAG) || stack.getItem() instanceof MeleeWeaponItem weapon && weapon.isTwoHanded();
     }
 
+    /** Кинжал парный: в основной руке его держат вместе со вторым таким же, поэтому вторая рука занята. */
+    public static boolean isPaired(ItemStack stack) {
+        return stack.getItem() instanceof com.heroicpaths.item.DaggerItem;
+    }
+
+    /** Оружие в основной руке занимает и вторую руку: двуручное или парные кинжалы. */
+    public static boolean locksOffhand(ItemStack main) {
+        return isTwoHanded(main) || isPaired(main);
+    }
+
     /** Одноручное оружие ближнего боя: его можно взять парой. */
     public static boolean isOneHanded(ItemStack stack) {
         return of(stack) != null && !isTwoHanded(stack);
@@ -79,7 +89,8 @@ public enum WeaponType {
         index = Math.min(index, tooltip.size());
         tooltip.add(index, Component.translatable("tooltip.heroicpaths.weapon_type", type.displayName(),
                 Component.translatable("weapon_type.heroicpaths." + type.id() + ".effect")).withStyle(ChatFormatting.GRAY));
-        tooltip.add(index + 1, Component.translatable(isTwoHanded(stack) ? "tooltip.heroicpaths.two_handed" : "tooltip.heroicpaths.one_handed")
+        String grip = isTwoHanded(stack) ? "two_handed" : isPaired(stack) ? "paired" : "one_handed";
+        tooltip.add(index + 1, Component.translatable("tooltip.heroicpaths." + grip)
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }
