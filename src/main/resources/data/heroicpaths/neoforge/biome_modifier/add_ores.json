@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [ "heroicpaths:ore_fire_crystal", "heroicpaths:ore_frost_crystal", "heroicpaths:ore_earth_crystal", "heroicpaths:ore_storm_crystal", "heroicpaths:ore_topaz", "heroicpaths:ore_sapphire", "heroicpaths:ore_ruby" ],
+  "step": "underground_ores"
+}

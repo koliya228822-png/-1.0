@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 1, "max": 1 },
+      "entries": [ { "type": "minecraft:item", "name": "heroicpaths:ability_book", "functions": [ { "function": "heroicpaths:random_ability_book", "max_level": 15 } ] } ]
+    },
+    {
+      "rolls": 1,
+      "entries": [ { "type": "minecraft:item", "name": "heroicpaths:crypt_crown_shard", "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1, "max": 2 } } ] } ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "heroicpaths:experience_tome", "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 2, "max": 4 } } ] }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond", "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 2, "max": 5 } } ] }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:emerald", "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 5, "max": 12 } } ] }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:wither_skeleton_skull", "weight": 1 },
+        { "type": "minecraft:item", "name": "minecraft:totem_of_undying", "weight": 1 },
+        { "type": "minecraft:empty", "weight": 1 }
+      ]
+    }
+  ]
+}

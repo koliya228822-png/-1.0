@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ " R ", "GTG", "OOO" ],
+  "key": { "R": { "item": "heroicpaths:ruby" }, "G": { "item": "minecraft:gold_block" }, "T": { "item": "heroicpaths:rune_table" }, "O": { "item": "minecraft:crying_obsidian" } },
+  "result": { "id": "heroicpaths:relic_altar", "count": 1 }
+}

@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:damascus_ingot", "count": 3 },
+    { "tag": "minecraft:planks", "count": 5 },
+    { "item": "minecraft:leather", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:damascus_kite_shield", "count": 1 }
+}

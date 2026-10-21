@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/smithing_forge_top",
+    "front": "heroicpaths:block/smithing_forge_front",
+    "side": "heroicpaths:block/smithing_forge_side"
+  }
+}

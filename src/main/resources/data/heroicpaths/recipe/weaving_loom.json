@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "SSS", "WLW", "PPP" ],
+  "key": { "L": { "item": "minecraft:loom" }, "P": { "tag": "minecraft:planks" }, "S": { "item": "minecraft:string" }, "W": { "tag": "minecraft:wool" } },
+  "result": { "id": "heroicpaths:weaving_loom", "count": 1 }
+}

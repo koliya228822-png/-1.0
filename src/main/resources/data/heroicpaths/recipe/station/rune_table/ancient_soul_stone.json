@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "heroicpaths:greater_soul_stone", "count": 1 },
+    { "item": "heroicpaths:ruby", "count": 2 },
+    { "item": "minecraft:diamond", "count": 2 },
+    { "item": "minecraft:crying_obsidian", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:ancient_soul_stone", "count": 1 }
+}

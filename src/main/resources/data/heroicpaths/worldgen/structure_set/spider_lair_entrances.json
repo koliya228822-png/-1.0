@@ -1,0 +1,11 @@
+{
+  "structures": [
+    { "structure": "heroicpaths:spider_lair_entrance", "weight": 1 }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 40,
+    "separation": 14,
+    "salt": 734120981
+  }
+}

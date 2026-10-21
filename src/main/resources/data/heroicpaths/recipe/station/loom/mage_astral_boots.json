@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "item": "heroicpaths:astral_silk", "count": 4 },
+    { "item": "minecraft:gold_nugget", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:mage_astral_boots", "count": 1 }
+}

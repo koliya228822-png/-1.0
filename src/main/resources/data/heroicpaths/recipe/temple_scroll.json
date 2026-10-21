@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "heroicpaths:broodmother_fang" },
+    { "item": "heroicpaths:broodmother_fang" },
+    { "item": "heroicpaths:broodmother_fang" },
+    { "item": "minecraft:paper" }
+  ],
+  "result": { "id": "heroicpaths:temple_scroll", "count": 1 }
+}

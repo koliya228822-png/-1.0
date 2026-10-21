@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1, "conditions": [ { "condition": "minecraft:random_chance", "chance": 1 } ],
+      "entries": [ { "type": "minecraft:item", "name": "heroicpaths:ability_book", "functions": [ { "function": "heroicpaths:random_ability_book", "max_level": 50 } ] } ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        { "type": "minecraft:item", "name": "heroicpaths:experience_tome", "weight": 3 },
+        { "type": "minecraft:empty", "weight": 2 }
+      ]
+    },
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 4, "max": 7 },
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:diamond", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 2, "max": 4 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:emerald", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 4, "max": 10 } } ] },
+        { "type": "minecraft:item", "name": "minecraft:netherite_ingot", "weight": 1 },
+        { "type": "minecraft:item", "name": "heroicpaths:ancient_soul_stone", "weight": 2 },
+        { "type": "minecraft:item", "name": "heroicpaths:greater_soul_stone", "weight": 3 },
+        { "type": "minecraft:item", "name": "heroicpaths:relic_spark", "weight": 1 },
+        { "type": "minecraft:item", "name": "minecraft:enchanted_golden_apple", "weight": 2 },
+        { "type": "minecraft:item", "name": "minecraft:totem_of_undying", "weight": 3 },
+        { "type": "minecraft:item", "name": "heroicpaths:ruby", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1, "max": 3 } } ] },
+        { "type": "minecraft:item", "name": "heroicpaths:spirit_elixir", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 2, "max": 4 } } ] }
+      ]
+    }
+  ]
+}

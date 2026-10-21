@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:damascus_ingot", "count": 7 },
+    { "item": "heroicpaths:hardened_leather", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:warrior_damascus_leggings", "count": 1 }
+}

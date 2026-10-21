@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:jigsaw",
+  "biomes": "#heroicpaths:has_structure/crypt",
+  "step": "underground_structures",
+  "terrain_adaptation": "none",
+  "spawn_overrides": {
+    "monster": {
+      "bounding_box": "piece",
+      "spawns": [
+        { "type": "minecraft:zombie", "weight": 10, "minCount": 1, "maxCount": 3 },
+        { "type": "minecraft:skeleton", "weight": 10, "minCount": 1, "maxCount": 2 },
+        { "type": "minecraft:cave_spider", "weight": 3, "minCount": 1, "maxCount": 2 }
+      ]
+    }
+  },
+  "start_pool": "heroicpaths:crypt/entrance",
+  "size": 7,
+  "start_height": { "absolute": -13 },
+  "project_start_to_heightmap": "WORLD_SURFACE_WG",
+  "max_distance_from_center": 80,
+  "use_expansion_hack": false
+}

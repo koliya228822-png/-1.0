@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ " E ", "OCO", "OOO" ],
+  "key": { "E": { "item": "minecraft:ender_eye" }, "O": { "item": "minecraft:obsidian" }, "C": { "item": "minecraft:crying_obsidian" } },
+  "result": { "id": "heroicpaths:gate_altar", "count": 1 }
+}

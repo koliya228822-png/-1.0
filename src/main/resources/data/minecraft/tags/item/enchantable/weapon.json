@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:steel_sword",
+    "heroicpaths:damascus_sword",
+    "heroicpaths:iron_greatsword",
+    "heroicpaths:diamond_greatsword",
+    "heroicpaths:steel_greatsword",
+    "heroicpaths:damascus_greatsword",
+    "heroicpaths:iron_rapier",
+    "heroicpaths:steel_rapier",
+    "heroicpaths:damascus_rapier",
+    "heroicpaths:steel_axe",
+    "heroicpaths:damascus_axe",
+    "heroicpaths:iron_dagger",
+    "heroicpaths:diamond_dagger",
+    "heroicpaths:steel_dagger",
+    "heroicpaths:damascus_dagger",
+    "heroicpaths:iron_spear",
+    "heroicpaths:steel_spear",
+    "heroicpaths:damascus_spear",
+    "heroicpaths:iron_flanged_mace",
+    "heroicpaths:steel_flanged_mace",
+    "heroicpaths:damascus_flanged_mace",
+    "heroicpaths:iron_warhammer",
+    "heroicpaths:steel_warhammer",
+    "heroicpaths:damascus_warhammer"
+  ]
+}

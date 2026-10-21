@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "heroicpaths:tyrant_ember_core" },
+    { "item": "heroicpaths:tyrant_ember_core" },
+    { "item": "heroicpaths:tyrant_ember_core" },
+    { "item": "minecraft:paper" }
+  ],
+  "result": { "id": "heroicpaths:frost_scroll", "count": 1 }
+}

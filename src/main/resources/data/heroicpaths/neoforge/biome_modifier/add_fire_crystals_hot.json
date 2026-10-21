@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#c:is_hot/overworld",
+  "features": [ "heroicpaths:ore_fire_crystal_extra" ],
+  "step": "underground_ores"
+}

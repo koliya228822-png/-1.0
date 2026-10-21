@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "item": "heroicpaths:arcane_cloth", "count": 2 },
+    { "item": "heroicpaths:sapphire", "count": 1 },
+    { "item": "minecraft:string", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:astral_silk", "count": 2 }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "tag": "c:gems/diamond", "count": 8 }
+  ],
+  "result": { "id": "minecraft:diamond_chestplate", "count": 1 }
+}

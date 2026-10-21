@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "LBL",
+    "SSS"
+  ],
+  "key": {
+    "A": { "item": "minecraft:amethyst_shard" },
+    "L": { "item": "minecraft:lapis_lazuli" },
+    "B": { "item": "minecraft:book" },
+    "S": { "item": "minecraft:smooth_stone" }
+  },
+  "result": {
+    "id": "heroicpaths:arcane_lectern",
+    "count": 1
+  }
+}

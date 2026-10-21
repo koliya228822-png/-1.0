@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "heroicpaths:tide_pearl" },
+    { "item": "heroicpaths:tide_pearl" },
+    { "item": "heroicpaths:tide_pearl" },
+    { "item": "minecraft:paper" }
+  ],
+  "result": { "id": "heroicpaths:necropolis_scroll", "count": 1 }
+}

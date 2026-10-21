@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:warrior_boots",
+    "heroicpaths:warrior_iron_boots",
+    "heroicpaths:warrior_damascus_boots",
+    "heroicpaths:archer_boots",
+    "heroicpaths:archer_leather_boots",
+    "heroicpaths:archer_impregnated_boots",
+    "heroicpaths:mage_boots",
+    "heroicpaths:mage_wool_boots",
+    "heroicpaths:mage_astral_boots"
+  ]
+}

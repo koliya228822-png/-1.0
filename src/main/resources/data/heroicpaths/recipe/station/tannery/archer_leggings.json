@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "heroicpaths:hardened_leather", "count": 7 },
+    { "item": "minecraft:string", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:archer_leggings", "count": 1 }
+}

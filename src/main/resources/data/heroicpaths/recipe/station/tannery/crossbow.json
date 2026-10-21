@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "tag": "c:rods/wooden", "count": 3 },
+    { "tag": "c:strings", "count": 2 },
+    { "tag": "c:ingots/iron", "count": 1 },
+    { "item": "minecraft:tripwire_hook", "count": 1 }
+  ],
+  "result": { "id": "minecraft:crossbow", "count": 1 }
+}

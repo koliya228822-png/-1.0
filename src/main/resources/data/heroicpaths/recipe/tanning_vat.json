@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "L L", "PBP", "PPP" ],
+  "key": { "B": { "item": "minecraft:barrel" }, "L": { "item": "minecraft:leather" }, "P": { "tag": "minecraft:planks" } },
+  "result": { "id": "heroicpaths:tanning_vat", "count": 1 }
+}

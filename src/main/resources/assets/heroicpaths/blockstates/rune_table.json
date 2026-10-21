@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "heroicpaths:block/rune_table" },
+    "facing=east": { "model": "heroicpaths:block/rune_table", "y": 90 },
+    "facing=south": { "model": "heroicpaths:block/rune_table", "y": 180 },
+    "facing=west": { "model": "heroicpaths:block/rune_table", "y": 270 }
+  }
+}

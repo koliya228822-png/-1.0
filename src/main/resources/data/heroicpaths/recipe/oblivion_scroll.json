@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:paper" },
+    { "item": "minecraft:ender_pearl" },
+    { "item": "minecraft:amethyst_shard" },
+    { "item": "minecraft:ink_sac" }
+  ],
+  "result": {
+    "id": "heroicpaths:oblivion_scroll",
+    "count": 1
+  }
+}

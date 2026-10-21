@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "III", "BFB", "BBB" ],
+  "key": { "B": { "item": "minecraft:bricks" }, "F": { "item": "minecraft:furnace" }, "I": { "item": "minecraft:iron_ingot" } },
+  "result": { "id": "heroicpaths:smithing_forge", "count": 1 }
+}

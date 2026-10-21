@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "heroicpaths:impregnated_leather", "count": 8 },
+    { "item": "minecraft:string", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:archer_impregnated_chestplate", "count": 1 }
+}

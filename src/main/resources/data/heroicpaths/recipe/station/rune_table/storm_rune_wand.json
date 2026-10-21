@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "heroicpaths:storm_rune", "count": 1 },
+    { "item": "heroicpaths:topaz", "count": 1 },
+    { "item": "minecraft:stick", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:storm_rune_wand", "count": 1 }
+}

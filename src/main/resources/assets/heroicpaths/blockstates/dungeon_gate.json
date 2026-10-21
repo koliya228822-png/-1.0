@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "heroicpaths:block/dungeon_gate" },
+    "facing=east": { "model": "heroicpaths:block/dungeon_gate", "y": 90 },
+    "facing=south": { "model": "heroicpaths:block/dungeon_gate", "y": 180 },
+    "facing=west": { "model": "heroicpaths:block/dungeon_gate", "y": 270 }
+  }
+}

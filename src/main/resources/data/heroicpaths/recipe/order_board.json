@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "PpP", "pBp", "PpP" ],
+  "key": { "P": { "tag": "minecraft:planks" }, "p": { "item": "minecraft:paper" }, "B": { "item": "minecraft:book" } },
+  "result": { "id": "heroicpaths:order_board", "count": 1 }
+}

@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/fire_rune_staff" },
+  "base": { "parent": "heroicpaths:item/3d/fire_rune_staff" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/fire_rune_staff" } }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/gate_altar_top",
+    "front": "heroicpaths:block/gate_altar_front",
+    "side": "heroicpaths:block/gate_altar_side"
+  }
+}

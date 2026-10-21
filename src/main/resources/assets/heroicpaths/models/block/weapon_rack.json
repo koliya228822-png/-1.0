@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "heroicpaths:block/weapon_rack_top",
+    "side": "heroicpaths:block/weapon_rack_side"
+  }
+}

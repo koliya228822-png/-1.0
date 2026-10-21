@@ -1,0 +1,6 @@
+{
+  "parent": "heroicpaths:item/3d/steel_heater_shield",
+  "overrides": [
+    { "predicate": { "blocking": 1 }, "model": "heroicpaths:item/steel_heater_shield_blocking" }
+  ]
+}

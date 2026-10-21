@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "heroicpaths:block/smithing_forge" },
+    "facing=east": { "model": "heroicpaths:block/smithing_forge", "y": 90 },
+    "facing=south": { "model": "heroicpaths:block/smithing_forge", "y": 180 },
+    "facing=west": { "model": "heroicpaths:block/smithing_forge", "y": 270 }
+  }
+}

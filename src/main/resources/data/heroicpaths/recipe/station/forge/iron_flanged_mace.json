@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot", "count": 3 },
+    { "item": "minecraft:stick", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:iron_flanged_mace", "count": 1 }
+}

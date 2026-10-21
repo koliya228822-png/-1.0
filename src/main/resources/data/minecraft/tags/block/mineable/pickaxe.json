@@ -1,0 +1,24 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:relic_altar",
+    "heroicpaths:arcane_lectern",
+    "heroicpaths:gate_altar",
+    "heroicpaths:fire_crystal_ore",
+    "heroicpaths:deepslate_fire_crystal_ore",
+    "heroicpaths:frost_crystal_ore",
+    "heroicpaths:deepslate_frost_crystal_ore",
+    "heroicpaths:earth_crystal_ore",
+    "heroicpaths:deepslate_earth_crystal_ore",
+    "heroicpaths:storm_crystal_ore",
+    "heroicpaths:deepslate_storm_crystal_ore",
+    "heroicpaths:topaz_ore",
+    "heroicpaths:deepslate_topaz_ore",
+    "heroicpaths:sapphire_ore",
+    "heroicpaths:deepslate_sapphire_ore",
+    "heroicpaths:ruby_ore",
+    "heroicpaths:deepslate_ruby_ore",
+    "heroicpaths:smithing_forge",
+    "heroicpaths:rune_table"
+  ]
+}

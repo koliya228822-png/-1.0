@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "heroicpaths:storm_rune", "count": 2 },
+    { "item": "heroicpaths:topaz", "count": 1 },
+    { "item": "minecraft:gold_ingot", "count": 1 },
+    { "item": "minecraft:stick", "count": 3 }
+  ],
+  "result": { "id": "heroicpaths:storm_rune_staff", "count": 1 }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/dungeon_gate_top",
+    "front": "heroicpaths:block/dungeon_gate_front",
+    "side": "heroicpaths:block/dungeon_gate_side"
+  }
+}

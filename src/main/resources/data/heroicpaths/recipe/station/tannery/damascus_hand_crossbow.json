@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "heroicpaths:damascus_ingot", "count": 1 },
+    { "item": "heroicpaths:impregnated_leather", "count": 1 },
+    { "item": "minecraft:string", "count": 3 },
+    { "item": "minecraft:tripwire_hook", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:damascus_hand_crossbow", "count": 1 }
+}

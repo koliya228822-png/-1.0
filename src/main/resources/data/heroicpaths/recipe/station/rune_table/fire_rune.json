@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "heroicpaths:fire_crystal", "count": 2 },
+    { "item": "minecraft:lapis_lazuli", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:fire_rune", "count": 1 }
+}

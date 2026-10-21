@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot", "count": 2 },
+    { "tag": "minecraft:planks", "count": 4 },
+    { "item": "minecraft:leather", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:iron_heater_shield", "count": 1 }
+}

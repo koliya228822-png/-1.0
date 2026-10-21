@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "HTH"
+  ],
+  "key": {
+    "A": { "item": "minecraft:arrow" },
+    "H": { "item": "minecraft:hay_block" },
+    "T": { "item": "minecraft:target" }
+  },
+  "result": {
+    "id": "heroicpaths:archery_target",
+    "count": 1
+  }
+}

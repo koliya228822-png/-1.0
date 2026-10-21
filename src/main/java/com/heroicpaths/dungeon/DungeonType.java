@@ -1,0 +1,168 @@
+package com.heroicpaths.dungeon;
+
+import com.heroicpaths.HeroicPaths;
+import com.heroicpaths.registry.ModItems;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Locale;
+
+/**
+ * Данжи, в которые ведут врата деревень. Сложность растёт от склепа к ледяным чертогам:
+ * враги крепче и бьют сильнее, награда больше.
+ */
+public enum DungeonType implements net.minecraft.util.StringRepresentable {
+    CRYPT(1, 1.0f, 1.0f, 300, 8, 1),
+    SPIDER_LAIR(10, 1.4f, 1.2f, 600, 12, 1),
+    FORGE(20, 1.8f, 1.4f, 900, 16, 2),
+    SUNKEN_TEMPLE(30, 2.3f, 1.65f, 1400, 22, 2),
+    FROST(40, 2.8f, 1.9f, 2000, 28, 3),
+    NECROPOLIS(50, 3.4f, 2.2f, 3000, 36, 4);
+
+    /** Прибавка к здоровью врагов за каждого игрока сверх первого. */
+    public static final float HEALTH_PER_EXTRA_PLAYER = 0.3f;
+    /** Прибавка к урону врагов за каждого игрока сверх первого. */
+    public static final float DAMAGE_PER_EXTRA_PLAYER = 0.1f;
+    public static final int MAX_PARTY = 6;
+    /** С этого уровня данжа для входа нужен свиток, скрафченный из трофеев босса предыдущего данжа. */
+    public static final int SCROLL_LEVEL = 20;
+
+    private final int minLevel;
+    private final float healthMultiplier;
+    private final float damageMultiplier;
+    private final int rewardXp;
+    private final int rewardEmeralds;
+    private final int rewardTomes;
+
+    DungeonType(int minLevel, float healthMultiplier, float damageMultiplier, int rewardXp, int rewardEmeralds, int rewardTomes) {
+        this.minLevel = minLevel;
+        this.healthMultiplier = healthMultiplier;
+        this.damageMultiplier = damageMultiplier;
+        this.rewardXp = rewardXp;
+        this.rewardEmeralds = rewardEmeralds;
+        this.rewardTomes = rewardTomes;
+    }
+
+    public String id() {
+        return name().toLowerCase(Locale.ROOT);
+    }
+
+    @Override
+    public String getSerializedName() {
+        return id();
+    }
+
+    /** Босс данжа (его id в шаблоне логова). */
+    public String bossId() {
+        return switch (this) {
+            case CRYPT -> "crypt_king";
+            case SPIDER_LAIR -> "spider_queen";
+            case FORGE -> "flame_tyrant";
+            case SUNKEN_TEMPLE -> "drowned_prophet";
+            case FROST -> "frost_lord";
+            case NECROPOLIS -> "lich";
+        };
+    }
+
+    public int minLevel() {
+        return minLevel;
+    }
+
+    public float damageMultiplier() {
+        return damageMultiplier;
+    }
+
+    public int rewardXp() {
+        return rewardXp;
+    }
+
+    public int rewardEmeralds() {
+        return rewardEmeralds;
+    }
+
+    public int rewardTomes() {
+        return rewardTomes;
+    }
+
+    /** Во сколько раз здоровье врагов больше обычного: сложность данжа × размер группы. */
+    public float healthMultiplier(int partySize) {
+        return healthMultiplier * (1f + HEALTH_PER_EXTRA_PLAYER * (Math.max(1, partySize) - 1));
+    }
+
+    /** Во сколько раз урон врагов больше обычного: сложность данжа × размер группы. */
+    public float damageMultiplier(int partySize) {
+        return damageMultiplier * (1f + DAMAGE_PER_EXTRA_PLAYER * (Math.max(1, partySize) - 1));
+    }
+
+    /** Сколько монстров появляется на месте каждого спавнера: 3 и ещё по одному за каждого игрока сверх первого. */
+    public int mobsPerSpawner(int partySize) {
+        return 3 + Math.max(1, partySize) - 1;
+    }
+
+    public boolean requiresScroll() {
+        return minLevel >= SCROLL_LEVEL;
+    }
+
+    /** Свиток доступа в данж или null, если он не нужен. */
+    @Nullable
+    public Item scroll() {
+        return switch (this) {
+            case CRYPT, SPIDER_LAIR -> null;
+            case FORGE -> ModItems.FORGE_SCROLL.get();
+            case SUNKEN_TEMPLE -> ModItems.TEMPLE_SCROLL.get();
+            case FROST -> ModItems.FROST_SCROLL.get();
+            case NECROPOLIS -> ModItems.NECROPOLIS_SCROLL.get();
+        };
+    }
+
+    /**
+     * Трофей босса: из трёх трофеев крафтится свиток данжа на ступень выше через один
+     * (склеп → кузня, логово → храм, кузня → чертоги, храм → некрополь).
+     */
+    public Item trophy() {
+        return switch (this) {
+            case CRYPT -> ModItems.CRYPT_CROWN_SHARD.get();
+            case SPIDER_LAIR -> ModItems.BROODMOTHER_FANG.get();
+            case FORGE -> ModItems.TYRANT_EMBER_CORE.get();
+            case SUNKEN_TEMPLE -> ModItems.TIDE_PEARL.get();
+            case FROST -> ModItems.FROST_HEART.get();
+            case NECROPOLIS -> ModItems.LICH_PHYLACTERY.get();
+        };
+    }
+
+    /** Шанс, что босс оставит каждому вошедшему Искру реликвии: от 8% в склепе до 30% в некрополе. */
+    public float relicSparkChance() {
+        return switch (this) {
+            case CRYPT -> 0.08f;
+            case SPIDER_LAIR -> 0.10f;
+            case FORGE -> 0.15f;
+            case SUNKEN_TEMPLE -> 0.20f;
+            case FROST -> 0.25f;
+            case NECROPOLIS -> 0.30f;
+        };
+    }
+
+    /** Пул стартовой комнаты (зал прибытия с порталом обратно). */
+    public ResourceLocation startPool() {
+        return HeroicPaths.id(id() + "/arrival");
+    }
+
+    public MutableComponent displayName() {
+        return Component.translatable("dungeon.heroicpaths." + id());
+    }
+
+    public MutableComponent description() {
+        return Component.translatable("dungeon.heroicpaths." + id() + ".desc");
+    }
+
+    @Nullable
+    public static DungeonType byId(String id) {
+        for (DungeonType type : values()) {
+            if (type.id().equals(id)) return type;
+        }
+        return null;
+    }
+}

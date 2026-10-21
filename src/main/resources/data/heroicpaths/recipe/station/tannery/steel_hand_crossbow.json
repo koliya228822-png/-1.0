@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "heroicpaths:steel_plate", "count": 1 },
+    { "item": "heroicpaths:hardened_leather", "count": 1 },
+    { "item": "minecraft:string", "count": 2 },
+    { "item": "minecraft:tripwire_hook", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:steel_hand_crossbow", "count": 1 }
+}

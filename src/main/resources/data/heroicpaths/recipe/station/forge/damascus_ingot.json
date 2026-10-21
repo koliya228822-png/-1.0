@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:steel_plate", "count": 2 },
+    { "item": "minecraft:flint", "count": 1 },
+    { "tag": "minecraft:coals", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:damascus_ingot", "count": 1 }
+}

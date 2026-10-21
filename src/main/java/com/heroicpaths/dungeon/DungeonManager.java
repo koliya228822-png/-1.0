@@ -1,0 +1,483 @@
+package com.heroicpaths.dungeon;
+
+import com.heroicpaths.HeroicPaths;
+import com.heroicpaths.entity.DungeonBoss;
+import com.heroicpaths.party.Party;
+import com.heroicpaths.party.PartyManager;
+import com.heroicpaths.registry.ModBlocks;
+import com.heroicpaths.registry.ModItems;
+import com.heroicpaths.rpg.RpgData;
+import com.heroicpaths.rpg.RpgManager;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.pools.JigsawPlacement;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.pools.alias.PoolAliasLookup;
+import net.minecraft.world.level.levelgen.structure.structures.JigsawStructure;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Измерение данжей: создание проходов, проверки и вход, масштабирование врагов под группу,
+ * награды за босса и выход.
+ */
+public final class DungeonManager {
+    public static final ResourceKey<Level> DUNGEON_LEVEL = ResourceKey.create(Registries.DIMENSION, HeroicPaths.id("dungeons"));
+    /** Проходы стоят в 1024 блоках друг от друга, чтобы не пересекаться. */
+    public static final int SPACING = 1024;
+    private static final int BASE_Y = 64;
+    private static final String PORTAL_COOLDOWN = "heroicpaths.portal_cooldown";
+    private static final ResourceLocation HEALTH_SCALE = HeroicPaths.id("dungeon_health");
+    private static final ResourceLocation DAMAGE_SCALE = HeroicPaths.id("dungeon_damage");
+
+    /**
+     * Только для игровых тестов: тестовый сервер не создаёт измерения из датапаков, поэтому тест подставляет
+     * свой мир на время одной проверки и сразу возвращает null.
+     */
+    @Nullable
+    public static ServerLevel testLevel;
+
+    private DungeonManager() {}
+
+    @Nullable
+    public static ServerLevel dungeonLevel(MinecraftServer server) {
+        return testLevel != null ? testLevel : server.getLevel(DUNGEON_LEVEL);
+    }
+
+    public static boolean isDungeonLevel(Level level) {
+        return level.dimension() == DUNGEON_LEVEL || (testLevel != null && level == testLevel);
+    }
+
+    @Nullable
+    public static DungeonInstance instanceAt(MinecraftServer server, BlockPos pos) {
+        return DungeonData.get(server).get(indexAt(pos));
+    }
+
+    private static int indexAt(BlockPos pos) {
+        return Math.floorDiv(pos.getX() + SPACING / 2, SPACING);
+    }
+
+    /** Данж, который строится прямо сейчас: мобы из шаблонов комнат появляются раньше, чем он зарегистрирован. */
+    private record Pending(int index, DungeonType type, int partySize) {}
+
+    @Nullable
+    private static Pending generating;
+
+    // ================================================================ проверки доступа
+
+    /** Результат проверки: можно ли войти, а если нельзя — почему. */
+    public record Access(boolean allowed, @Nullable Component reason) {
+        static final Access OK = new Access(true, null);
+
+        static Access deny(Component reason) {
+            return new Access(false, reason);
+        }
+    }
+
+    /**
+     * Проверка уровня: средний уровень текущей группы игрока (сумма уровней всех участников, делённая на их число)
+     * не ниже минимального уровня данжа. Считается заново при каждой попытке, поэтому смена состава её не обходит.
+     */
+    public static Access checkLevel(ServerPlayer player, DungeonType type) {
+        double average = PartyManager.averageLevel(player);
+        if (average + 1e-6 < type.minLevel()) {
+            return Access.deny(Component.translatable("message.heroicpaths.access.level", type.displayName(),
+                    type.minLevel(), PartyManager.format(average)));
+        }
+        return Access.OK;
+    }
+
+    /** Ищет в инвентаре свиток нужного данжа. Возвращает номер слота или -1. */
+    public static int findScroll(ServerPlayer player, DungeonType type) {
+        if (type.scroll() == null) return -1;
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            if (player.getInventory().getItem(slot).is(type.scroll())) return slot;
+        }
+        return -1;
+    }
+
+    // ================================================================ создание
+
+    /** Создаёт новый проход для группы и строит данж. Возвращает null, если измерение недоступно или постройка не удалась. */
+    @Nullable
+    public static DungeonInstance create(MinecraftServer server, DungeonType type, Collection<UUID> roster, @Nullable UUID partyId,
+                                         ResourceKey<Level> returnLevel, BlockPos returnPos) {
+        ServerLevel level = dungeonLevel(server);
+        return level == null ? null : create(level, type, roster, partyId, returnLevel, returnPos);
+    }
+
+    @Nullable
+    public static DungeonInstance create(ServerLevel level, DungeonType type, Collection<UUID> roster, @Nullable UUID partyId,
+                                         ResourceKey<Level> returnLevel, BlockPos returnPos) {
+        if (roster.isEmpty()) return null;
+        DungeonData data = DungeonData.get(level.getServer());
+        int index = data.allocateIndex();
+        int party = Math.max(1, Math.min(DungeonType.MAX_PARTY, roster.size()));
+        BlockPos origin = new BlockPos(index * SPACING, BASE_Y, 0);
+        List<PoolElementStructurePiece> pieces;
+        generating = new Pending(index, type, party);
+        try {
+            pieces = generate(level, type, origin);
+            convertSpawners(level, pieces, type, party);
+        } catch (RuntimeException e) {
+            HeroicPaths.LOGGER.error("Failed to build dungeon {} #{}", type.id(), index, e);
+            return null;
+        } finally {
+            generating = null;
+        }
+        if (pieces.isEmpty()) return null;
+        BoundingBox start = pieces.get(0).getBoundingBox();
+        BlockPos arrival = new BlockPos(start.getCenter().getX(), start.minY() + 1, start.getCenter().getZ());
+        DungeonInstance instance = new DungeonInstance(index, type, roster, partyId, origin, arrival, returnLevel, returnPos);
+        data.put(instance);
+        // Сохраняем сразу: после сбоя игры номер прохода не должен выдаться повторно поверх уже построенного данжа.
+        level.getServer().overworld().getDataStorage().save();
+        HeroicPaths.LOGGER.info("Dungeon {} #{} built from {} pieces at {} for {} players", type.id(), index, pieces.size(), origin, party);
+        return instance;
+    }
+
+    /** Строит данж целиком (как генератор jigsaw-структур) и возвращает его комнаты. */
+    public static List<PoolElementStructurePiece> generate(ServerLevel level, DungeonType type, BlockPos origin) {
+        Holder<StructureTemplatePool> start = level.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL)
+                .getHolderOrThrow(ResourceKey.create(Registries.TEMPLATE_POOL, type.startPool()));
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
+                generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
+                level.getSeed(), new ChunkPos(origin), level, biome -> true);
+        Optional<Structure.GenerationStub> stub = JigsawPlacement.addPieces(context, start, Optional.empty(), 7, origin,
+                false, Optional.empty(), 80, PoolAliasLookup.EMPTY,
+                JigsawStructure.DEFAULT_DIMENSION_PADDING, JigsawStructure.DEFAULT_LIQUID_SETTINGS);
+        List<PoolElementStructurePiece> pieces = new ArrayList<>();
+        if (stub.isEmpty()) return pieces;
+        for (StructurePiece piece : stub.get().getPiecesBuilder().build().pieces()) {
+            if (piece instanceof PoolElementStructurePiece poolPiece) {
+                poolPiece.place(level, level.structureManager(), generator, level.getRandom(), BoundingBox.infinite(), origin, false);
+                pieces.add(poolPiece);
+            }
+        }
+        return pieces;
+    }
+
+    /**
+     * Монстры в данже не возрождаются: каждый спавнер сразу выпускает одну волну (3 моба и ещё по одному
+     * за каждого игрока сверх первого) и исчезает. Возвращает число появившихся мобов.
+     */
+    public static int convertSpawners(ServerLevel level, List<PoolElementStructurePiece> pieces, DungeonType type, int partySize) {
+        int spawned = 0;
+        for (PoolElementStructurePiece piece : pieces) {
+            BoundingBox box = piece.getBoundingBox();
+            for (BlockPos pos : BlockPos.betweenClosed(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ())) {
+                if (!(level.getBlockEntity(pos) instanceof SpawnerBlockEntity spawner)) continue;
+                BlockPos at = pos.immutable();
+                CompoundTag spawnData = spawner.getSpawner().save(new CompoundTag()).getCompound("SpawnData").getCompound("entity");
+                level.setBlock(at, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                Optional<EntityType<?>> mobType = EntityType.byString(spawnData.getString("id"));
+                if (mobType.isEmpty()) continue;
+                for (int i = 0; i < type.mobsPerSpawner(partySize); i++) {
+                    if (!(mobType.get().create(level) instanceof Mob mob)) break;
+                    mob.moveTo(at.getX() + 0.5 + (i % 2) * 0.4 - 0.2, at.getY(), at.getZ() + 0.5 + (i / 2 % 2) * 0.4 - 0.2,
+                            level.getRandom().nextFloat() * 360f, 0f);
+                    mob.finalizeSpawn(level, level.getCurrentDifficultyAt(at), MobSpawnType.STRUCTURE, null);
+                    mob.setPersistenceRequired();
+                    if (level.addFreshEntity(mob)) spawned++;
+                }
+            }
+        }
+        return spawned;
+    }
+
+    // ================================================================ вход и выход
+
+    /** Вызывается, когда игрок стоит в портале данжа. */
+    public static void onPortalContact(ServerPlayer player, BlockPos portalPos) {
+        long now = player.level().getGameTime();
+        if (player.getPersistentData().getLong(PORTAL_COOLDOWN) > now) return;
+        player.getPersistentData().putLong(PORTAL_COOLDOWN, now + 60);
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+
+        if (isDungeonLevel(player.level())) {
+            // Внутри данжа порталы есть только на месте гибели босса: выйти можно лишь так или умерев.
+            DungeonInstance instance = instanceAt(server, portalPos);
+            if (instance != null && instance.isCompleted()) leave(player, instance);
+            return;
+        }
+        GateAltarBlockEntity altar = GateAltarBlockEntity.findNear(player.serverLevel(), portalPos);
+        DungeonInstance instance = altar == null ? null : DungeonData.get(server).get(altar.instanceIndex());
+        if (instance != null) enter(player, instance, altar);
+    }
+
+    /**
+     * Вход через открытые врата. Порядок проверок:
+     * 1) проход не пройден; 2) игрок из группы, для которой открыты врата, и всё ещё в ней;
+     * 3) средний уровень группы; 4) свиток (для данжей с 20 уровня); 5) игрок жив и может переместиться.
+     * Потом вход, и только после успешного входа сгорают свиток и камень. При любой неудаче ничего не тратится.
+     */
+    public static boolean enter(ServerPlayer player, DungeonInstance instance, @Nullable GateAltarBlockEntity altar) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return false;
+        if (instance.isCompleted()) {
+            deny(player, Component.translatable("message.heroicpaths.dungeon_completed"));
+            return false;
+        }
+        Party party = PartyManager.partyOf(player);
+        UUID currentParty = party == null ? null : party.id();
+        // Одиночка, открывший врата, может войти и после вступления в группу; группа — только пока он в ней.
+        boolean sameParty = instance.partyId == null || instance.partyId.equals(currentParty);
+        if (!instance.isInRoster(player.getUUID()) || !sameParty) {
+            deny(player, Component.translatable("message.heroicpaths.access.not_party"));
+            return false;
+        }
+        Access level = checkLevel(player, instance.type);
+        if (!level.allowed()) {
+            deny(player, level.reason());
+            return false;
+        }
+        if (instance.type.requiresScroll() && !instance.isScrollPaid() && (altar == null || !altar.hasEscrowedScroll(instance.type))) {
+            deny(player, Component.translatable("message.heroicpaths.access.scroll", new ItemStack(instance.type.scroll()).getHoverName()));
+            return false;
+        }
+        if (!player.isAlive() || player.isSpectator() || player.isPassenger() || player.isVehicle()) return false;
+        ServerLevel dungeon = dungeonLevel(server);
+        if (dungeon == null) {
+            deny(player, Component.translatable("message.heroicpaths.gate_failed"));
+            return false;
+        }
+
+        player.getPersistentData().putLong(PORTAL_COOLDOWN, dungeon.getGameTime() + 60);
+        player.teleportTo(dungeon, instance.arrival.getX() + 0.5, instance.arrival.getY(), instance.arrival.getZ() + 0.5,
+                player.getYRot(), player.getXRot());
+        if (player.level() != dungeon || !player.isAlive()) return false;
+
+        // Вход состоялся: свиток и камень сгорают ровно один раз за проход.
+        if (!instance.isScrollPaid()) {
+            instance.markScrollPaid();
+            if (altar != null) altar.consumeEscrow();
+        }
+        instance.entered().add(player.getUUID());
+        DungeonData.get(server).setDirty();
+        player.sendSystemMessage(Component.translatable("message.heroicpaths.dungeon_entered", instance.type.displayName(),
+                Math.round((instance.type.healthMultiplier(instance.partySize) - 1) * 100)).withStyle(ChatFormatting.DARK_PURPLE));
+        player.sendSystemMessage(Component.translatable("message.heroicpaths.dungeon_rules").withStyle(ChatFormatting.GRAY));
+        if (altar != null && instance.everyoneEntered()) altar.closeGate();
+        return true;
+    }
+
+    private static void deny(ServerPlayer player, @Nullable Component reason) {
+        if (reason != null) player.displayClientMessage(reason.copy().withStyle(ChatFormatting.RED), true);
+    }
+
+    public static void leave(ServerPlayer player, DungeonInstance instance) {
+        MinecraftServer server = player.getServer();
+        ServerLevel target = server == null ? null : server.getLevel(instance.returnLevel);
+        if (target == null && server != null) target = server.overworld();
+        if (target == null) return;
+        player.getPersistentData().putLong(PORTAL_COOLDOWN, target.getGameTime() + 60);
+        player.teleportTo(target, instance.returnPos.getX() + 0.5, instance.returnPos.getY(), instance.returnPos.getZ() + 0.5,
+                player.getYRot(), player.getXRot());
+    }
+
+    // ================================================================ события
+
+    @SubscribeEvent
+    public static void onServerStarted(ServerStartedEvent event) {
+        if (dungeonLevel(event.getServer()) != null) {
+            HeroicPaths.LOGGER.info("Dungeon dimension {} is ready", DUNGEON_LEVEL.location());
+        } else {
+            HeroicPaths.LOGGER.warn("Dungeon dimension {} is missing: dungeon gates will not open", DUNGEON_LEVEL.location());
+        }
+    }
+
+    /** Камни и свитки, которые алтарь вернул, пока хозяин был не в сети. */
+    @SubscribeEvent
+    public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        List<ItemStack> returned = DungeonData.get(player.server).takePendingReturns(player.getUUID());
+        for (ItemStack stack : returned) give(player, stack);
+        if (!returned.isEmpty()) {
+            player.sendSystemMessage(Component.translatable("message.heroicpaths.gate_items_returned").withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    /** Враги в данже крепче: сложность данжа, +30% здоровья и +10% урона за каждого игрока группы сверх первого. */
+    @SubscribeEvent
+    public static void onEntityJoin(EntityJoinLevelEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level) || !isDungeonLevel(level)) return;
+        if (!(event.getEntity() instanceof Mob mob) || !(mob instanceof Enemy)) return;
+        DungeonInstance instance = instanceAt(level.getServer(), mob.blockPosition());
+        if (instance != null) {
+            applyScaling(mob, instance.type, instance.partySize);
+        } else if (generating != null && generating.index() == indexAt(mob.blockPosition())) {
+            applyScaling(mob, generating.type(), generating.partySize());
+        } else {
+            return;
+        }
+        // Монстры данжа не исчезают, пока группа далеко.
+        mob.setPersistenceRequired();
+    }
+
+    public static void applyScaling(Mob mob, DungeonInstance instance) {
+        applyScaling(mob, instance.type, instance.partySize);
+    }
+
+    public static void applyScaling(Mob mob, DungeonType type, int partySize) {
+        AttributeInstance health = mob.getAttribute(Attributes.MAX_HEALTH);
+        if (health == null || health.hasModifier(HEALTH_SCALE)) return;
+        health.addPermanentModifier(new AttributeModifier(HEALTH_SCALE,
+                type.healthMultiplier(partySize) - 1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        AttributeInstance damage = mob.getAttribute(Attributes.ATTACK_DAMAGE);
+        float damageMultiplier = type.damageMultiplier(partySize);
+        if (damage != null && !damage.hasModifier(DAMAGE_SCALE) && damageMultiplier != 1f) {
+            damage.addPermanentModifier(new AttributeModifier(DAMAGE_SCALE,
+                    damageMultiplier - 1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+        mob.setHealth(mob.getMaxHealth());
+    }
+
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (!(entity instanceof DungeonBoss) || !(entity.level() instanceof ServerLevel level) || !isDungeonLevel(level)) return;
+        DungeonInstance instance = instanceAt(level.getServer(), entity.blockPosition());
+        if (instance == null || instance.isCompleted()) return;
+        completeInstance(level, instance, entity.blockPosition());
+    }
+
+    /** Босс повержен: награды и трофей всем вошедшим, выполнение контрактов и открытие врат у входа. */
+    public static void completeInstance(ServerLevel level, DungeonInstance instance, BlockPos bossPos) {
+        instance.complete();
+        DungeonData.get(level.getServer()).setDirty();
+        java.util.List<ServerPlayer> cleared = new java.util.ArrayList<>();
+        for (UUID uuid : instance.entered()) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(uuid);
+            if (player == null) continue;
+            cleared.add(player);
+            RpgData data = RpgManager.get(player);
+            boolean contract = instance.type.id().equals(data.getContractDungeon());
+            if (contract) data.clearContract();
+            RpgManager.addXp(player, instance.type.rewardXp());
+            give(player, new ItemStack(Items.EMERALD, instance.type.rewardEmeralds()));
+            give(player, new ItemStack(ModItems.EXPERIENCE_TOME.get(), instance.type.rewardTomes()));
+            give(player, new ItemStack(instance.type.trophy()));
+            if (player.getRandom().nextFloat() < instance.type.relicSparkChance()) {
+                give(player, new ItemStack(ModItems.RELIC_SPARK.get()));
+                player.sendSystemMessage(Component.translatable("message.heroicpaths.relic_spark_found").withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+            RpgManager.sync(player);
+            player.sendSystemMessage(Component.translatable(contract ? "message.heroicpaths.contract_done" : "message.heroicpaths.dungeon_cleared",
+                    instance.type.displayName(), instance.type.rewardXp()).withStyle(ChatFormatting.GOLD));
+            player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1f, 1f);
+        }
+        // Заказы гильдии на зачистку этого данжа — для вошедших и их групп.
+        com.heroicpaths.guild.GuildOrders.onDungeonCleared(level.getServer(), cleared, instance.type);
+        // Домой — через врата у входа: запечатанный проём в зале прибытия открывается порталом.
+        boolean gate = openEntranceGate(level, instance.arrival);
+        for (ServerPlayer player : cleared)
+            player.sendSystemMessage(Component.translatable(gate ? "message.heroicpaths.dungeon_gate_opened" : "message.heroicpaths.dungeon_exit_here")
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+        if (gate) return;
+        // Врата не нашлись (повреждённый зал) — чтобы никто не застрял, портал на месте гибели босса, как раньше.
+        for (int y = 0; y < 3; y++) {
+            BlockPos pos = bossPos.above(y);
+            if (level.getBlockState(pos).isAir()) {
+                level.setBlockAndUpdate(pos, ModBlocks.DUNGEON_PORTAL.get().defaultBlockState()
+                        .setValue(BlockStateProperties.HORIZONTAL_AXIS, Direction.Axis.X));
+            }
+        }
+    }
+
+    /**
+     * Открывает врата в зале прибытия: заливка проёма 3×4 внутри обсидиановой рамки становится порталом домой.
+     * В шаблоне зала врата стоят в 4 блоках от его центра (точки прибытия); как повёрнут зал, заранее не известно,
+     * поэтому проверяются все четыре стороны: подходит та, где однородная заливка обрамлена обсидианом.
+     */
+    public static boolean openEntranceGate(ServerLevel level, BlockPos arrival) {
+        int[][] sides = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+        for (int[] side : sides) {
+            // Проём тянется поперёк направления на врата.
+            int ax = side[1] != 0 ? 1 : 0, az = side[0] != 0 ? 1 : 0;
+            BlockPos center = arrival.offset(side[0] * 4, 0, side[1] * 4);
+            List<BlockPos> inside = new java.util.ArrayList<>();
+            net.minecraft.world.level.block.Block seal = null;
+            boolean ok = true;
+            for (int i = -1; i <= 1 && ok; i++)
+                for (int y = 0; y <= 3 && ok; y++) {
+                    BlockPos pos = center.offset(ax * i, y, az * i);
+                    BlockState state = level.getBlockState(pos);
+                    if (state.isAir() || state.is(Blocks.OBSIDIAN) || (seal != null && !state.is(seal))) ok = false;
+                    else {
+                        seal = state.getBlock();
+                        inside.add(pos.immutable());
+                    }
+                }
+            for (int y = 0; y <= 4 && ok; y++)
+                ok = level.getBlockState(center.offset(-ax * 2, y, -az * 2)).is(Blocks.OBSIDIAN)
+                        && level.getBlockState(center.offset(ax * 2, y, az * 2)).is(Blocks.OBSIDIAN);
+            for (int i = -1; i <= 1 && ok; i++) ok = level.getBlockState(center.offset(ax * i, 4, az * i)).is(Blocks.OBSIDIAN);
+            if (!ok) continue;
+            BlockState portal = ModBlocks.DUNGEON_PORTAL.get().defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_AXIS, ax == 1 ? Direction.Axis.X : Direction.Axis.Z);
+            for (BlockPos pos : inside) level.setBlock(pos, portal, 3);
+            BlockPos middle = center.above(2);
+            level.sendParticles(ParticleTypes.REVERSE_PORTAL, middle.getX() + 0.5, middle.getY(), middle.getZ() + 0.5, 80, 1.2, 1.2, 1.2, 0.1);
+            level.playSound(null, middle, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 1f, 1.2f);
+            return true;
+        }
+        return false;
+    }
+
+    static void give(ServerPlayer player, ItemStack stack) {
+        if (stack.isEmpty()) return;
+        if (!player.getInventory().add(stack)) {
+            ItemEntity drop = player.drop(stack, false);
+            if (drop != null) drop.setNoPickUpDelay();
+        }
+    }
+}

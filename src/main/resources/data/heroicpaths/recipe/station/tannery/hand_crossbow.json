@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot", "count": 2 },
+    { "item": "minecraft:stick", "count": 2 },
+    { "item": "minecraft:string", "count": 2 },
+    { "item": "minecraft:tripwire_hook", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:hand_crossbow", "count": 1 }
+}

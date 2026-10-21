@@ -1,0 +1,11 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "heroicpaths:storm_rune", "count": 2 },
+    { "item": "heroicpaths:sapphire", "count": 1 },
+    { "item": "heroicpaths:ruby", "count": 1 },
+    { "item": "minecraft:blaze_rod", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:storm_archmage_wand", "count": 1 }
+}

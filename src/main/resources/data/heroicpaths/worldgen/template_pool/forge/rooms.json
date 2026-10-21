@@ -1,0 +1,41 @@
+{
+  "fallback": "heroicpaths:forge/dead_ends",
+  "elements": [
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:forge/tomb_room",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:forge/library",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:forge/spider_den",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:forge/armory",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+}
+  ]
+}

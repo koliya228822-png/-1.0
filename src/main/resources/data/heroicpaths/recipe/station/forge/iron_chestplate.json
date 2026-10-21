@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "tag": "c:ingots/iron", "count": 8 }
+  ],
+  "result": { "id": "minecraft:iron_chestplate", "count": 1 }
+}

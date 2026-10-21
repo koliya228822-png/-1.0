@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "tag": "c:gems/diamond", "count": 5 }
+  ],
+  "result": { "id": "minecraft:diamond_helmet", "count": 1 }
+}

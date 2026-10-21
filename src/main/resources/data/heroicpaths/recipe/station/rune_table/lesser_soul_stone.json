@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "minecraft:amethyst_shard", "count": 4 },
+    { "item": "minecraft:lapis_lazuli", "count": 2 },
+    { "item": "minecraft:bone", "count": 4 }
+  ],
+  "result": { "id": "heroicpaths:lesser_soul_stone", "count": 1 }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "heroicpaths:block/arcane_lectern_top",
+    "side": "heroicpaths:block/arcane_lectern_side"
+  }
+}

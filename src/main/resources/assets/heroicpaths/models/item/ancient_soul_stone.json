@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": { "layer0": "heroicpaths:item/ancient_soul_stone" },
+  "overrides": [
+    { "predicate": { "heroicpaths:charged": 1 }, "model": "heroicpaths:item/ancient_soul_stone_charged" }
+  ]
+}

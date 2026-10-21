@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/weaving_loom_top",
+    "front": "heroicpaths:block/weaving_loom_front",
+    "side": "heroicpaths:block/weaving_loom_side"
+  }
+}

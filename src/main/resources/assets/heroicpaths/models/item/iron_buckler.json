@@ -1,0 +1,6 @@
+{
+  "parent": "heroicpaths:item/3d/iron_buckler",
+  "overrides": [
+    { "predicate": { "blocking": 1 }, "model": "heroicpaths:item/iron_buckler_blocking" }
+  ]
+}

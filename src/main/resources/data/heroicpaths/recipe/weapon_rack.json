@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SXS",
+    "PPP"
+  ],
+  "key": {
+    "S": { "item": "minecraft:stick" },
+    "X": { "item": "minecraft:iron_sword" },
+    "P": { "tag": "minecraft:planks" }
+  },
+  "result": {
+    "id": "heroicpaths:weapon_rack",
+    "count": 1
+  }
+}

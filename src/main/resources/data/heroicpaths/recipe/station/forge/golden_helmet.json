@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "tag": "c:ingots/gold", "count": 5 }
+  ],
+  "result": { "id": "minecraft:golden_helmet", "count": 1 }
+}

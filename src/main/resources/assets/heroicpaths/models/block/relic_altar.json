@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/enchanting_table",
+  "textures": {
+    "particle": "heroicpaths:block/relic_altar_bottom",
+    "bottom": "heroicpaths:block/relic_altar_bottom",
+    "top": "heroicpaths:block/relic_altar_top",
+    "side": "heroicpaths:block/relic_altar_side"
+  }
+}

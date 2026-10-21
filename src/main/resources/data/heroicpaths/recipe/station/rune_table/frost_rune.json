@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "rune_table",
+  "ingredients": [
+    { "item": "heroicpaths:frost_crystal", "count": 2 },
+    { "item": "minecraft:lapis_lazuli", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:frost_rune", "count": 1 }
+}

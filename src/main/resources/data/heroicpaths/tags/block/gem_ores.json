@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:topaz_ore",
+    "heroicpaths:deepslate_topaz_ore",
+    "heroicpaths:sapphire_ore",
+    "heroicpaths:deepslate_sapphire_ore",
+    "heroicpaths:ruby_ore",
+    "heroicpaths:deepslate_ruby_ore"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "fallback": "heroicpaths:sunken_temple/dead_ends",
+  "elements": [
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:sunken_temple/tomb_room",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:sunken_temple/library",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:sunken_temple/spider_den",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:sunken_temple/armory",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+}
+  ]
+}

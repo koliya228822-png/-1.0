@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "minecraft:leather", "count": 5 },
+    { "item": "minecraft:string", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:archer_leather_helmet", "count": 1 }
+}

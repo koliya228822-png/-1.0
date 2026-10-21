@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "tag": "minecraft:wool", "count": 4 },
+    { "item": "minecraft:string", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:mage_wool_boots", "count": 1 }
+}

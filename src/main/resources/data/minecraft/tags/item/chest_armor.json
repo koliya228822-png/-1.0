@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:warrior_chestplate",
+    "heroicpaths:warrior_iron_chestplate",
+    "heroicpaths:warrior_damascus_chestplate",
+    "heroicpaths:archer_chestplate",
+    "heroicpaths:archer_leather_chestplate",
+    "heroicpaths:archer_impregnated_chestplate",
+    "heroicpaths:mage_chestplate",
+    "heroicpaths:mage_wool_chestplate",
+    "heroicpaths:mage_astral_chestplate"
+  ]
+}

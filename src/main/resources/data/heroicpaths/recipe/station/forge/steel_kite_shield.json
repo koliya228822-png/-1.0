@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:steel_plate", "count": 3 },
+    { "tag": "minecraft:planks", "count": 5 },
+    { "item": "minecraft:leather", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:steel_kite_shield", "count": 1 }
+}

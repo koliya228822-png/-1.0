@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot", "count": 5 },
+    { "item": "minecraft:leather", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:warrior_iron_helmet", "count": 1 }
+}

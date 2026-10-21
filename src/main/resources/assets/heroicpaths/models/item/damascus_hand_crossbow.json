@@ -1,0 +1,16 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/damascus_hand_crossbow" },
+  "base": { "parent": "heroicpaths:item/3d/damascus_hand_crossbow" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/damascus_hand_crossbow" } }
+  },
+  "overrides": [
+    { "predicate": { "pulling": 1 }, "model": "heroicpaths:item/damascus_hand_crossbow_pulling_0" },
+    { "predicate": { "pulling": 1, "pull": 0.58 }, "model": "heroicpaths:item/damascus_hand_crossbow_pulling_1" },
+    { "predicate": { "pulling": 1, "pull": 1.0 }, "model": "heroicpaths:item/damascus_hand_crossbow_pulling_2" },
+    { "predicate": { "charged": 1 }, "model": "heroicpaths:item/damascus_hand_crossbow_arrow" },
+    { "predicate": { "charged": 1, "firework": 1 }, "model": "heroicpaths:item/damascus_hand_crossbow_firework" }
+  ]
+}

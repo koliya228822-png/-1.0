@@ -1,0 +1,23 @@
+{
+  "fallback": "heroicpaths:spider_lair/dead_ends",
+  "elements": [
+{
+  "weight": 3,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:spider_lair/corridor_straight",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:spider_lair/corridor_turn",
+    "processors": "minecraft:empty",
+    "projection": "rigid"
+  }
+}
+  ]
+}

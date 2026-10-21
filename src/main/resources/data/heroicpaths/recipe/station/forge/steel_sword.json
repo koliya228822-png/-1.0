@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:steel_plate", "count": 2 },
+    { "item": "minecraft:stick", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:steel_sword", "count": 1 }
+}

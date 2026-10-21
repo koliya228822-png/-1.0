@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:steel_sword",
+    "heroicpaths:damascus_sword",
+    "heroicpaths:iron_greatsword",
+    "heroicpaths:diamond_greatsword",
+    "heroicpaths:steel_greatsword",
+    "heroicpaths:damascus_greatsword",
+    "heroicpaths:iron_rapier",
+    "heroicpaths:steel_rapier",
+    "heroicpaths:damascus_rapier"
+  ]
+}

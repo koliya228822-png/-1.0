@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "tag": "minecraft:wool", "count": 1 },
+    { "item": "minecraft:lapis_lazuli", "count": 1 },
+    { "item": "minecraft:amethyst_shard", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:arcane_cloth", "count": 2 }
+}

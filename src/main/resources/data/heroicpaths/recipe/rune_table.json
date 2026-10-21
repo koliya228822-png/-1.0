@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "ACA", "DBD", "DDD" ],
+  "key": { "A": { "item": "minecraft:amethyst_shard" }, "B": { "item": "minecraft:book" }, "C": { "tag": "heroicpaths:crystals" }, "D": { "item": "minecraft:polished_deepslate" } },
+  "result": { "id": "heroicpaths:rune_table", "count": 1 }
+}

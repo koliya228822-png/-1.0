@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:warrior_leggings",
+    "heroicpaths:warrior_iron_leggings",
+    "heroicpaths:warrior_damascus_leggings",
+    "heroicpaths:archer_leggings",
+    "heroicpaths:archer_leather_leggings",
+    "heroicpaths:archer_impregnated_leggings",
+    "heroicpaths:mage_leggings",
+    "heroicpaths:mage_wool_leggings",
+    "heroicpaths:mage_astral_leggings"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/composite_bow_pulling_1" },
+  "base": { "parent": "heroicpaths:item/3d/composite_bow_pulling_1" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/composite_bow_pulling_1" } }
+  }
+}

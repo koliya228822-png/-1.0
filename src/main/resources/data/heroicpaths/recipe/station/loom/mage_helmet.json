@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "item": "heroicpaths:arcane_cloth", "count": 5 },
+    { "item": "minecraft:string", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:mage_helmet", "count": 1 }
+}

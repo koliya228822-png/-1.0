@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "heroicpaths:block/quest_board" },
+    "facing=east": { "model": "heroicpaths:block/quest_board", "y": 90 },
+    "facing=south": { "model": "heroicpaths:block/quest_board", "y": 180 },
+    "facing=west": { "model": "heroicpaths:block/quest_board", "y": 270 }
+  }
+}

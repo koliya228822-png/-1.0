@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/steel_hand_crossbow_firework" },
+  "base": { "parent": "heroicpaths:item/3d/steel_hand_crossbow_firework" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/steel_hand_crossbow_firework" } }
+  }
+}

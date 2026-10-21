@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "HEROICPATHS_TWO_HANDED",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "TWO_HANDED" }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "HEROICPATHS_POLEARM",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "POLEARM" }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "HEROICPATHS_STAFF",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "STAFF" }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "HEROICPATHS_PISTOL",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "PISTOL" }
+    },
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "HEROICPATHS_CHANNEL",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": { "class": "com/heroicpaths/client/WeaponPoses", "field": "CHANNEL" }
+    }
+  ]
+}

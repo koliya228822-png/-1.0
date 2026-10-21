@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/tanning_vat_top",
+    "front": "heroicpaths:block/tanning_vat_front",
+    "side": "heroicpaths:block/tanning_vat_side"
+  }
+}

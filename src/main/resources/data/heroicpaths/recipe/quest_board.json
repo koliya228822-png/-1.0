@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "PPP", "PBP", "PPP" ],
+  "key": { "P": { "tag": "minecraft:planks" }, "B": { "item": "minecraft:paper" } },
+  "result": { "id": "heroicpaths:quest_board", "count": 1 }
+}

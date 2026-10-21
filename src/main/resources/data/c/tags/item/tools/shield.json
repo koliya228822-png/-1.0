@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:iron_buckler",
+    "heroicpaths:steel_buckler",
+    "heroicpaths:damascus_buckler",
+    "heroicpaths:iron_heater_shield",
+    "heroicpaths:steel_heater_shield",
+    "heroicpaths:damascus_heater_shield",
+    "heroicpaths:iron_kite_shield",
+    "heroicpaths:steel_kite_shield",
+    "heroicpaths:damascus_kite_shield"
+  ]
+}

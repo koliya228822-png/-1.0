@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:damascus_ingot", "count": 1 },
+    { "item": "minecraft:stick", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:damascus_dagger", "count": 1 }
+}

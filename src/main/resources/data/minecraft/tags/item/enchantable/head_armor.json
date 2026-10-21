@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:warrior_helmet",
+    "heroicpaths:warrior_iron_helmet",
+    "heroicpaths:warrior_damascus_helmet",
+    "heroicpaths:archer_helmet",
+    "heroicpaths:archer_leather_helmet",
+    "heroicpaths:archer_impregnated_helmet",
+    "heroicpaths:mage_helmet",
+    "heroicpaths:mage_wool_helmet",
+    "heroicpaths:mage_astral_helmet"
+  ]
+}

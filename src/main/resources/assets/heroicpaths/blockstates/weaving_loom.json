@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "heroicpaths:block/weaving_loom" },
+    "facing=east": { "model": "heroicpaths:block/weaving_loom", "y": 90 },
+    "facing=south": { "model": "heroicpaths:block/weaving_loom", "y": 180 },
+    "facing=west": { "model": "heroicpaths:block/weaving_loom", "y": 270 }
+  }
+}

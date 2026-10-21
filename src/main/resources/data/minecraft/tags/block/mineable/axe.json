@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:weapon_rack",
+    "heroicpaths:quest_board",
+    "heroicpaths:tanning_vat",
+    "heroicpaths:weaving_loom",
+    "heroicpaths:order_board"
+  ]
+}
