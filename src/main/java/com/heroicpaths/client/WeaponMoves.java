@@ -267,6 +267,7 @@ public final class WeaponMoves {
                 main ? new Vector3f(start.main).lerp(mainOut, k) : start.main, off ? new Vector3f(start.off).lerp(offOut, k) : start.off, 1, 0, 0);
     }
 
+    private static float ease(float k) {
         k = Mth.clamp(k, 0, 1);
         return k * k * (3 - 2 * k);
     }
