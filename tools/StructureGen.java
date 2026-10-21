@@ -190,13 +190,50 @@ public class StructureGen {
             Map.entry(MODID + ":chests/crypt", MODID + ":chests/necropolis"),
             Map.entry(MODID + ":chests/crypt_treasure", MODID + ":chests/necropolis_treasure")));
 
+    /** Глиняные копи — первый данж за вратами: глина и терракота, глиняные големы и Глиняный колосс. */
+    static final Theme CLAY = new Theme("clay", Map.ofEntries(
+            Map.entry("minecraft:stone_bricks", "minecraft:mud_bricks"),
+            Map.entry("minecraft:mossy_stone_bricks", "minecraft:packed_mud"),
+            Map.entry("minecraft:cracked_stone_bricks", "minecraft:brown_terracotta"),
+            Map.entry("minecraft:chiseled_stone_bricks", "minecraft:red_terracotta"),
+            Map.entry("minecraft:stone_brick_stairs", "minecraft:mud_brick_stairs"),
+            Map.entry("minecraft:polished_blackstone_bricks", "minecraft:bricks"),
+            Map.entry("minecraft:cracked_polished_blackstone_bricks", "minecraft:terracotta"),
+            Map.entry("minecraft:polished_blackstone", "minecraft:packed_mud"),
+            Map.entry("minecraft:chiseled_polished_blackstone", "minecraft:red_terracotta"),
+            Map.entry("minecraft:polished_blackstone_stairs", "minecraft:brick_stairs"),
+            Map.entry("minecraft:polished_blackstone_slab", "minecraft:brick_slab"),
+            Map.entry("minecraft:gilded_blackstone", "minecraft:raw_copper_block"),
+            Map.entry("minecraft:crying_obsidian", "minecraft:orange_terracotta"),
+            Map.entry("minecraft:polished_deepslate", "minecraft:clay"),
+            Map.entry("minecraft:bookshelf", "minecraft:clay"),
+            Map.entry("minecraft:cobweb", "minecraft:air"),
+            Map.entry("minecraft:soul_lantern", "minecraft:lantern"),
+            Map.entry("minecraft:soul_campfire", "minecraft:campfire"),
+            Map.entry("minecraft:zombie", MODID + ":clay_golem"),
+            Map.entry("minecraft:skeleton", MODID + ":clay_golem"),
+            Map.entry("minecraft:cave_spider", MODID + ":clay_golem"),
+            Map.entry(MODID + ":crypt_king", MODID + ":clay_colossus"),
+            Map.entry(MODID + ":chests/crypt", MODID + ":chests/clay"),
+            Map.entry(MODID + ":chests/crypt_treasure", MODID + ":chests/clay_treasure")));
+
+    /** Имя jigsaw-якоря в центре площадки спуска и зала у арены: по нему этаж ставится точно под шахтой с этажа выше. */
+    static final String FLOOR_ANCHOR = MODID + ":floor_anchor";
+
+    /**
+     * Данжи за вратами многоэтажные: этажи 1–5 (зал прибытия или площадка спуска → центральный зал → комнаты,
+     * а из центрального зала проход в зал со спуском вниз) и шестой — огромная арена босса.
+     * Шахту с лестницей между этажами прорубает игра, когда строит проход.
+     */
     static int generatePortalDungeons(Path resources) throws IOException {
         Path structures = resources.resolve("data/" + MODID + "/structure");
         Path pools = resources.resolve("data/" + MODID + "/worldgen/template_pool");
         Map<String, Template> pieces = new LinkedHashMap<>();
         pieces.put("arrival", cryptArrival());
-        pieces.put("hub", cryptHub());
-        pieces.put("boss_room", cryptBossRoom());
+        pieces.put("landing", floorLanding());
+        pieces.put("floor_hub", cryptHub(false));
+        pieces.put("descent", descentRoom());
+        pieces.put("arena", bossArena());
         pieces.put("corridor_straight", cryptCorridor());
         pieces.put("corridor_turn", cryptTurn());
         pieces.put("tomb_room", tombRoom());
@@ -205,12 +242,8 @@ public class StructureGen {
         pieces.put("armory", armoryRoom());
         pieces.put("dead_end", deadEnd());
 
-        // Склеп: остальные комнаты уже есть, нужен только зал прибытия.
-        write(structures.resolve("crypt/arrival.nbt"), pieces.get("arrival").toNbt());
-        writeText(pools.resolve("crypt/arrival.json"), poolJson(CRYPT, "minecraft:empty", "arrival", 1));
-        int count = 2;
-
-        for (Theme theme : List.of(FORGE, FROST, SPIDER_LAIR, SUNKEN_TEMPLE, NECROPOLIS)) {
+        int count = 0;
+        for (Theme theme : List.of(CLAY, FORGE, FROST, SPIDER_LAIR, SUNKEN_TEMPLE, NECROPOLIS)) {
             String prefix = MODID + ":" + theme.name() + "/";
             for (Map.Entry<String, Template> piece : pieces.entrySet()) {
                 @SuppressWarnings("unchecked")
@@ -218,14 +251,14 @@ public class StructureGen {
                 write(structures.resolve(theme.name() + "/" + piece.getKey() + ".nbt"), nbt);
                 count++;
             }
-            writeText(pools.resolve(theme.name() + "/arrival.json"), poolJson(prefix, "minecraft:empty", "arrival", 1));
-            writeText(pools.resolve(theme.name() + "/hub.json"), poolJson(prefix, "minecraft:empty", "hub", 1));
-            writeText(pools.resolve(theme.name() + "/boss.json"), poolJson(prefix, "minecraft:empty", "boss_room", 1));
+            for (String single : List.of("arrival", "landing", "floor_hub", "descent", "arena")) {
+                writeText(pools.resolve(theme.name() + "/" + single + ".json"), poolJson(prefix, "minecraft:empty", single, 1));
+            }
             writeText(pools.resolve(theme.name() + "/corridors.json"), poolJson(prefix, prefix + "dead_ends", "corridor_straight", 3, "corridor_turn", 2));
             writeText(pools.resolve(theme.name() + "/rooms.json"), poolJson(prefix, prefix + "dead_ends",
                     "tomb_room", 2, "library", 1, "spider_den", 1, "armory", 1));
             writeText(pools.resolve(theme.name() + "/dead_ends.json"), poolJson(prefix, "minecraft:empty", "dead_end", 1));
-            count += 6;
+            count += 8;
         }
         return count;
     }
@@ -370,7 +403,153 @@ public class StructureGen {
         t.set(6, 5, 6, SOUL_LANTERN);
         t.set(1, 5, 9, COBWEB);
         t.set(7, 5, 9, COBWEB);
-        doorway(t, 4, 10, "south", cryptJigsaw(MODID + ":crypt_entrance", MODID + ":crypt_hub", CRYPT + "hub", 0));
+        doorway(t, 4, 10, "south", cryptJigsaw(MODID + ":crypt_entrance", MODID + ":crypt_hub", CRYPT + "floor_hub", 0));
+        return t;
+    }
+
+    /**
+     * Площадка спуска (этажи 2–5): сюда спускается лестница с этажа выше. Якорь в центре — низ шахты,
+     * колонна к северу от него держит лестницу. Выход в центральный зал этажа на юг.
+     */
+    static Template floorLanding() {
+        Random r = new Random(12);
+        Template t = new Template(9, 7, 9);
+        room(t, 0, 0, 8, 8, 6, r);
+        t.set(4, 1, 4, "minecraft:jigsaw[orientation=up_north]", cryptJigsaw(FLOOR_ANCHOR, FLOOR_ANCHOR, "minecraft:empty", 0));
+        for (int y = 1; y <= 5; y++) t.set(4, y, 3, "minecraft:chiseled_stone_bricks");
+        for (int[] p : new int[][]{{1, 1}, {7, 1}, {1, 7}, {7, 7}}) t.fill(p[0], 1, p[1], p[0], 5, p[1], "minecraft:chiseled_stone_bricks");
+        t.set(2, 5, 6, SOUL_LANTERN);
+        t.set(6, 5, 6, SOUL_LANTERN);
+        t.set(2, 1, 1, "minecraft:soul_campfire[facing=south,lit=true,signal_fire=false,waterlogged=false]");
+        t.set(6, 1, 1, "minecraft:soul_campfire[facing=south,lit=true,signal_fire=false,waterlogged=false]");
+        t.set(1, 5, 4, COBWEB);
+        doorway(t, 4, 8, "south", cryptJigsaw(MODID + ":crypt_entrance", MODID + ":crypt_hub", CRYPT + "floor_hub", 0));
+        return t;
+    }
+
+    /**
+     * Зал спуска: проём в полу посередине (лестницу вниз прорубает игра), вокруг — плиты резного камня,
+     * четыре столба с фонарями и страж. Вход только с севера, из центрального зала.
+     */
+    static Template descentRoom() {
+        Random r = new Random(13);
+        Template t = new Template(9, 7, 9);
+        room(t, 0, 0, 8, 8, 6, r);
+        for (int x = 3; x <= 5; x++) for (int z = 3; z <= 5; z++) t.set(x, 0, z, "minecraft:chiseled_stone_bricks");
+        for (int[] p : new int[][]{{2, 2}, {6, 2}, {2, 6}, {6, 6}}) {
+            t.set(p[0], 1, p[1], "minecraft:chiseled_stone_bricks");
+            t.set(p[0], 2, p[1], "minecraft:stone_brick_stairs[facing=north,half=bottom,shape=straight,waterlogged=false]");
+            t.set(p[0], 5, p[1], SOUL_LANTERN);
+        }
+        t.set(1, 5, 1, COBWEB);
+        t.set(7, 5, 7, COBWEB);
+        t.set(1, 1, 7, "minecraft:bone_block[axis=y]");
+        t.set(7, 1, 7, "minecraft:skeleton_skull[powered=false,rotation=8]");
+        guard(t, 4, 6, "minecraft:zombie");
+        doorway(t, 4, 0, "north", cryptJigsaw(MODID + ":descent_room", MODID + ":descent_door", "minecraft:empty", 0));
+        return t;
+    }
+
+    /** Радиус круглого зала арены, его центр в шаблоне и высота свода. */
+    static final int ARENA_R = 24, ARENA_C = 26, ARENA_H = 27;
+
+    /**
+     * Арена босса — шестой этаж. Круглый зал радиусом 24 и высотой 27 с кольцом колонн, узором на полу,
+     * светящимся сводом и боссом посередине. С юга к нему примыкает зал спуска: сюда приходит лестница,
+     * здесь же запечатанные врата домой (в 4 блоках к югу от якоря), которые открываются после победы.
+     */
+    static Template bossArena() {
+        Random r = new Random(14);
+        int c = ARENA_C;
+        int size = c * 2 + 1;
+        int ante = size; // первый ряд зала спуска по z
+        Template t = new Template(size, ARENA_H + 1, size + 11);
+        for (int x = 0; x < size; x++) {
+            for (int z = 0; z < size; z++) {
+                double d = Math.sqrt((x - c) * (x - c) + (z - c) * (z - c));
+                if (d >= ARENA_R + 2) continue;
+                // Пол: чернокаменный кирпич, два кольца плачущего обсидиана, резной круг под боссом и лучи от центра.
+                String floor = r.nextDouble() < 0.85 ? "minecraft:polished_blackstone_bricks" : "minecraft:cracked_polished_blackstone_bricks";
+                if ((d >= 5.5 && d < 6.5) || (d >= 15.5 && d < 16.5)) floor = "minecraft:crying_obsidian";
+                else if (d < 3.5) floor = "minecraft:chiseled_polished_blackstone";
+                else if (d < 15.5 && (x == c || z == c)) floor = "minecraft:polished_blackstone";
+                t.set(x, 0, z, floor);
+                if (d >= ARENA_R) {
+                    // Стена с рёбрами через каждые 15° и поясами через 7 блоков.
+                    double angle = Math.toDegrees(Math.atan2(z - c, x - c)) + 360;
+                    boolean rib = (angle % 15) < 4;
+                    for (int y = 1; y < ARENA_H; y++) {
+                        t.set(x, y, z, rib ? "minecraft:chiseled_polished_blackstone" : y % 7 == 0 ? "minecraft:polished_blackstone" : blackBrick(r));
+                    }
+                }
+                // Свод: светящиеся блоки решёткой через 5.
+                boolean light = d < ARENA_R - 1 && (x - c) % 5 == 0 && (z - c) % 5 == 0;
+                t.set(x, ARENA_H, z, light ? "minecraft:glowstone" : "minecraft:polished_blackstone");
+            }
+        }
+        // Восемь колонн 3×3 по кольцу радиусом 17, у каждой фонарь и костёр.
+        for (int i = 0; i < 8; i++) {
+            double a = Math.PI * 2 * i / 8 + Math.PI / 8;
+            int px = c + (int) Math.round(Math.cos(a) * 17), pz = c + (int) Math.round(Math.sin(a) * 17);
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    for (int y = 1; y < ARENA_H; y++) {
+                        boolean cap = y <= 2 || y >= ARENA_H - 2;
+                        t.set(px + dx, y, pz + dz, cap ? "minecraft:chiseled_polished_blackstone" : "minecraft:polished_blackstone");
+                    }
+                }
+            }
+            t.set(px, 1, pz + (pz > c ? -2 : 2), "minecraft:soul_lantern[hanging=false,waterlogged=false]");
+            t.set(px + (px > c ? -2 : 2), 1, pz, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
+        }
+        // Висячие фонари двумя кольцами.
+        for (int i = 0; i < 12; i++) {
+            double a = Math.PI * 2 * i / 12;
+            t.set(c + (int) Math.round(Math.cos(a) * 10), ARENA_H - 1, c + (int) Math.round(Math.sin(a) * 10), SOUL_LANTERN);
+            t.set(c + (int) Math.round(Math.cos(a + 0.26) * 21), ARENA_H - 1, c + (int) Math.round(Math.sin(a + 0.26) * 21), SOUL_LANTERN);
+        }
+        // Трон босса у северной стены и сундуки с сокровищами по бокам.
+        t.fill(c - 2, 1, 3, c + 2, 1, 4, "minecraft:gilded_blackstone");
+        t.fill(c - 1, 2, 3, c + 1, 5, 3, "minecraft:gilded_blackstone");
+        t.set(c, 2, 4, "minecraft:polished_blackstone_stairs[facing=south,half=bottom,shape=straight,waterlogged=false]");
+        chest(t, c - 4, 1, 4, "south", "crypt_treasure");
+        chest(t, c + 4, 1, 4, "south", "crypt_treasure");
+        for (int[] p : new int[][]{{c - 6, 5}, {c + 6, 5}, {c - 5, 3}, {c + 5, 3}}) t.set(p[0], 1, p[1], "minecraft:bone_block[axis=y]");
+        t.entities.add(map("blockPos", List.of(c, 1, c), "pos", List.of(c + 0.5, 1.0, c + 0.5),
+                "nbt", map("id", MODID + ":crypt_king", "PersistenceRequired", (byte) 1)));
+
+        // Проход из зала спуска в арену: 5 в ширину, 5 в высоту, сквозь стену зала.
+        for (int z = c + ARENA_R; z < ante; z++) {
+            for (int x = c - 3; x <= c + 3; x++) {
+                boolean wall = x == c - 3 || x == c + 3;
+                t.set(x, 0, z, "minecraft:polished_blackstone");
+                t.set(x, 6, z, blackBrick(r));
+                for (int y = 1; y <= 5; y++) t.set(x, y, z, wall ? blackBrick(r) : AIR);
+            }
+        }
+        // Зал спуска 11×11 (z = ante..ante+10): якорь шахты в центре, колонна-опора лестницы к северу от него,
+        // запечатанные врата домой в 4 блоках к югу.
+        int az = ante + 5;
+        for (int x = c - 5; x <= c + 5; x++) {
+            for (int z = ante; z <= ante + 10; z++) {
+                boolean edge = x == c - 5 || x == c + 5 || z == ante || z == ante + 10;
+                t.set(x, 0, z, r.nextDouble() < 0.8 ? "minecraft:stone_bricks" : "minecraft:cracked_stone_bricks");
+                t.set(x, 7, z, brick(r));
+                for (int y = 1; y <= 6; y++) t.set(x, y, z, edge ? brick(r) : AIR);
+            }
+        }
+        for (int x = c - 2; x <= c + 2; x++) for (int y = 1; y <= 5; y++) t.set(x, y, ante, AIR);
+        t.set(c, 1, az, "minecraft:jigsaw[orientation=up_north]", cryptJigsaw(FLOOR_ANCHOR, FLOOR_ANCHOR, "minecraft:empty", 0));
+        for (int y = 1; y <= 6; y++) t.set(c, y, az - 1, "minecraft:chiseled_stone_bricks");
+        for (int x = c - 2; x <= c + 2; x++) {
+            for (int y = 1; y <= 5; y++) {
+                boolean frame = x == c - 2 || x == c + 2 || y == 5;
+                t.set(x, y, az + 4, frame ? "minecraft:obsidian" : "minecraft:crying_obsidian");
+            }
+        }
+        for (int[] p : new int[][]{{c - 3, az - 3}, {c + 3, az - 3}, {c - 3, az + 2}, {c + 3, az + 2}}) t.set(p[0], 6, p[1], SOUL_LANTERN);
+        t.set(c - 4, 1, az + 4, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
+        t.set(c + 4, 1, az + 4, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
         return t;
     }
 
@@ -564,8 +743,15 @@ public class StructureGen {
         return t;
     }
 
-    /** Главный зал 13x13: колонны, спавнеры, сундук, стражи. Проход на юг ведёт к боссу. */
     static Template cryptHub() {
+        return cryptHub(true);
+    }
+
+    /**
+     * Главный зал 13x13: колонны, спавнеры, сундук, стражи. Проход на юг ведёт к боссу (склеп в мире)
+     * или к спуску на следующий этаж (данжи за вратами).
+     */
+    static Template cryptHub(boolean bossDoor) {
         Random r = new Random(2);
         Template t = new Template(13, 7, 13);
         room(t, 0, 0, 12, 12, 6, r);
@@ -580,7 +766,9 @@ public class StructureGen {
         guard(t, 8, 4, "minecraft:zombie");
         doorway(t, 6, 0, "north", cryptJigsaw(MODID + ":crypt_hub", MODID + ":crypt_entrance", "minecraft:empty", 0));
         // Высокий приоритет: проход к боссу достраивается первым, пока рядом ещё свободно.
-        doorway(t, 6, 12, "south", cryptJigsaw(MODID + ":crypt_boss_door", MODID + ":crypt_boss_room", CRYPT + "boss", 10));
+        doorway(t, 6, 12, "south", bossDoor
+                ? cryptJigsaw(MODID + ":crypt_boss_door", MODID + ":crypt_boss_room", CRYPT + "boss", 10)
+                : cryptJigsaw(MODID + ":descent_door", MODID + ":descent_room", CRYPT + "descent", 10));
         doorway(t, 0, 6, "west", passage(CRYPT + "corridors"));
         doorway(t, 12, 6, "east", passage(CRYPT + "corridors"));
         return t;

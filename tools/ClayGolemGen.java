@@ -1,0 +1,533 @@
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Random;
+
+/**
+ * Глиняные големы Глиняных копей: модели (кубоиды по частям тела), раскладка развёрток по текстуре и сами
+ * текстуры в 4 раза подробнее развёртки, плюс светящийся слой (глаза, ядро колосса).
+ *
+ * Пишет textures/entity/clay/<модель>.png и <модель>_glow.png и client/clay/ClayModels.java (LayerDefinition
+ * каждой модели). Координаты — как у моделей Minecraft: y вниз, земля на y = 24, лицо смотрит в −z.
+ * Запуск из корня проекта: java tools/ClayGolemGen.java .
+ */
+public class ClayGolemGen {
+    /** Во сколько раз текстура подробнее развёртки. */
+    static final int R = 4;
+
+    record Box(double x, double y, double z, int w, int h, int d, double inflate, String mat, String feature) {}
+
+    static final class Part {
+        final String name, parent;
+        final double px, py, pz, rx, ry, rz;
+        final List<Box> boxes = new ArrayList<>();
+        final List<int[]> uv = new ArrayList<>();
+
+        Part(String name, String parent, double px, double py, double pz, double rx, double ry, double rz) {
+            this.name = name;
+            this.parent = parent;
+            this.px = px;
+            this.py = py;
+            this.pz = pz;
+            this.rx = rx;
+            this.ry = ry;
+            this.rz = rz;
+        }
+
+        Part box(double x, double y, double z, int w, int h, int d, String mat) {
+            return box(x, y, z, w, h, d, 0, mat, "");
+        }
+
+        Part box(double x, double y, double z, int w, int h, int d, double inflate, String mat, String feature) {
+            boxes.add(new Box(x, y, z, w, h, d, inflate, mat, feature));
+            return this;
+        }
+    }
+
+    static final class Model {
+        final String name;
+        final List<Part> parts = new ArrayList<>();
+        int texW = 128, texH;
+        /** Цвет глаз и светящихся трещин. */
+        final int[] glow;
+
+        Model(String name, int[] glow) {
+            this.name = name;
+            this.glow = glow;
+        }
+
+        Part part(String name, String parent, double px, double py, double pz) {
+            return part(name, parent, px, py, pz, 0, 0, 0);
+        }
+
+        Part part(String name, String parent, double px, double py, double pz, double rx, double ry, double rz) {
+            Part p = new Part(name, parent, px, py, pz, rx, ry, rz);
+            parts.add(p);
+            return p;
+        }
+
+        /** Полками раскладывает развёртки всех кубоидов (высокие первыми) по ширине texW. */
+        void pack() {
+            List<Object[]> all = new ArrayList<>();
+            for (Part p : parts) for (int i = 0; i < p.boxes.size(); i++) {
+                p.uv.add(new int[2]);
+                all.add(new Object[]{p, i});
+            }
+            all.sort((a, b) -> {
+                Box ba = ((Part) a[0]).boxes.get((int) a[1]), bb = ((Part) b[0]).boxes.get((int) b[1]);
+                return Integer.compare(bb.d + bb.h, ba.d + ba.h);
+            });
+            int x = 0, y = 0, shelf = 0;
+            for (Object[] o : all) {
+                Part p = (Part) o[0];
+                Box b = p.boxes.get((int) o[1]);
+                int w = 2 * (b.w + b.d), h = b.d + b.h;
+                if (x + w > texW) {
+                    x = 0;
+                    y += shelf;
+                    shelf = 0;
+                }
+                p.uv.get((int) o[1])[0] = x;
+                p.uv.get((int) o[1])[1] = y;
+                x += w;
+                shelf = Math.max(shelf, h);
+            }
+            int used = y + shelf;
+            texH = 32;
+            while (texH < used) texH *= 2;
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        Path root = Path.of(args.length > 0 ? args[0] : ".");
+        Path tex = root.resolve("src/main/resources/assets/heroicpaths/textures/entity/clay");
+        Files.createDirectories(tex);
+        List<Model> models = List.of(colossus(), golem(), thrower(), brute());
+        StringBuilder java = new StringBuilder();
+        java.append("package com.heroicpaths.client.clay;\n\n")
+                .append("import net.minecraft.client.model.geom.PartPose;\n")
+                .append("import net.minecraft.client.model.geom.builders.CubeDeformation;\n")
+                .append("import net.minecraft.client.model.geom.builders.CubeListBuilder;\n")
+                .append("import net.minecraft.client.model.geom.builders.LayerDefinition;\n")
+                .append("import net.minecraft.client.model.geom.builders.MeshDefinition;\n")
+                .append("import net.minecraft.client.model.geom.builders.PartDefinition;\n\n")
+                .append("import java.util.HashMap;\n")
+                .append("import java.util.Map;\n\n")
+                .append("// Сгенерировано tools/ClayGolemGen.java — не править вручную.\n")
+                .append("public final class ClayModels {\n")
+                .append("    private ClayModels() {}\n");
+        for (Model m : models) {
+            m.pack();
+            BufferedImage[] img = paint(m);
+            ImageIO.write(img[0], "png", tex.resolve(m.name + ".png").toFile());
+            ImageIO.write(img[1], "png", tex.resolve(m.name + "_glow.png").toFile());
+            java.append("\n    public static LayerDefinition ").append(camel(m.name)).append("() {\n")
+                    .append("        MeshDefinition mesh = new MeshDefinition();\n")
+                    .append("        Map<String, PartDefinition> parts = new HashMap<>();\n")
+                    .append("        parts.put(\"root\", mesh.getRoot());\n");
+            for (Part p : m.parts) {
+                StringBuilder cubes = new StringBuilder("CubeListBuilder.create()");
+                for (int i = 0; i < p.boxes.size(); i++) {
+                    Box b = p.boxes.get(i);
+                    cubes.append(".texOffs(").append(p.uv.get(i)[0]).append(", ").append(p.uv.get(i)[1]).append(")")
+                            .append(".addBox(").append(f(b.x)).append(", ").append(f(b.y)).append(", ").append(f(b.z)).append(", ")
+                            .append(b.w).append(", ").append(b.h).append(", ").append(b.d)
+                            .append(", new CubeDeformation(").append(f(b.inflate)).append("))");
+                }
+                java.append("        parts.put(\"").append(p.name).append("\", parts.get(\"").append(p.parent).append("\").addOrReplaceChild(\"")
+                        .append(p.name).append("\", ").append(cubes).append(",\n                PartPose.offsetAndRotation(")
+                        .append(f(p.px)).append(", ").append(f(p.py)).append(", ").append(f(p.pz)).append(", ")
+                        .append(f(p.rx)).append(", ").append(f(p.ry)).append(", ").append(f(p.rz)).append(")));\n");
+            }
+            java.append("        return LayerDefinition.create(mesh, ").append(m.texW).append(", ").append(m.texH).append(");\n    }\n");
+            System.out.println(m.name + ": " + m.parts.size() + " parts, texture " + m.texW + "x" + m.texH);
+        }
+        java.append("}\n");
+        Path out = root.resolve("src/main/java/com/heroicpaths/client/clay/ClayModels.java");
+        Files.createDirectories(out.getParent());
+        Files.writeString(out, java.toString(), StandardCharsets.UTF_8);
+    }
+
+    // =====================================================================================
+    // Модели
+    // =====================================================================================
+
+    static final int[] AMBER = {255, 176, 64}, CYAN = {120, 230, 255}, RED = {255, 80, 50};
+
+    /**
+     * Глиняный колосс: шесть рук (могучая верхняя пара, средняя и нижняя), обожжённые латы — нагрудник, наплечники,
+     * пояс и шлем. В фазах отваливаются нижние руки с нагрудником и наплечниками, потом средние руки со шлемом и поясом.
+     */
+    static Model colossus() {
+        Model m = new Model("clay_colossus", AMBER);
+        m.part("body", "root", 0, 8, 0, 0.12, 0, 0)
+                .box(-8, -16, -5, 16, 14, 10, 0, "clay", "core")
+                .box(-6, -2, -4, 12, 5, 8, 0, "clay_dark", "")
+                .box(-5, -14, 4.5, 10, 9, 2, 0, "clay_dark", "");
+        m.part("chest_plate", "body", 0, 0, 0)
+                .box(-8, -16, -5, 16, 9, 10, 0.8, "fired", "plate")
+                .box(-3, -18, -5.5, 6, 3, 2, 0, "fired", "plate");
+        m.part("belt_plate", "body", 0, 0, 0)
+                .box(-6, -2, -4, 12, 4, 8, 0.7, "fired", "plate")
+                .box(-4, 1, -5.2, 8, 5, 1, 0, "fired", "plate");
+        m.part("head", "body", 0, -16, -2)
+                .box(-4, -7, -4, 8, 8, 8, 0, "clay", "face")
+                .box(-3, -1, -4.6, 6, 2, 1, 0, "clay_dark", "");
+        m.part("helmet", "head", 0, 0, 0)
+                .box(-4, -7, -4, 8, 4, 8, 0.8, "fired", "plate")
+                .box(-1, -10, -3, 2, 3, 8, 0, "fired", "plate");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            double o = s < 0 ? 0 : 1; // смещение кубоидов левой руки, чтобы она была зеркалом правой
+            m.part("arm_" + side, "body", 10 * s, -13, 0)
+                    .box(s < 0 ? -5 : -1, -2, -3, 6, 18, 6, "clay")
+                    .box(s < 0 ? -6 : -2, 16, -4, 8, 6, 8, 0, "clay_dark", "fist");
+            m.part("pauldron_" + side, "arm_" + side, 0, 0, 0)
+                    .box(s < 0 ? -6 : -2, -4, -4, 8, 6, 8, 0.4, "fired", "plate")
+                    .box(s < 0 ? -4 : 0, -6, -2, 4, 2, 4, 0, "fired", "plate");
+            m.part("arm_mid_" + side, "body", 8 * s, -8, 1, 0, 0, -0.35 * s)
+                    .box(-2, -1, -2, 4, 13, 4, "clay")
+                    .box(-2.5, 12, -2.5, 5, 4, 5, 0, "clay_dark", "fist");
+            m.part("arm_lower_" + side, "body", 7 * s, -3, 1, 0, 0, -0.6 * s)
+                    .box(-1.5, -1, -1.5, 3, 10, 3, "clay")
+                    .box(-2, 9, -2, 4, 3, 4, 0, "clay_dark", "fist");
+            m.part("leg_" + side, "root", 4 * s, 10, 0)
+                    .box(-3.5, 0, -3.5, 7, 14, 7, "clay")
+                    .box(-4, 11, -5, 8, 3, 9, 0, "clay_dark", "");
+        }
+        return m;
+    }
+
+    /** Маленький голем ближнего боя: коренастый, по пояс человеку. */
+    static Model golem() {
+        Model m = new Model("clay_golem", AMBER);
+        m.part("body", "root", 0, 12, 0)
+                .box(-4, -8, -3, 8, 8, 6, 0, "clay", "seams");
+        m.part("head", "body", 0, -8, -1)
+                .box(-3, -5, -3, 6, 5, 6, 0, "clay", "face");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 5.5 * s, 5, 0)
+                    .box(-2, -1, -2, 4, 9, 4, "clay")
+                    .box(-2.5, 7, -2.5, 5, 4, 5, 0, "clay_dark", "fist");
+            m.part("leg_" + side, "root", 2 * s, 12, 0)
+                    .box(-2, 0, -2, 4, 12, 4, "clay");
+        }
+        return m;
+    }
+
+    /** Голем-метатель: светлая глина, сума с глиняными ядрами на боку, длинная бросковая рука. */
+    static Model thrower() {
+        Model m = new Model("clay_thrower", CYAN);
+        m.part("body", "root", 0, 12, 0)
+                .box(-3.5, -9, -2.5, 7, 9, 5, 0, "pale", "seams")
+                .box(3, -7, -3, 3, 5, 6, 0, "leather", "");
+        m.part("head", "body", 0, -9, -1)
+                .box(-3, -6, -3, 6, 6, 6, 0, "pale", "face")
+                .box(-3.5, -7, -3.5, 7, 2, 7, 0, "leather", "");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 5 * s, 4, 0)
+                    .box(-1.5, -1, -1.5, 3, s < 0 ? 12 : 10, 3, "pale")
+                    .box(-2, s < 0 ? 10 : 8, -2, 4, 3, 4, 0, "pale_dark", "fist");
+            m.part("leg_" + side, "root", 2 * s, 12, 0)
+                    .box(-1.5, 0, -1.5, 3, 12, 3, "pale");
+        }
+        return m;
+    }
+
+    /** Голем-танк: массивный, из тёмной обожжённой глины, грудь и плечи под толстыми плитами. */
+    static Model brute() {
+        Model m = new Model("clay_brute", RED);
+        m.part("body", "root", 0, 12, 0, 0.15, 0, 0)
+                .box(-7, -11, -4.5, 14, 11, 9, 0, "dark", "seams")
+                .box(-7, -11, -4.5, 14, 7, 9, 0.6, "fired", "plate");
+        m.part("head", "body", 0, -10, -3)
+                .box(-3, -4, -3.5, 6, 5, 6, 0, "dark", "face");
+        for (int s = -1; s <= 1; s += 2) {
+            String side = s < 0 ? "right" : "left";
+            m.part("arm_" + side, "root", 8.5 * s, 3, 0)
+                    .box(s < 0 ? -3.5 : -1.5, -2, -2.5, 5, 13, 5, "dark")
+                    .box(s < 0 ? -4.5 : -1.5, 10, -3.5, 6, 6, 7, 0, "fired", "fist")
+                    .box(s < 0 ? -4.5 : -1.5, -4, -3.5, 6, 5, 7, 0.3, "fired", "plate");
+            m.part("leg_" + side, "root", 3.5 * s, 12, 0)
+                    .box(-2.5, 0, -2.5, 5, 12, 5, "dark");
+        }
+        return m;
+    }
+
+    // =====================================================================================
+    // Текстуры
+    // =====================================================================================
+
+    /** Основной цвет, тёмный и светлый оттенки материала. */
+    static int[][] palette(String mat) {
+        return switch (mat) {
+            case "clay" -> new int[][]{{176, 108, 70}, {112, 62, 40}, {214, 150, 104}};
+            case "clay_dark" -> new int[][]{{140, 82, 54}, {86, 46, 30}, {180, 118, 80}};
+            case "pale" -> new int[][]{{170, 156, 140}, {108, 96, 86}, {206, 196, 180}};
+            case "pale_dark" -> new int[][]{{132, 118, 104}, {80, 70, 62}, {170, 158, 142}};
+            case "dark" -> new int[][]{{110, 70, 52}, {62, 36, 26}, {150, 100, 76}};
+            case "leather" -> new int[][]{{110, 74, 44}, {64, 40, 22}, {150, 106, 66}};
+            default -> new int[][]{{132, 56, 34}, {74, 28, 16}, {184, 92, 54}}; // fired — обожжённая терракота лат
+        };
+    }
+
+    static BufferedImage[] paint(Model m) {
+        int w = m.texW * R, h = m.texH * R;
+        BufferedImage base = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage glow = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Random rnd = new Random(m.name.hashCode());
+        for (Part p : m.parts) {
+            for (int i = 0; i < p.boxes.size(); i++) {
+                Box b = p.boxes.get(i);
+                int u = p.uv.get(i)[0], v = p.uv.get(i)[1];
+                // Грани: верх, низ, правая (запад), перед (север), левая (восток), зад (юг).
+                face(base, glow, m, b, "top", u + b.d, v, b.w, b.d, rnd);
+                face(base, glow, m, b, "bottom", u + b.d + b.w, v, b.w, b.d, rnd);
+                face(base, glow, m, b, "side", u, v + b.d, b.d, b.h, rnd);
+                face(base, glow, m, b, "front", u + b.d, v + b.d, b.w, b.h, rnd);
+                face(base, glow, m, b, "side", u + b.d + b.w, v + b.d, b.d, b.h, rnd);
+                face(base, glow, m, b, "back", u + 2 * b.d + b.w, v + b.d, b.w, b.h, rnd);
+            }
+        }
+        return new BufferedImage[]{base, glow};
+    }
+
+    /** Одна грань кубоида: материал с шумом и разводами, затенение сверху вниз, скошенные края и особенности. */
+    static void face(BufferedImage base, BufferedImage glow, Model m, Box b, String kind, int u, int v, int fw, int fh, Random rnd) {
+        int x0 = u * R, y0 = v * R, pw = fw * R, ph = fh * R;
+        if (pw <= 0 || ph <= 0) return;
+        int[][] pal = palette(b.mat);
+        boolean fired = b.mat.equals("fired");
+        long seed = rnd.nextLong();
+        double[][] tone = new double[pw][ph];
+        for (int x = 0; x < pw; x++) {
+            for (int y = 0; y < ph; y++) {
+                double n = noise(seed, x / 9.0, y / 9.0) * 0.55 + noise(seed + 1, x / 3.5, y / 3.5) * 0.3 + noise(seed + 2, x, y) * 0.15;
+                // Разводы пальцев по сырой глине (у лат — ровные полосы обжига).
+                double smear = fired ? Math.sin(y * 0.9 + noise(seed + 3, x / 14.0, 0) * 3) * 0.04
+                        : Math.sin((x * 0.35 + y * 0.12) + noise(seed + 4, x / 7.0, y / 7.0) * 4) * 0.06;
+                double shade = switch (kind) {
+                    case "top" -> 1.12;
+                    case "bottom" -> 0.68;
+                    default -> 1.08 - 0.25 * y / (double) ph;
+                };
+                tone[x][y] = (0.82 + 0.36 * n + smear) * shade;
+            }
+        }
+        // Трещины: случайные блуждания, тёмные с светлой кромкой.
+        int cracks = (fired ? 1 : 2) + (pw * ph) / 900;
+        for (int c = 0; c < cracks; c++) crack(tone, rnd, pw, ph, 0.55);
+        // Скошенные края грани.
+        for (int x = 0; x < pw; x++) {
+            for (int y = 0; y < ph; y++) {
+                int edge = Math.min(Math.min(x, pw - 1 - x), Math.min(y, ph - 1 - y));
+                if (edge == 0) tone[x][y] *= 0.72;
+                else if (edge == 1) tone[x][y] *= fired ? 1.18 : 0.88;
+                else if (edge == 2 && fired) tone[x][y] *= 1.1;
+            }
+        }
+        for (int x = 0; x < pw; x++) for (int y = 0; y < ph; y++) put(base, x0 + x, y0 + y, mix(pal, tone[x][y]));
+
+        if (fired && b.feature.equals("plate")) plate(base, x0, y0, pw, ph, kind);
+        if (b.feature.equals("seams") && !kind.equals("bottom")) seams(base, x0, y0, pw, ph, pal);
+        if (kind.equals("front") && b.feature.equals("face")) eyes(base, glow, m.glow, x0, y0, pw, ph, b.mat);
+        if (kind.equals("front") && b.feature.equals("core")) core(base, glow, m.glow, x0, y0, pw, ph, rnd);
+        if (b.feature.equals("fist") && (kind.equals("front") || kind.equals("bottom"))) knuckles(base, x0, y0, pw, ph, pal);
+    }
+
+    /** Латы: заклёпки по углам, гравированные полосы и медный кант. */
+    static void plate(BufferedImage img, int x0, int y0, int pw, int ph, String kind) {
+        int[] copper = {214, 136, 72}, copperDark = {120, 64, 30};
+        for (int x = 3; x < pw - 3; x++) {
+            put(img, x0 + x, y0 + 3, copperDark);
+            put(img, x0 + x, y0 + ph - 4, copperDark);
+        }
+        if (!kind.equals("top") && !kind.equals("bottom") && ph > 20) {
+            for (int y = 8; y < ph - 8; y += 8) for (int x = 6; x < pw - 6; x++) {
+                int[] c = get(img, x0 + x, y0 + y);
+                put(img, x0 + x, y0 + y, scale(c, 0.7));
+                put(img, x0 + x, y0 + y + 1, scale(c, 1.15));
+            }
+        }
+        int r = 2;
+        for (int[] p : new int[][]{{6, 6}, {pw - 7, 6}, {6, ph - 7}, {pw - 7, ph - 7}}) {
+            if (pw < 16 || ph < 16) break;
+            for (int dx = -r; dx <= r; dx++) for (int dy = -r; dy <= r; dy++) {
+                if (dx * dx + dy * dy > r * r + 1) continue;
+                boolean light = dx + dy < 0;
+                put(img, x0 + p[0] + dx, y0 + p[1] + dy, light ? copper : copperDark);
+            }
+        }
+    }
+
+    /** Швы между пластами глины — как будто голема лепили слоями. */
+    static void seams(BufferedImage img, int x0, int y0, int pw, int ph, int[][] pal) {
+        for (int y = 10; y < ph - 4; y += 11) {
+            for (int x = 1; x < pw - 1; x++) {
+                int dy = (int) Math.round(Math.sin(x * 0.4 + y) * 1.2);
+                put(img, x0 + x, y0 + y + dy, scale(pal[1], 0.9));
+                put(img, x0 + x, y0 + y + dy + 1, pal[2]);
+            }
+        }
+    }
+
+    /** Костяшки кулака: тёмные ложбинки между пальцами. */
+    static void knuckles(BufferedImage img, int x0, int y0, int pw, int ph, int[][] pal) {
+        int fingers = 4;
+        for (int f = 1; f < fingers; f++) {
+            int x = pw * f / fingers;
+            for (int y = 2; y < ph - 2; y++) {
+                put(img, x0 + x, y0 + y, scale(pal[1], 0.8));
+                put(img, x0 + x + 1, y0 + y, pal[2]);
+            }
+        }
+    }
+
+    /** Глаза: две светящиеся прорези с ореолом на основном слое и чистым светом на светящемся. */
+    static void eyes(BufferedImage base, BufferedImage glow, int[] color, int x0, int y0, int pw, int ph, String mat) {
+        int ew = Math.max(4, pw / 5), eh = Math.max(3, ph / 7);
+        int ey = ph * 2 / 5;
+        for (int e = 0; e < 2; e++) {
+            int ex = e == 0 ? pw / 4 - ew / 2 + 1 : pw * 3 / 4 - ew / 2 - 1;
+            for (int x = -2; x < ew + 2; x++) {
+                for (int y = -2; y < eh + 2; y++) {
+                    boolean inside = x >= 0 && x < ew && y >= 0 && y < eh;
+                    // Глубокая глазница вокруг.
+                    if (!inside) {
+                        put(base, x0 + ex + x, y0 + ey + y, scale(get(base, x0 + ex + x, y0 + ey + y), 0.45));
+                        continue;
+                    }
+                    double hot = 1 - Math.abs(y - (eh - 1) / 2.0) / eh;
+                    int[] c = {Math.min(255, (int) (color[0] * (0.7 + 0.5 * hot))), Math.min(255, (int) (color[1] * (0.7 + 0.5 * hot))),
+                            Math.min(255, (int) (color[2] * (0.7 + 0.5 * hot)))};
+                    put(base, x0 + ex + x, y0 + ey + y, c);
+                    put(glow, x0 + ex + x, y0 + ey + y, c);
+                }
+            }
+        }
+        // Рот — тёмная щель.
+        for (int x = pw / 3; x < pw * 2 / 3; x++) put(base, x0 + x, y0 + ph * 3 / 4, scale(palette(mat)[1], 0.6));
+    }
+
+    /** Ядро колосса: руна-круг в груди и расходящиеся светящиеся трещины (видны, когда нагрудник отвалится). */
+    static void core(BufferedImage base, BufferedImage glow, int[] color, int x0, int y0, int pw, int ph, Random rnd) {
+        int cx = pw / 2, cy = ph * 2 / 5, r = Math.min(pw, ph) / 6;
+        for (int x = -r - 2; x <= r + 2; x++) {
+            for (int y = -r - 2; y <= r + 2; y++) {
+                double d = Math.sqrt(x * x + y * y);
+                if (d > r + 1.5) continue;
+                double heat = d < r * 0.55 ? 1 : (d > r - 1 && d < r + 1) ? 0.9 : 0.35;
+                int[] c = {Math.min(255, (int) (color[0] * (0.5 + 0.6 * heat))), Math.min(255, (int) (color[1] * (0.4 + 0.6 * heat))),
+                        Math.min(255, (int) (color[2] * (0.3 + 0.6 * heat)))};
+                put(base, x0 + cx + x, y0 + cy + y, c);
+                if (heat > 0.5) put(glow, x0 + cx + x, y0 + cy + y, c);
+            }
+        }
+        for (int i = 0; i < 9; i++) {
+            double a = Math.PI * 2 * i / 9 + rnd.nextDouble() * 0.4;
+            double x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+            for (int step = 0; step < r * 3; step++) {
+                a += (rnd.nextDouble() - 0.5) * 0.6;
+                x += Math.cos(a);
+                y += Math.sin(a);
+                if (x < 2 || y < 2 || x >= pw - 2 || y >= ph - 2) break;
+                double fade = 1 - step / (r * 3.0);
+                int[] c = {(int) (color[0] * (0.5 + 0.5 * fade)), (int) (color[1] * (0.4 + 0.5 * fade)), (int) (color[2] * (0.3 + 0.4 * fade))};
+                put(base, x0 + (int) x, y0 + (int) y, c);
+                put(glow, x0 + (int) x, y0 + (int) y, c);
+            }
+        }
+    }
+
+    static void crack(double[][] tone, Random rnd, int pw, int ph, double depth) {
+        double x = rnd.nextInt(pw), y = rnd.nextInt(ph), a = rnd.nextDouble() * Math.PI * 2;
+        int length = 6 + rnd.nextInt(Math.max(4, Math.min(pw, ph) / 2));
+        for (int i = 0; i < length; i++) {
+            a += (rnd.nextDouble() - 0.5) * 0.9;
+            x += Math.cos(a);
+            y += Math.sin(a);
+            int ix = (int) x, iy = (int) y;
+            if (ix < 1 || iy < 1 || ix >= pw - 1 || iy >= ph - 1) return;
+            tone[ix][iy] *= depth;
+            tone[ix][iy - 1] *= 1.12;
+        }
+    }
+
+    // ---------------------------------------------------------------- шум и цвет
+
+    static double noise(long seed, double x, double y) {
+        int ix = (int) Math.floor(x), iy = (int) Math.floor(y);
+        double fx = x - ix, fy = y - iy;
+        fx = fx * fx * (3 - 2 * fx);
+        fy = fy * fy * (3 - 2 * fy);
+        double a = hash(seed, ix, iy), b = hash(seed, ix + 1, iy), c = hash(seed, ix, iy + 1), d = hash(seed, ix + 1, iy + 1);
+        return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy;
+    }
+
+    static double hash(long seed, int x, int y) {
+        long h = seed ^ (x * 0x9E3779B97F4A7C15L) ^ (y * 0xC2B2AE3D27D4EB4FL);
+        h = (h ^ (h >>> 31)) * 0xBF58476D1CE4E5B9L;
+        h ^= h >>> 29;
+        return (h >>> 11) / (double) (1L << 53);
+    }
+
+    /** Тон 1 — основной цвет; меньше — к тёмному оттенку, больше — к светлому. */
+    static int[] mix(int[][] pal, double t) {
+        int[] from, to;
+        double k;
+        if (t < 1) {
+            from = pal[1];
+            to = pal[0];
+            k = Math.max(0, (t - 0.45) / 0.55);
+        } else {
+            from = pal[0];
+            to = pal[2];
+            k = Math.min(1, (t - 1) / 0.3);
+        }
+        return new int[]{(int) (from[0] + (to[0] - from[0]) * k), (int) (from[1] + (to[1] - from[1]) * k), (int) (from[2] + (to[2] - from[2]) * k)};
+    }
+
+    static int[] scale(int[] c, double k) {
+        return new int[]{clamp(c[0] * k), clamp(c[1] * k), clamp(c[2] * k)};
+    }
+
+    static int clamp(double v) {
+        return (int) Math.max(0, Math.min(255, Math.round(v)));
+    }
+
+    static void put(BufferedImage img, int x, int y, int[] c) {
+        if (x < 0 || y < 0 || x >= img.getWidth() || y >= img.getHeight()) return;
+        img.setRGB(x, y, 0xFF000000 | (c[0] << 16) | (c[1] << 8) | c[2]);
+    }
+
+    static int[] get(BufferedImage img, int x, int y) {
+        if (x < 0 || y < 0 || x >= img.getWidth() || y >= img.getHeight()) return new int[]{0, 0, 0};
+        int rgb = img.getRGB(x, y);
+        return new int[]{(rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF};
+    }
+
+    static String f(double v) {
+        return String.format(Locale.ROOT, "%.2ff", v);
+    }
+
+    static String camel(String name) {
+        StringBuilder out = new StringBuilder();
+        boolean up = false;
+        for (char c : name.toCharArray()) {
+            if (c == '_') up = true;
+            else {
+                out.append(up ? Character.toUpperCase(c) : c);
+                up = false;
+            }
+        }
+        return out.toString();
+    }
+}

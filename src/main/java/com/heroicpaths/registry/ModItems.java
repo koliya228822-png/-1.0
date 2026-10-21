@@ -84,6 +84,15 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.DROWNED_PROPHET, 0x2A6A6A, 0x8AF0E0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> LICH_SPAWN_EGG = ITEMS.register("lich_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.LICH, 0x1A1A22, 0x60E0FF, new Item.Properties()));
+    // Глиняные копи: колосс и его големы
+    public static final DeferredItem<DeferredSpawnEggItem> CLAY_COLOSSUS_SPAWN_EGG = ITEMS.register("clay_colossus_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CLAY_COLOSSUS, 0x8A4A2A, 0xFFB040, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> CLAY_GOLEM_SPAWN_EGG = ITEMS.register("clay_golem_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CLAY_GOLEM, 0xB06C46, 0x704028, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> CLAY_THROWER_SPAWN_EGG = ITEMS.register("clay_thrower_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CLAY_THROWER, 0xAA9C8C, 0x78E6FF, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> CLAY_BRUTE_SPAWN_EGG = ITEMS.register("clay_brute_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.CLAY_BRUTE, 0x6E4634, 0xFF5032, new Item.Properties()));
     public static final DeferredItem<TrophyItem> BROODMOTHER_FANG = ITEMS.register("broodmother_fang",
             () -> new TrophyItem(new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<TrophyItem> TIDE_PEARL = ITEMS.register("tide_pearl",

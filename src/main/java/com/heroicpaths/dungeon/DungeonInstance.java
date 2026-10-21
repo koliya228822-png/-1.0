@@ -28,6 +28,8 @@ public final class DungeonInstance {
     public final int partySize;
     public final BlockPos origin;
     public final BlockPos arrival;
+    /** Где появляется группа на арене босса (низ шахты с пятого этажа): рядом врата домой. */
+    public final BlockPos bossArrival;
     public final ResourceKey<Level> returnLevel;
     public final BlockPos returnPos;
     /** Группа, открывшая врата; null — игрок был один. */
@@ -41,7 +43,7 @@ public final class DungeonInstance {
     private boolean scrollPaid;
 
     public DungeonInstance(int index, DungeonType type, Collection<UUID> roster, @Nullable UUID partyId, BlockPos origin,
-                           BlockPos arrival, ResourceKey<Level> returnLevel, BlockPos returnPos) {
+                           BlockPos arrival, BlockPos bossArrival, ResourceKey<Level> returnLevel, BlockPos returnPos) {
         this.index = index;
         this.type = type;
         this.roster.addAll(roster);
@@ -49,6 +51,7 @@ public final class DungeonInstance {
         this.partyId = partyId;
         this.origin = origin;
         this.arrival = arrival;
+        this.bossArrival = bossArrival;
         this.returnLevel = returnLevel;
         this.returnPos = returnPos;
     }
@@ -93,6 +96,7 @@ public final class DungeonInstance {
         tag.putString("type", type.id());
         tag.put("origin", NbtUtils.writeBlockPos(origin));
         tag.put("arrival", NbtUtils.writeBlockPos(arrival));
+        tag.put("bossArrival", NbtUtils.writeBlockPos(bossArrival));
         tag.putString("returnLevel", returnLevel.location().toString());
         tag.put("returnPos", NbtUtils.writeBlockPos(returnPos));
         if (partyId != null) tag.putUUID("partyId", partyId);
@@ -109,10 +113,13 @@ public final class DungeonInstance {
         Set<UUID> entered = readUuids(tag.getList("entered", Tag.TAG_INT_ARRAY));
         // Проходы старой версии не знали состав группы: пускаем тех, кто уже вошёл.
         if (roster.isEmpty()) roster.addAll(entered);
+        BlockPos arrival = NbtUtils.readBlockPos(tag, "arrival").orElse(BlockPos.ZERO);
         DungeonInstance instance = new DungeonInstance(tag.getInt("index"), type == null ? DungeonType.CRYPT : type,
                 roster, tag.hasUUID("partyId") ? tag.getUUID("partyId") : null,
                 NbtUtils.readBlockPos(tag, "origin").orElse(BlockPos.ZERO),
-                NbtUtils.readBlockPos(tag, "arrival").orElse(BlockPos.ZERO),
+                arrival,
+                // Одноэтажные проходы старой версии: арены нет, врата домой — у входа.
+                NbtUtils.readBlockPos(tag, "bossArrival").orElse(arrival),
                 ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("returnLevel"))),
                 NbtUtils.readBlockPos(tag, "returnPos").orElse(BlockPos.ZERO));
         instance.entered.addAll(entered);

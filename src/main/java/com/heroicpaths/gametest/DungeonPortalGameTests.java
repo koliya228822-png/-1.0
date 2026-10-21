@@ -67,18 +67,18 @@ public class DungeonPortalGameTests {
         ServerLevel level = helper.getLevel();
         var pools = level.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
         for (DungeonType type : DungeonType.values()) {
-            for (String pool : List.of("arrival", "hub", "corridors", "rooms", "dead_ends", "boss")) {
-                ResourceLocation id = HeroicPaths.id(type.id() + "/" + pool);
+            for (String pool : List.of("arrival", "landing", "floor_hub", "corridors", "rooms", "dead_ends", "descent", "arena")) {
+                ResourceLocation id = HeroicPaths.id(type.theme() + "/" + pool);
                 helper.assertTrue(pools.containsKey(id), "missing pool " + id);
             }
             helper.assertTrue(pools.containsKey(type.startPool()), "missing start pool " + type.startPool());
-            // Босс стоит в шаблоне логова: у каждого данжа свой.
-            StructureTemplate boss = level.getStructureManager().get(HeroicPaths.id(type.id() + "/boss_room")).orElse(null);
-            helper.assertTrue(boss != null, "missing boss room of " + type.id());
+            // Босс стоит в шаблоне арены: у каждого данжа свой.
+            StructureTemplate boss = level.getStructureManager().get(HeroicPaths.id(type.theme() + "/arena")).orElse(null);
+            helper.assertTrue(boss != null, "missing boss arena of " + type.id());
             String expected = HeroicPaths.MODID + ":" + type.bossId();
             ListTag entities = boss.save(new CompoundTag()).getList("entities", Tag.TAG_COMPOUND);
             boolean hasBoss = entities.stream().anyMatch(e -> expected.equals(((CompoundTag) e).getCompound("nbt").getString("id")));
-            helper.assertTrue(hasBoss, type.id() + " boss room has no " + expected);
+            helper.assertTrue(hasBoss, type.id() + " boss arena has no " + expected);
         }
         helper.assertTrue(level.registryAccess().registryOrThrow(Registries.DIMENSION_TYPE).containsKey(HeroicPaths.id("dungeon")),
                 "dimension type heroicpaths:dungeon is not registered");
@@ -105,34 +105,110 @@ public class DungeonPortalGameTests {
     }
 
     /**
-     * Каждый данж строится целиком: зал прибытия с запечатанными вратами (выхода назад нет), центральный зал и логово босса;
-     * после победы врата у входа открываются порталом 3×4 — в любой теме и при любом повороте зала.
+     * Каждый данж строится целиком: пять этажей (зал прибытия или площадка спуска, центральный зал, зал со спуском),
+     * между ними шахты с лестницей, внизу арена с боссом. Врата домой у арены открываются порталом 3×4 — в любой теме
+     * и при любом повороте; врата в зале прибытия остаются запечатанными.
      */
     @GameTest(template = ARENA, batch = "portal_dungeons", timeoutTicks = 600)
-    public static void portalDungeonsGenerateWithBossLair(GameTestHelper helper) {
+    public static void portalDungeonsBuildFiveFloorsAndArena(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        BlockPos origin = helper.absolutePos(new BlockPos(0, 40, 0)).offset(0, 0, -900);
+        BlockPos base = helper.absolutePos(BlockPos.ZERO);
+        BlockPos origin = new BlockPos(base.getX(), 220, base.getZ() - 900);
         int index = 0;
         for (DungeonType type : DungeonType.values()) {
-            for (int attempt = 0; attempt < 2; attempt++) {
-                List<PoolElementStructurePiece> pieces = DungeonManager.generate(level, type, origin.offset(index++ * 220, 0, 0));
-                List<String> names = pieces.stream().map(p -> p.getElement().toString()).toList();
-                helper.assertTrue(!pieces.isEmpty(), type.id() + " was not generated");
-                helper.assertTrue(count(names, type.id() + "/arrival") == 1, type.id() + " must have one arrival hall: " + names);
-                helper.assertTrue(count(names, type.id() + "/hub") == 1, type.id() + " must have one hub: " + names);
-                helper.assertTrue(count(names, type.id() + "/boss_room") == 1, type.id() + " must have one boss lair: " + names);
-                helper.assertTrue(names.stream().noneMatch(n -> !n.contains(HeroicPaths.MODID + ":" + type.id() + "/")),
+            String theme = type.theme();
+            DungeonManager.Built built = DungeonManager.build(level, type, origin.offset(index++ * 260, 0, 0), 1);
+            helper.assertTrue(built != null, type.id() + " was not built");
+            helper.assertTrue(built.floors().size() == DungeonType.FLOORS + 1, type.id() + " must have 5 floors and an arena");
+            for (int floor = 1; floor <= DungeonType.FLOORS + 1; floor++) {
+                List<String> names = built.floors().get(floor - 1).stream().map(p -> p.getElement().toString()).toList();
+                helper.assertTrue(names.stream().allMatch(n -> n.contains(HeroicPaths.MODID + ":" + theme + "/")),
                         type.id() + " mixes pieces of other dungeons: " + names);
-                int portals = countBlocks(level, pieces.get(0).getBoundingBox(), ModBlocks.DUNGEON_PORTAL.get());
-                helper.assertTrue(portals == 0, type.id() + " arrival hall must not have a way back, got " + portals + " portal blocks");
-                BoundingBox hall = pieces.get(0).getBoundingBox();
-                BlockPos arrival = new BlockPos(hall.getCenter().getX(), hall.minY() + 1, hall.getCenter().getZ());
-                helper.assertTrue(DungeonManager.openEntranceGate(level, arrival), type.id() + " entrance gate was not found");
-                int opened = countBlocks(level, hall, ModBlocks.DUNGEON_PORTAL.get());
-                helper.assertTrue(opened == 12, type.id() + " entrance gate must open as a 3x4 portal, got " + opened);
+                if (floor > DungeonType.FLOORS) {
+                    helper.assertTrue(count(names, theme + "/arena") == 1, type.id() + " arena missing: " + names);
+                    continue;
+                }
+                helper.assertTrue(count(names, theme + (floor == 1 ? "/arrival" : "/landing")) == 1, type.id() + " floor " + floor + " start: " + names);
+                helper.assertTrue(count(names, theme + "/floor_hub") == 1, type.id() + " floor " + floor + " must have one hub: " + names);
+                helper.assertTrue(count(names, theme + "/descent") == 1, type.id() + " floor " + floor + " must have one way down: " + names);
             }
+            // Шахта: лестница доходит до низа каждой площадки спуска и до зала у арены.
+            helper.assertTrue(level.getBlockState(built.bossArrival()).is(net.minecraft.world.level.block.Blocks.LADDER),
+                    type.id() + " shaft does not reach the arena");
+            helper.assertTrue(level.getBlockState(built.bossArrival().above(20)).is(net.minecraft.world.level.block.Blocks.LADDER),
+                    type.id() + " shaft to the arena is broken");
+            BoundingBox hall = built.floors().get(0).get(0).getBoundingBox();
+            helper.assertTrue(countBlocks(level, hall, ModBlocks.DUNGEON_PORTAL.get()) == 0, type.id() + " arrival hall must not have a way back");
+            // Босс посреди арены.
+            BoundingBox arena = built.floors().get(DungeonType.FLOORS).get(0).getBoundingBox();
+            String bossId = HeroicPaths.MODID + ":" + type.bossId();
+            boolean boss = !level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, net.minecraft.world.phys.AABB.of(arena),
+                    m -> EntityType.getKey(m.getType()).toString().equals(bossId)).isEmpty();
+            helper.assertTrue(boss, type.id() + " arena has no " + bossId);
+            if (!DungeonManager.openEntranceGate(level, built.bossArrival())) {
+                StringBuilder dump = new StringBuilder();
+                for (int[] d : new int[][]{{0, -4}, {4, 0}, {0, 4}, {-4, 0}}) {
+                    dump.append(" [").append(d[0]).append(',').append(d[1]).append("]:");
+                    for (int y = 0; y <= 4; y++) dump.append(level.getBlockState(built.bossArrival().offset(d[0], y, d[1])).getBlock().getName().getString()).append('/');
+                }
+                for (int y = -2; y <= 2; y++) dump.append(" y").append(y).append('=').append(level.getBlockState(built.bossArrival().above(y)).getBlock().getName().getString());
+                helper.fail(type.id() + " arena gate home was not found at " + built.bossArrival() + ":" + dump);
+            }
+            int opened = countBlocks(level, BoundingBox.fromCorners(built.bossArrival().offset(-6, -1, -6), built.bossArrival().offset(6, 6, 6)),
+                    ModBlocks.DUNGEON_PORTAL.get());
+            helper.assertTrue(opened == 12, type.id() + " arena gate must open as a 3x4 portal, got " + opened);
         }
         helper.runAfterDelay(100, helper::succeed);
+    }
+
+    /** В Глиняных копях состав этажей: 1–2 только ближний бой, 3 — пополам с метателями, 4–5 — каждый пятый танк. */
+    @GameTest(template = ARENA)
+    public static void clayFloorsMixGolems(GameTestHelper helper) {
+        DungeonType clay = DungeonType.CRYPT;
+        EntityType<?> any = EntityType.ZOMBIE;
+        for (int floor = 1; floor <= 2; floor++)
+            for (int i = 0; i < 10; i++)
+                helper.assertTrue(clay.floorMob(floor, i, any) == ModEntities.CLAY_GOLEM.get(), "floor " + floor + " must be melee only");
+        int ranged = 0, tanks = 0;
+        for (int i = 0; i < 10; i++) if (clay.floorMob(3, i, any) == ModEntities.CLAY_THROWER.get()) ranged++;
+        helper.assertTrue(ranged == 5, "floor 3 must be half throwers, got " + ranged);
+        ranged = 0;
+        for (int i = 0; i < 20; i++) {
+            EntityType<?> mob = clay.floorMob(4, i, any);
+            if (mob == ModEntities.CLAY_BRUTE.get()) tanks++;
+            if (mob == ModEntities.CLAY_THROWER.get()) ranged++;
+        }
+        helper.assertTrue(tanks == 4, "floor 4 must be 20% tanks, got " + tanks + " of 20");
+        helper.assertTrue(ranged == 8, "floor 4 must split the rest between melee and ranged, got " + ranged + " throwers");
+        helper.assertTrue(DungeonType.FORGE.floorMob(4, 0, any) == any, "other dungeons keep their own monsters");
+        helper.succeed();
+    }
+
+    /** Колосс: латы гасят урон, на 2/3 и 1/3 здоровья он сбрасывает части и становится быстрее и сильнее. */
+    @GameTest(template = ARENA, timeoutTicks = 200)
+    public static void clayColossusHasThreePhases(GameTestHelper helper) {
+        com.heroicpaths.entity.ClayColossus boss = helper.spawn(ModEntities.CLAY_COLOSSUS.get(), new BlockPos(4, 2, 4));
+        helper.assertTrue(boss.getBbHeight() >= 5.3f, "the colossus must be three times the player's height");
+        helper.assertTrue(boss.phase() == 1 && boss.armorReduction() > 0.3f, "phase 1 must be armored");
+        double speed = boss.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+        double damage = boss.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        boss.setHealth(boss.getMaxHealth() * 0.6f);
+        helper.runAfterDelay(3, () -> {
+            helper.assertTrue(boss.phase() == 2, "below 2/3 health the colossus must enter phase 2, got " + boss.phase());
+            helper.assertTrue(boss.action() == com.heroicpaths.entity.ClayColossus.SHED, "phase change must shed armor");
+            helper.assertTrue(boss.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED) > speed, "phase 2 must be faster");
+            helper.assertTrue(!boss.hurt(boss.damageSources().generic(), 5f), "the colossus must be invulnerable while shedding");
+            int debris = helper.getLevel().getEntitiesOfClass(com.heroicpaths.entity.ClayDebris.class, boss.getBoundingBox().inflate(10)).size();
+            helper.assertTrue(debris == 5, "phase 2 must drop 2 arms and 3 armor parts, got " + debris);
+            boss.setHealth(boss.getMaxHealth() * 0.2f);
+            helper.runAfterDelay(3, () -> {
+                helper.assertTrue(boss.phase() == 3 && boss.armorReduction() == 0f, "below 1/3 health the colossus must be bare in phase 3");
+                helper.assertTrue(boss.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) > damage * 1.5,
+                        "phase 3 must hit much harder");
+                boss.discard();
+                helper.succeed();
+            });
+        });
     }
 
     @GameTest(template = ARENA)
@@ -141,8 +217,16 @@ public class DungeonPortalGameTests {
         helper.assertTrue(Math.abs(DungeonType.CRYPT.healthMultiplier(3) - 1.6f) < 1e-4, "party of 3 must give +60% health");
         helper.assertTrue(Math.abs(DungeonType.FORGE.healthMultiplier(2) - 1.8f * 1.3f) < 1e-4, "forge for 2 must be 1.8 x 1.3");
 
-        helper.assertTrue(DungeonType.CRYPT.mobsPerSpawner(1) == 3 && DungeonType.CRYPT.mobsPerSpawner(4) == 6,
+        helper.assertTrue(DungeonType.CRYPT.mobsPerSpawner(1) == 2 && DungeonType.CRYPT.mobsPerSpawner(4) == 5,
                 "each extra player must add one monster per spawner");
+        // Этажи людней с глубиной: второй вдвое людней первого, дальше ещё больше.
+        int previous = 0;
+        for (int floor = 1; floor <= DungeonType.FLOORS; floor++) {
+            int crowd = DungeonType.CRYPT.mobsPerSpawner(1, floor);
+            helper.assertTrue(crowd > previous, "floor " + floor + " must have more monsters than the one above, got " + crowd);
+            previous = crowd;
+        }
+        helper.assertTrue(DungeonType.CRYPT.mobsPerSpawner(1, 2) == 2 * DungeonType.CRYPT.mobsPerSpawner(1, 1), "floor 2 must be twice floor 1");
 
         Zombie zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 2, 2));
         float baseDamage = (float) zombie.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
@@ -196,7 +280,7 @@ public class DungeonPortalGameTests {
         ServerPlayer stranger = helper.makeMockServerPlayerInLevel();
         UUID partyId = UUID.randomUUID();
         DungeonInstance instance = new DungeonInstance(998, DungeonType.CRYPT, List.of(first.getUUID(), second.getUUID()), partyId,
-                BlockPos.ZERO, BlockPos.ZERO, helper.getLevel().dimension(), BlockPos.ZERO);
+                BlockPos.ZERO, BlockPos.ZERO, BlockPos.ZERO, helper.getLevel().dimension(), BlockPos.ZERO);
         helper.assertTrue(instance.partySize == 2, "party size must come from the roster");
         helper.assertTrue(instance.isInRoster(first.getUUID()) && instance.isInRoster(second.getUUID()), "party members must be in the roster");
         helper.assertTrue(!instance.isInRoster(stranger.getUUID()), "a stranger is in the roster");
@@ -241,8 +325,10 @@ public class DungeonPortalGameTests {
         helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == DungeonType.CRYPT.rewardEmeralds(), "wrong emerald reward");
         helper.assertTrue(player.getInventory().countItem(ModItems.EXPERIENCE_TOME.get()) == DungeonType.CRYPT.rewardTomes(), "wrong tome reward");
         helper.assertTrue(player.getInventory().countItem(ModItems.CRYPT_CROWN_SHARD.get()) == 1, "every party member must get a boss trophy");
-        int gate = countBlocks(level, BoundingBox.fromCorners(instance.arrival.offset(-6, -1, -6), instance.arrival.offset(6, 6, 6)), ModBlocks.DUNGEON_PORTAL.get());
-        helper.assertTrue(gate == 12, "the entrance gate must open as the way home, got " + gate + " portal blocks");
+        int gate = countBlocks(level, BoundingBox.fromCorners(instance.bossArrival.offset(-6, -1, -6), instance.bossArrival.offset(6, 6, 6)), ModBlocks.DUNGEON_PORTAL.get());
+        helper.assertTrue(gate == 12, "the arena gate must open as the way home, got " + gate + " portal blocks");
+        int entrance = countBlocks(level, BoundingBox.fromCorners(instance.arrival.offset(-6, -1, -6), instance.arrival.offset(6, 6, 6)), ModBlocks.DUNGEON_PORTAL.get());
+        helper.assertTrue(entrance == 0, "the arrival hall must stay sealed, got " + entrance + " portal blocks");
         helper.assertTrue(!DungeonManager.enter(player, instance, null), "a completed dungeon must not be enterable");
         helper.runAfterDelay(60, helper::succeed);
     }

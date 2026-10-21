@@ -1,8 +1,10 @@
 package com.heroicpaths.dungeon;
 
 import com.heroicpaths.HeroicPaths;
+import com.heroicpaths.registry.ModEntities;
 import com.heroicpaths.registry.ModItems;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -55,10 +57,21 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
         return id();
     }
 
-    /** Босс данжа (его id в шаблоне логова). */
+    /** Этажей с монстрами; под последним — арена босса. */
+    public static final int FLOORS = 5;
+
+    /**
+     * Папка шаблонов и пулов данжа. Первый данж за вратами — Глиняные копи (id остался «crypt», чтобы старые
+     * сохранения, контракты и заказы гильдии не сломались); склеп в мире со своим Королём Склепа остался прежним.
+     */
+    public String theme() {
+        return this == CRYPT ? "clay" : id();
+    }
+
+    /** Босс данжа (его id в шаблоне арены). */
     public String bossId() {
         return switch (this) {
-            case CRYPT -> "crypt_king";
+            case CRYPT -> "clay_colossus";
             case SPIDER_LAIR -> "spider_queen";
             case FORGE -> "flame_tyrant";
             case SUNKEN_TEMPLE -> "drowned_prophet";
@@ -97,9 +110,28 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
         return damageMultiplier * (1f + DAMAGE_PER_EXTRA_PLAYER * (Math.max(1, partySize) - 1));
     }
 
-    /** Сколько монстров появляется на месте каждого спавнера: 3 и ещё по одному за каждого игрока сверх первого. */
+    /** Сколько монстров появляется на месте каждого спавнера первого этажа: 2 и ещё по одному за каждого игрока сверх первого. */
     public int mobsPerSpawner(int partySize) {
-        return 3 + Math.max(1, partySize) - 1;
+        return 2 + Math.max(1, partySize) - 1;
+    }
+
+    /** Чем глубже этаж, тем больше монстров: второй этаж вдвое людней первого, дальше ещё больше. */
+    private static final float[] FLOOR_CROWD = {1f, 2f, 2.5f, 3f, 3.5f};
+
+    public int mobsPerSpawner(int partySize, int floor) {
+        return Math.round(mobsPerSpawner(partySize) * FLOOR_CROWD[Math.max(1, Math.min(FLOORS, floor)) - 1]);
+    }
+
+    /**
+     * Кто выходит из спавнера на этаже. В Глиняных копях состав зависит от этажа: на 1–2 только големы ближнего боя,
+     * на 3-м половина — метатели, на 4–5 каждый пятый — голем-танк, остальные поровну ближние и дальние.
+     * В других данжах — монстр, записанный в спавнере. number — порядковый номер монстра на этаже.
+     */
+    public EntityType<?> floorMob(int floor, int number, EntityType<?> original) {
+        if (this != CRYPT) return original;
+        if (floor >= 4 && number % 5 == 0) return ModEntities.CLAY_BRUTE.get();
+        if (floor >= 3 && number % 2 == 1) return ModEntities.CLAY_THROWER.get();
+        return ModEntities.CLAY_GOLEM.get();
     }
 
     public boolean requiresScroll() {
@@ -145,9 +177,19 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
         };
     }
 
-    /** Пул стартовой комнаты (зал прибытия с порталом обратно). */
+    /** Пул стартовой комнаты первого этажа (зал прибытия с запечатанными вратами). */
     public ResourceLocation startPool() {
-        return HeroicPaths.id(id() + "/arrival");
+        return HeroicPaths.id(theme() + "/arrival");
+    }
+
+    /** Пул площадки спуска, с которой начинаются этажи 2–5. */
+    public ResourceLocation landingPool() {
+        return HeroicPaths.id(theme() + "/landing");
+    }
+
+    /** Пул арены босса — шестого этажа. */
+    public ResourceLocation arenaPool() {
+        return HeroicPaths.id(theme() + "/arena");
     }
 
     public MutableComponent displayName() {

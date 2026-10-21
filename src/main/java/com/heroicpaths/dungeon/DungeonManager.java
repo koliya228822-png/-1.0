@@ -71,7 +71,6 @@ public final class DungeonManager {
     public static final ResourceKey<Level> DUNGEON_LEVEL = ResourceKey.create(Registries.DIMENSION, HeroicPaths.id("dungeons"));
     /** Проходы стоят в 1024 блоках друг от друга, чтобы не пересекаться. */
     public static final int SPACING = 1024;
-    private static final int BASE_Y = 64;
     private static final String PORTAL_COOLDOWN = "heroicpaths.portal_cooldown";
     private static final ResourceLocation HEALTH_SCALE = HeroicPaths.id("dungeon_health");
     private static final ResourceLocation DAMAGE_SCALE = HeroicPaths.id("dungeon_damage");
@@ -144,6 +143,11 @@ public final class DungeonManager {
 
     // ================================================================ создание
 
+    /** Высота пола первого этажа; каждый следующий этаж на FLOOR_STEP ниже, арена — на ARENA_DROP ниже пятого. */
+    public static final int TOP_Y = 200, FLOOR_STEP = 16, ARENA_DROP = 40;
+    /** Имя jigsaw-якоря в центре площадки спуска и зала у арены (низ шахты с этажа выше). */
+    public static final ResourceLocation FLOOR_ANCHOR = HeroicPaths.id("floor_anchor");
+
     /** Создаёт новый проход для группы и строит данж. Возвращает null, если измерение недоступно или постройка не удалась. */
     @Nullable
     public static DungeonInstance create(MinecraftServer server, DungeonType type, Collection<UUID> roster, @Nullable UUID partyId,
@@ -159,38 +163,133 @@ public final class DungeonManager {
         DungeonData data = DungeonData.get(level.getServer());
         int index = data.allocateIndex();
         int party = Math.max(1, Math.min(DungeonType.MAX_PARTY, roster.size()));
-        BlockPos origin = new BlockPos(index * SPACING, BASE_Y, 0);
-        List<PoolElementStructurePiece> pieces;
+        BlockPos origin = new BlockPos(index * SPACING, TOP_Y, 0);
+        Built built;
         generating = new Pending(index, type, party);
         try {
-            pieces = generate(level, type, origin);
-            convertSpawners(level, pieces, type, party);
+            built = build(level, type, origin, party);
         } catch (RuntimeException e) {
             HeroicPaths.LOGGER.error("Failed to build dungeon {} #{}", type.id(), index, e);
             return null;
         } finally {
             generating = null;
         }
-        if (pieces.isEmpty()) return null;
-        BoundingBox start = pieces.get(0).getBoundingBox();
-        BlockPos arrival = new BlockPos(start.getCenter().getX(), start.minY() + 1, start.getCenter().getZ());
-        DungeonInstance instance = new DungeonInstance(index, type, roster, partyId, origin, arrival, returnLevel, returnPos);
+        if (built == null) return null;
+        DungeonInstance instance = new DungeonInstance(index, type, roster, partyId, origin, built.arrival(), built.bossArrival(),
+                returnLevel, returnPos);
         data.put(instance);
         // Сохраняем сразу: после сбоя игры номер прохода не должен выдаться повторно поверх уже построенного данжа.
         level.getServer().overworld().getDataStorage().save();
-        HeroicPaths.LOGGER.info("Dungeon {} #{} built from {} pieces at {} for {} players", type.id(), index, pieces.size(), origin, party);
+        HeroicPaths.LOGGER.info("Dungeon {} #{} built: {} floors, {} pieces, {} monsters at {} for {} players", type.id(), index,
+                built.floors().size(), built.pieces().size(), built.monsters(), origin, party);
         return instance;
     }
 
-    /** Строит данж целиком (как генератор jigsaw-структур) и возвращает его комнаты. */
+    /**
+     * Построенный данж: комнаты по этажам (последний — арена), точка прибытия на первом этаже, низ шахты на арене
+     * и сколько монстров вышло из спавнеров.
+     */
+    public record Built(List<List<PoolElementStructurePiece>> floors, BlockPos arrival, BlockPos bossArrival, int monsters) {
+        public List<PoolElementStructurePiece> pieces() {
+            List<PoolElementStructurePiece> all = new ArrayList<>();
+            floors.forEach(all::addAll);
+            return all;
+        }
+    }
+
+    /**
+     * Строит все этажи данжа сверху вниз. Этаж 1 начинается залом прибытия в origin, этажи 2–5 — площадкой спуска,
+     * шестой — ареной босса; каждый ставится якорем точно под залом спуска этажа выше, и между ними прорубается шахта
+     * с лестницей. Спавнеры каждого этажа сразу выпускают свою волну. Возвращает null, если этаж не построился.
+     */
+    @Nullable
+    public static Built build(ServerLevel level, DungeonType type, BlockPos origin, int partySize) {
+        List<List<PoolElementStructurePiece>> floors = new ArrayList<>();
+        BlockPos arrival = null, bossArrival = null, shaftTop = null;
+        int monsters = 0;
+        for (int floor = 1; floor <= DungeonType.FLOORS + 1; floor++) {
+            boolean arena = floor > DungeonType.FLOORS;
+            List<PoolElementStructurePiece> pieces;
+            BlockPos anchor = null;
+            if (floor == 1) {
+                pieces = generate(level, type.startPool(), origin, null);
+            } else {
+                anchor = shaftTop.below((arena ? ARENA_DROP : FLOOR_STEP) - 1);
+                // Игра ставит стартовую комнату так, что именованный jigsaw оказывается на блок ниже переданной точки
+                // (точка — это клетка перед jigsaw, а он смотрит вверх), поэтому передаём точку на блок выше якоря.
+                pieces = generate(level, arena ? type.arenaPool() : type.landingPool(), anchor.above(), FLOOR_ANCHOR);
+            }
+            if (pieces.isEmpty()) {
+                HeroicPaths.LOGGER.error("Dungeon {} floor {} was not generated", type.id(), floor);
+                return null;
+            }
+            floors.add(pieces);
+            if (floor == 1) {
+                BoundingBox start = pieces.get(0).getBoundingBox();
+                arrival = new BlockPos(start.getCenter().getX(), start.minY() + 1, start.getCenter().getZ());
+            } else {
+                carveShaft(level, shaftTop, anchor);
+            }
+            if (arena) {
+                bossArrival = anchor;
+                break;
+            }
+            monsters += convertSpawners(level, pieces, type, partySize, floor);
+            shaftTop = descentHole(pieces);
+        }
+        return new Built(floors, arrival, bossArrival, monsters);
+    }
+
+    /** Проём в полу зала спуска (центр пола); если зал не поместился — центр первой комнаты этажа. */
+    private static BlockPos descentHole(List<PoolElementStructurePiece> pieces) {
+        PoolElementStructurePiece hole = pieces.get(0);
+        for (PoolElementStructurePiece piece : pieces) {
+            if (piece.getElement().toString().contains("/descent]")) hole = piece;
+        }
+        BoundingBox box = hole.getBoundingBox();
+        return new BlockPos(box.getCenter().getX(), box.minY(), box.getCenter().getZ());
+    }
+
+    /**
+     * Шахта между этажами: лестница от проёма в полу зала спуска (top) до якоря нижнего этажа (bottom) на опоре с севера.
+     * Выше потолка нижнего зала шахта обложена кладкой со всех сторон, чтобы в пустоте не было дыр.
+     */
+    public static void carveShaft(ServerLevel level, BlockPos top, BlockPos bottom) {
+        BlockState wall = level.getBlockState(top.east());
+        if (wall.isAir()) wall = Blocks.STONE_BRICKS.defaultBlockState();
+        BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, Direction.SOUTH);
+        for (int y = bottom.getY(); y <= top.getY(); y++) {
+            BlockPos at = new BlockPos(bottom.getX(), y, bottom.getZ());
+            level.setBlock(at.north(), wall, Block.UPDATE_CLIENTS);
+            level.setBlock(at, ladder, Block.UPDATE_CLIENTS);
+            if (y < bottom.getY() + 6) continue;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    BlockPos side = at.offset(dx, 0, dz);
+                    if ((dx != 0 || dz != 0) && level.getBlockState(side).isAir()) level.setBlock(side, wall, Block.UPDATE_CLIENTS);
+                }
+            }
+        }
+    }
+
+    /** Строит первый этаж данжа (как генератор jigsaw-структур) и возвращает его комнаты. */
     public static List<PoolElementStructurePiece> generate(ServerLevel level, DungeonType type, BlockPos origin) {
+        return generate(level, type.startPool(), origin, null);
+    }
+
+    /**
+     * Строит одну jigsaw-структуру из пула startPool. Если задан anchor — стартовая комната ставится так,
+     * чтобы jigsaw с этим именем оказался ровно в origin (при любом повороте).
+     */
+    public static List<PoolElementStructurePiece> generate(ServerLevel level, ResourceLocation startPool, BlockPos origin,
+                                                           @Nullable ResourceLocation anchor) {
         Holder<StructureTemplatePool> start = level.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL)
-                .getHolderOrThrow(ResourceKey.create(Registries.TEMPLATE_POOL, type.startPool()));
+                .getHolderOrThrow(ResourceKey.create(Registries.TEMPLATE_POOL, startPool));
         ChunkGenerator generator = level.getChunkSource().getGenerator();
         Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
                 generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
-                level.getSeed(), new ChunkPos(origin), level, biome -> true);
-        Optional<Structure.GenerationStub> stub = JigsawPlacement.addPieces(context, start, Optional.empty(), 7, origin,
+                level.getSeed() + origin.getY(), new ChunkPos(origin), level, biome -> true);
+        Optional<Structure.GenerationStub> stub = JigsawPlacement.addPieces(context, start, Optional.ofNullable(anchor), 7, origin,
                 false, Optional.empty(), 80, PoolAliasLookup.EMPTY,
                 JigsawStructure.DEFAULT_DIMENSION_PADDING, JigsawStructure.DEFAULT_LIQUID_SETTINGS);
         List<PoolElementStructurePiece> pieces = new ArrayList<>();
@@ -204,12 +303,18 @@ public final class DungeonManager {
         return pieces;
     }
 
-    /**
-     * Монстры в данже не возрождаются: каждый спавнер сразу выпускает одну волну (3 моба и ещё по одному
-     * за каждого игрока сверх первого) и исчезает. Возвращает число появившихся мобов.
-     */
     public static int convertSpawners(ServerLevel level, List<PoolElementStructurePiece> pieces, DungeonType type, int partySize) {
+        return convertSpawners(level, pieces, type, partySize, 1);
+    }
+
+    /**
+     * Монстры в данже не возрождаются: каждый спавнер сразу выпускает одну волну и исчезает. Волна растёт с этажом
+     * ({@link DungeonType#mobsPerSpawner(int, int)}), а состав этажа задаёт {@link DungeonType#floorMob}.
+     * Возвращает число появившихся мобов.
+     */
+    public static int convertSpawners(ServerLevel level, List<PoolElementStructurePiece> pieces, DungeonType type, int partySize, int floor) {
         int spawned = 0;
+        int number = 0;
         for (PoolElementStructurePiece piece : pieces) {
             BoundingBox box = piece.getBoundingBox();
             for (BlockPos pos : BlockPos.betweenClosed(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ())) {
@@ -219,9 +324,12 @@ public final class DungeonManager {
                 level.setBlock(at, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
                 Optional<EntityType<?>> mobType = EntityType.byString(spawnData.getString("id"));
                 if (mobType.isEmpty()) continue;
-                for (int i = 0; i < type.mobsPerSpawner(partySize); i++) {
-                    if (!(mobType.get().create(level) instanceof Mob mob)) break;
-                    mob.moveTo(at.getX() + 0.5 + (i % 2) * 0.4 - 0.2, at.getY(), at.getZ() + 0.5 + (i / 2 % 2) * 0.4 - 0.2,
+                int count = type.mobsPerSpawner(partySize, floor);
+                for (int i = 0; i < count; i++) {
+                    if (!(type.floorMob(floor, number++, mobType.get()).create(level) instanceof Mob mob)) break;
+                    double angle = Math.PI * 2 * i / count;
+                    double spread = count > 4 ? 0.45 : 0.3;
+                    mob.moveTo(at.getX() + 0.5 + Math.cos(angle) * spread, at.getY(), at.getZ() + 0.5 + Math.sin(angle) * spread,
                             level.getRandom().nextFloat() * 360f, 0f);
                     mob.finalizeSpawn(level, level.getCurrentDifficultyAt(at), MobSpawnType.STRUCTURE, null);
                     mob.setPersistenceRequired();
@@ -345,6 +453,32 @@ public final class DungeonManager {
         }
     }
 
+    private static final String LAST_FLOOR = "heroicpaths.dungeon_floor";
+
+    /** Когда игрок спускается на новый этаж, над панелью предметов пишется «Этаж N из 6». */
+    @SubscribeEvent
+    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 10 != 0) return;
+        if (!isDungeonLevel(player.level())) {
+            player.getPersistentData().remove(LAST_FLOOR);
+            return;
+        }
+        DungeonInstance instance = instanceAt(player.server, player.blockPosition());
+        if (instance == null || instance.bossArrival.equals(instance.arrival)) return;
+        int floor = floorAt(instance, player.getBlockY());
+        if (player.getPersistentData().getInt(LAST_FLOOR) == floor) return;
+        player.getPersistentData().putInt(LAST_FLOOR, floor);
+        player.displayClientMessage(Component.translatable("message.heroicpaths.dungeon_floor", floor, DungeonType.FLOORS + 1)
+                .withStyle(floor > DungeonType.FLOORS ? ChatFormatting.RED : ChatFormatting.GOLD), true);
+    }
+
+    /** Номер этажа по высоте: этажи 1–5 через FLOOR_STEP от верхнего, ниже пятого — арена. */
+    public static int floorAt(DungeonInstance instance, int y) {
+        if (y < instance.bossArrival.getY() + 30) return DungeonType.FLOORS + 1;
+        int floor = 1 + Math.floorDiv(instance.arrival.getY() + 8 - y, FLOOR_STEP);
+        return Math.max(1, Math.min(DungeonType.FLOORS, floor));
+    }
+
     /** Враги в данже крепче: сложность данжа, +30% здоровья и +10% урона за каждого игрока группы сверх первого. */
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent event) {
@@ -417,8 +551,9 @@ public final class DungeonManager {
         }
         // Заказы гильдии на зачистку этого данжа — для вошедших и их групп.
         com.heroicpaths.guild.GuildOrders.onDungeonCleared(level.getServer(), cleared, instance.type);
-        // Домой — через врата у входа: запечатанный проём в зале прибытия открывается порталом.
-        boolean gate = openEntranceGate(level, instance.arrival);
+        // Домой — через врата в зале у арены, куда спустилась группа (у старых одноэтажных проходов — у входа).
+        boolean gate = openEntranceGate(level, instance.bossArrival)
+                || (!instance.bossArrival.equals(instance.arrival) && openEntranceGate(level, instance.arrival));
         for (ServerPlayer player : cleared)
             player.sendSystemMessage(Component.translatable(gate ? "message.heroicpaths.dungeon_gate_opened" : "message.heroicpaths.dungeon_exit_here")
                     .withStyle(ChatFormatting.LIGHT_PURPLE));

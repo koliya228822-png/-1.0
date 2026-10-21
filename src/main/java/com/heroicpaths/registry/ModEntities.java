@@ -114,6 +114,44 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build("lich"));
 
+    /** Босс Глиняных копей: шестирукий колосс втрое выше игрока. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayColossus>> CLAY_COLOSSUS =
+            ENTITY_TYPES.register("clay_colossus", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayColossus>of(com.heroicpaths.entity.ClayColossus::new, MobCategory.MONSTER)
+                    .sized(2.4f, 5.4f)
+                    .eyeHeight(4.7f)
+                    .clientTrackingRange(12)
+                    .build("clay_colossus"));
+
+    // Глиняные големы Глиняных копей: ближнего боя, метатель и танк.
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayGolem>> CLAY_GOLEM =
+            ENTITY_TYPES.register("clay_golem", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayGolem>of(com.heroicpaths.entity.ClayGolem::new, MobCategory.MONSTER)
+                    .sized(0.8f, 1.3f).eyeHeight(1.1f).clientTrackingRange(8).build("clay_golem"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayThrower>> CLAY_THROWER =
+            ENTITY_TYPES.register("clay_thrower", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayThrower>of(com.heroicpaths.entity.ClayThrower::new, MobCategory.MONSTER)
+                    .sized(0.7f, 1.4f).eyeHeight(1.2f).clientTrackingRange(8).build("clay_thrower"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayBrute>> CLAY_BRUTE =
+            ENTITY_TYPES.register("clay_brute", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayBrute>of(com.heroicpaths.entity.ClayBrute::new, MobCategory.MONSTER)
+                    .sized(1.3f, 2.1f).eyeHeight(1.8f).clientTrackingRange(8).build("clay_brute"));
+    /** Ком глины метателя. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayShot>> CLAY_SHOT =
+            ENTITY_TYPES.register("clay_shot", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayShot>of(com.heroicpaths.entity.ClayShot::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f).clientTrackingRange(4).updateInterval(10).build("clay_shot"));
+    /** Глиняный валун колосса. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayShot>> CLAY_BOULDER =
+            ENTITY_TYPES.register("clay_boulder", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayShot>of(com.heroicpaths.entity.ClayShot::new, MobCategory.MISC)
+                    .sized(0.9f, 0.9f).clientTrackingRange(8).updateInterval(5).build("clay_boulder"));
+    /** Отвалившаяся рука или кусок лат колосса (только зрелище). */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.ClayDebris>> CLAY_DEBRIS =
+            ENTITY_TYPES.register("clay_debris", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.ClayDebris>of(com.heroicpaths.entity.ClayDebris::new, MobCategory.MISC)
+                    .sized(1.0f, 0.6f).clientTrackingRange(8).updateInterval(2).noSave().build("clay_debris"));
+
     // Зверь охотника растёт вместе с ним: пёс → волк → кабан → медведь → совомедведь.
     public static final DeferredHolder<EntityType<?>, EntityType<CompanionWolf>> COMPANION_DOG = wolf("companion_dog");
     public static final DeferredHolder<EntityType<?>, EntityType<CompanionWolf>> COMPANION_WOLF = wolf("companion_wolf");
@@ -160,6 +198,10 @@ public final class ModEntities {
         event.put(SPIDER_QUEEN.get(), com.heroicpaths.entity.SpiderQueen.createAttributes().build());
         event.put(DROWNED_PROPHET.get(), com.heroicpaths.entity.DrownedProphet.createAttributes().build());
         event.put(LICH.get(), com.heroicpaths.entity.Lich.createAttributes().build());
+        event.put(CLAY_COLOSSUS.get(), com.heroicpaths.entity.ClayColossus.createAttributes().build());
+        event.put(CLAY_GOLEM.get(), com.heroicpaths.entity.ClayGolem.createAttributes().build());
+        event.put(CLAY_THROWER.get(), com.heroicpaths.entity.ClayThrower.createAttributes().build());
+        event.put(CLAY_BRUTE.get(), com.heroicpaths.entity.ClayBrute.createAttributes().build());
         event.put(COMPANION_DOG.get(), Wolf.createAttributes().build());
         event.put(COMPANION_WOLF.get(), Wolf.createAttributes().build());
         event.put(SPIRIT_WOLF.get(), Wolf.createAttributes().build());

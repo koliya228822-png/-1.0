@@ -68,8 +68,7 @@ public final class BossController {
 
     /** Вызывается из customServerAiStep босса. */
     public void tick(Abilities abilities) {
-        bossEvent.setProgress(boss.getHealth() / boss.getMaxHealth());
-        if (boss.tickCount % 10 == 0) updatePlayers();
+        tickBar();
         updatePhase();
         LivingEntity target = boss.getTarget();
         if (target == null || !target.isAlive()) return;
@@ -85,6 +84,18 @@ public final class BossController {
         if (--boltCooldown <= 0 && distanceSqr > 16 && boss.hasLineOfSight(target)) {
             abilities.bolt(target);
             boltCooldown = enraged ? 40 : 80;
+        }
+    }
+
+    /** Только полоса здоровья и список игроков рядом — для боссов со своими фазами. */
+    public void tickBar() {
+        bossEvent.setProgress(boss.getHealth() / boss.getMaxHealth());
+        if (boss.tickCount % 10 == 0) updatePlayers();
+    }
+
+    public void message(String key, ChatFormatting color, Object... args) {
+        for (ServerPlayer player : bossEvent.getPlayers()) {
+            player.sendSystemMessage(Component.translatable(key, args).withStyle(color));
         }
     }
 

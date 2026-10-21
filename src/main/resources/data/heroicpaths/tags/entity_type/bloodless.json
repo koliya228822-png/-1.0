@@ -21,6 +21,10 @@
     "heroicpaths:frost_lord",
     "heroicpaths:flame_tyrant",
     "heroicpaths:summoned_skeleton",
-    "heroicpaths:summoned_golem"
+    "heroicpaths:summoned_golem",
+    "heroicpaths:clay_colossus",
+    "heroicpaths:clay_golem",
+    "heroicpaths:clay_thrower",
+    "heroicpaths:clay_brute"
   ]
 }

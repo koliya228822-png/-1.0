@@ -56,6 +56,8 @@ public class HeroicPathsClient {
         modBus.addListener(HeroicPathsClient::onRegisterParticles);
         // Объёмная классовая броня.
         modBus.addListener(com.heroicpaths.client.armor.ArmorModels::registerLayers);
+        modBus.addListener(com.heroicpaths.client.clay.ClayRenderers::registerLayers);
+        modBus.addListener(com.heroicpaths.client.clay.ClayRenderers::registerRenderers);
         modBus.addListener(com.heroicpaths.client.armor.ArmorModels::registerExtensions);
         // Двуручное оружие: поза обеих рук, руки на рукояти от первого лица, закрытый слот второй руки.
         modBus.addListener(WeaponPoses::registerExtensions);
