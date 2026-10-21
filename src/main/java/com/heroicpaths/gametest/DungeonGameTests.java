@@ -168,7 +168,7 @@ public class DungeonGameTests {
     }
 
     @GameTest(template = ARENA)
-    public static void cryptLootContainsExperienceTomes(GameTestHelper helper) {
+    public static void dungeonLootHasNoExperienceTomes(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         for (String table : List.of("chests/crypt", "chests/crypt_treasure", "entities/crypt_king")) {
             LootTable loot = lootTable(level, table);
@@ -177,9 +177,16 @@ public class DungeonGameTests {
         LootParams params = new LootParams.Builder(level)
                 .withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO))
                 .create(LootContextParamSets.CHEST);
-        List<ItemStack> treasure = lootTable(level, "chests/crypt_treasure").getRandomItems(params);
-        int tomes = treasure.stream().filter(stack -> stack.is(ModItems.EXPERIENCE_TOME.get())).mapToInt(ItemStack::getCount).sum();
-        helper.assertTrue(tomes >= 2, "treasure chest must contain at least 2 experience tomes, got " + tomes);
+        // Книги опыта только для тестов: ни один сундук данжа не должен их давать.
+        for (com.heroicpaths.dungeon.DungeonType type : com.heroicpaths.dungeon.DungeonType.values()) {
+            for (String table : List.of("chests/" + type.theme(), "chests/" + type.theme() + "_treasure")) {
+                LootTable loot = lootTable(level, table);
+                for (int roll = 0; roll < 20 && loot != LootTable.EMPTY; roll++) {
+                    boolean tome = loot.getRandomItems(params).stream().anyMatch(stack -> stack.is(ModItems.EXPERIENCE_TOME.get()));
+                    helper.assertFalse(tome, table + " must not drop experience tomes");
+                }
+            }
+        }
         helper.succeed();
     }
 

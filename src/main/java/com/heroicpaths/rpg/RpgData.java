@@ -32,6 +32,9 @@ import java.util.UUID;
  */
 public class RpgData implements INBTSerializable<CompoundTag> {
     public static final int MAX_LEVEL = 100;
+    /** Опыт с 1-го на 2-й уровень; каждый следующий уровень дороже предыдущего в XP_GROWTH раз. */
+    public static final int XP_FIRST_LEVEL = 40;
+    public static final double XP_GROWTH = 1.5;
     public static final int ABILITY_SLOTS = 4;
     /** Очки умений на старте. */
     public static final int STARTING_ABILITY_POINTS = 2;
@@ -89,8 +92,10 @@ public class RpgData implements INBTSerializable<CompoundTag> {
         Arrays.fill(coreStats, CoreStat.BASE);
     }
 
+    /** Опыт до следующего уровня: 40 на первом, каждый следующий уровень требует в 1,5 раза больше предыдущего. */
     public static int xpToNextLevel(int level) {
-        return 40 + 20 * (level - 1);
+        double xp = XP_FIRST_LEVEL * Math.pow(XP_GROWTH, Math.max(0, level - 1));
+        return xp >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) Math.round(xp);
     }
 
     public PlayerClass getPlayerClass() {

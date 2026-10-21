@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-/** Даёт опыт класса. В будущем — награда из данжей. */
+/** Даёт опыт класса. Только для тестов: из лута, наград и торговли книги убраны, остались в творческой вкладке. */
 public class ExperienceTomeItem extends Item {
     private static final int XP_AMOUNT = 150;
 

@@ -40,25 +40,25 @@ public final class MentorTrades {
             add(trades, 1, buy(Items.COAL, 15, 2), sell(ModItems.IRON_DAGGER.get(), 3, 1, 1), sell(ModItems.SPIRIT_ELIXIR.get(), 2, 1, 1));
             add(trades, 2, buy(Items.IRON_INGOT, 4, 10), sell(ModItems.IRON_BUCKLER.get(), 5, 1, 5), enchanted(ModItems.IRON_RAPIER.get(), 4, 5),
                     sell(ModItems.STEEL_PLATE.get(), 2, 2, 5));
-            add(trades, 3, buy(Items.FLINT, 24, 20), enchanted(Items.IRON_AXE, 5, 10), sell(ModItems.EXPERIENCE_TOME.get(), 12, 1, 10));
+            add(trades, 3, buy(Items.FLINT, 24, 20), enchanted(Items.IRON_AXE, 5, 10));
             add(trades, 4, buy(Items.DIAMOND, 1, 30), enchanted(ModItems.DIAMOND_GREATSWORD.get(), 12, 15), sell(ModItems.OBLIVION_SCROLL.get(), 10, 1, 15));
-            add(trades, 5, enchanted(Items.DIAMOND_AXE, 17, 30), sell(ModItems.EXPERIENCE_TOME.get(), 9, 1, 30));
+            add(trades, 5, enchanted(Items.DIAMOND_AXE, 17, 30));
         } else if (profession == ModVillagers.MASTER_ARCHER.get()) {
             add(trades, 1, sell(ModItems.MUSKET_BALL.get(), 1, 8, 1));
             add(trades, 3, sell(ModItems.MUSKET.get(), 10, 1, 10));
             add(trades, 1, buy(Items.STICK, 32, 2), sell(Items.ARROW, 1, 16, 1), sell(ModItems.SPIRIT_ELIXIR.get(), 2, 1, 1));
             add(trades, 2, buy(Items.STRING, 14, 10), sell(Items.BOW, 2, 1, 5), sell(ModItems.HAND_CROSSBOW.get(), 3, 1, 5),
                     sell(ModItems.HARDENED_LEATHER.get(), 2, 2, 5));
-            add(trades, 3, buy(Items.FEATHER, 24, 20), enchanted(Items.BOW, 3, 10), sell(ModItems.EXPERIENCE_TOME.get(), 12, 1, 10));
+            add(trades, 3, buy(Items.FEATHER, 24, 20), enchanted(Items.BOW, 3, 10));
             add(trades, 4, buy(Items.TRIPWIRE_HOOK, 8, 30), enchanted(ModItems.HAND_CROSSBOW.get(), 4, 15), sell(Items.SPECTRAL_ARROW, 2, 8, 15));
             add(trades, 5, enchanted(Items.BOW, 8, 30), sell(ModItems.OBLIVION_SCROLL.get(), 9, 1, 30));
         } else if (profession == ModVillagers.ARCHMAGE.get()) {
             add(trades, 1, buy(Items.PAPER, 24, 2), sell(ModItems.SPIRIT_ELIXIR.get(), 1, 1, 1), sell(Items.LAPIS_LAZULI, 1, 4, 1));
             add(trades, 2, buy(Items.AMETHYST_SHARD, 8, 10), sell(Items.EXPERIENCE_BOTTLE, 3, 1, 5), sell(Items.GLOWSTONE_DUST, 1, 4, 5),
                     sell(ModItems.ARCANE_CLOTH.get(), 2, 3, 5));
-            add(trades, 3, buy(Items.BOOK, 4, 20), sell(ModItems.EXPERIENCE_TOME.get(), 10, 1, 10), sell(Items.ENDER_PEARL, 5, 1, 10));
+            add(trades, 3, buy(Items.BOOK, 4, 20), sell(Items.ENDER_PEARL, 5, 1, 10));
             add(trades, 4, buy(Items.INK_SAC, 5, 30), sell(ModItems.OBLIVION_SCROLL.get(), 8, 1, 15), sell(ModItems.SPIRIT_ELIXIR.get(), 3, 4, 15));
-            add(trades, 5, sell(ModItems.EXPERIENCE_TOME.get(), 8, 1, 30), sell(Items.ENDER_EYE, 6, 1, 30));
+            add(trades, 5, sell(Items.ENDER_EYE, 6, 1, 30));
         }
         if (profession == ModVillagers.SWORDMASTER.get()) {
             add(trades, 2, sell(ModItems.IRON_DAGGER.get(), 4, 1, 5), sell(ModItems.IRON_GREATSWORD.get(), 7, 1, 5));
@@ -74,8 +74,7 @@ public final class MentorTrades {
         if (profession == ModVillagers.GUILDMASTER.get()) {
             add(trades, 1, buy(Items.ROTTEN_FLESH, 24, 2), buy(Items.BONE, 16, 2), sell(ModItems.SPIRIT_ELIXIR.get(), 2, 1, 1));
             add(trades, 2, buy(Items.STRING, 16, 10), buy(Items.GUNPOWDER, 8, 10), sell(Items.MAP, 3, 1, 5));
-            add(trades, 3, buy(Items.ENDER_PEARL, 3, 20), sell(ModItems.EXPERIENCE_TOME.get(), 11, 1, 10),
-                    book(PlayerClass.playable(), 20, 10));
+            add(trades, 3, buy(Items.ENDER_PEARL, 3, 20), book(PlayerClass.playable(), 20, 10));
             add(trades, 4, buy(Items.BLAZE_ROD, 4, 30), sell(ModItems.OBLIVION_SCROLL.get(), 9, 1, 15), book(PlayerClass.playable(), 40, 15));
             add(trades, 5, book(PlayerClass.playable(), 100, 30), sell(ModItems.ORDER_BOARD.get(), 4, 1, 30));
         }

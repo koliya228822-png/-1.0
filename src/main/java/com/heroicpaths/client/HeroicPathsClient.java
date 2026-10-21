@@ -146,6 +146,7 @@ public class HeroicPathsClient {
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(HeroicPaths.id("rpg_hud"), new RpgHudLayer());
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("cast_bar"), new CastBarLayer());
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("mob_info"), new MobInfoLayer());
     }
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {

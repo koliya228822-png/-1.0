@@ -108,6 +108,14 @@ public final class DungeonManager {
     @Nullable
     private static Pending generating;
 
+    /** Тип данжа в этой точке измерения данжей, в том числе того, что строится прямо сейчас; null — данжа тут нет. */
+    @Nullable
+    public static DungeonType typeAt(net.minecraft.server.level.ServerLevel level, BlockPos pos) {
+        DungeonInstance instance = instanceAt(level.getServer(), pos);
+        if (instance != null) return instance.type;
+        return generating != null && generating.index() == indexAt(pos) ? generating.type() : null;
+    }
+
     // ================================================================ проверки доступа
 
     /** Результат проверки: можно ли войти, а если нельзя — почему. */
@@ -575,7 +583,6 @@ public final class DungeonManager {
             if (contract) data.clearContract();
             RpgManager.addXp(player, instance.type.rewardXp());
             give(player, new ItemStack(Items.EMERALD, instance.type.rewardEmeralds()));
-            give(player, new ItemStack(ModItems.EXPERIENCE_TOME.get(), instance.type.rewardTomes()));
             give(player, new ItemStack(instance.type.trophy()));
             if (player.getRandom().nextFloat() < instance.type.relicSparkChance()) {
                 give(player, new ItemStack(ModItems.RELIC_SPARK.get()));
