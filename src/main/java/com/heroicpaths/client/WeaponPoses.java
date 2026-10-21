@@ -2,6 +2,7 @@ package com.heroicpaths.client;
 
 import com.heroicpaths.combat.WeaponType;
 import com.heroicpaths.item.FocusItem;
+import com.heroicpaths.item.GreatswordItem;
 import com.heroicpaths.item.HandCrossbowItem;
 import com.heroicpaths.item.MeleeWeaponItem;
 import com.heroicpaths.item.MusketItem;
@@ -224,7 +225,8 @@ public final class WeaponPoses {
     public static void registerExtensions(RegisterClientExtensionsEvent event) {
         List<Item> twoHanded = new ArrayList<>(), staves = new ArrayList<>(), wands = new ArrayList<>(), pistols = new ArrayList<>(), muskets = new ArrayList<>();
         for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof MeleeWeaponItem weapon && weapon.isTwoHanded()) twoHanded.add(item);
+            // Двуручный меч — в WeaponMoves (стойки и удары как у длинного меча), здесь копьё и молот.
+            if (item instanceof MeleeWeaponItem weapon && weapon.isTwoHanded() && !(item instanceof GreatswordItem)) twoHanded.add(item);
             if (item instanceof FocusItem focus) (focus.isStaff() ? staves : wands).add(item);
             if (item instanceof HandCrossbowItem) pistols.add(item);
             if (item instanceof MusketItem) muskets.add(item);

@@ -76,6 +76,11 @@ public final class BentArms {
         root.addOrReplaceChild("left_fore", CubeListBuilder.create().texOffs(32, 53).addBox(-1, -1, -2, w, 7, 4), PartPose.ZERO);
         root.addOrReplaceChild("left_upper_sleeve", CubeListBuilder.create().texOffs(48, 48).addBox(-1, -2, -2, w, 6, 4, sleeve), PartPose.ZERO);
         root.addOrReplaceChild("left_fore_sleeve", CubeListBuilder.create().texOffs(48, 53).addBox(-1, -1, -2, w, 7, 4, sleeve), PartPose.ZERO);
+        // Скругление локтя: короткий кусок руки, который рисуется на сгибе под промежуточными углами.
+        root.addOrReplaceChild("right_elbow", CubeListBuilder.create().texOffs(40, 23).addBox(-3, -1, -2, w, 2, 4), PartPose.ZERO);
+        root.addOrReplaceChild("right_elbow_sleeve", CubeListBuilder.create().texOffs(40, 39).addBox(-3, -1, -2, w, 2, 4, sleeve), PartPose.ZERO);
+        root.addOrReplaceChild("left_elbow", CubeListBuilder.create().texOffs(32, 55).addBox(-1, -1, -2, w, 2, 4), PartPose.ZERO);
+        root.addOrReplaceChild("left_elbow_sleeve", CubeListBuilder.create().texOffs(48, 55).addBox(-1, -1, -2, w, 2, 4, sleeve), PartPose.ZERO);
         return LayerDefinition.create(mesh, 64, 64).bakeRoot();
     }
 
@@ -141,10 +146,16 @@ public final class BentArms {
                 VertexConsumer solid = buffers.getBuffer(RenderType.entitySolid(texture));
                 upper.render(pose, solid, light, overlay);
                 fore.render(pose, solid, light, overlay);
+                // Локоть не угловатый: на сгибе ещё два куска руки под промежуточными углами.
+                Quaternionf qu = rotation(upper), qf = rotation(fore);
+                ModelPart joint = root.getChild(side + "_elbow");
+                for (float k : new float[]{1 / 3F, 2 / 3F}) renderAt(pose, joint, e, new Quaternionf(qu).slerp(qf, k), solid, light, overlay);
                 if (player.isModelPartShown(right ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE)) {
                     VertexConsumer translucent = buffers.getBuffer(RenderType.entityTranslucent(texture));
                     upperSleeve.render(pose, translucent, light, overlay);
                     foreSleeve.render(pose, translucent, light, overlay);
+                    ModelPart jointSleeve = root.getChild(side + "_elbow_sleeve");
+                    for (float k : new float[]{1 / 3F, 2 / 3F}) renderAt(pose, jointSleeve, e, new Quaternionf(qu).slerp(qf, k), translucent, light, overlay);
                 }
                 if (chest.getItem() instanceof ClassArmorItem armor) renderArmor(pose, buffers, light, player, chest, armor, right, upper, fore, e);
             }
@@ -167,6 +178,19 @@ public final class BentArms {
                 pose.popPose();
             }
         }
+    }
+
+    private static Quaternionf rotation(ModelPart part) {
+        return new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot);
+    }
+
+    /** Часть (с нулевой позой) в точке at с поворотом rot. */
+    private static void renderAt(PoseStack pose, ModelPart part, Vector3f at, Quaternionf rot, VertexConsumer vc, int light, int overlay) {
+        pose.pushPose();
+        pose.translate(at.x / 16, at.y / 16, at.z / 16);
+        pose.mulPose(rot);
+        part.render(pose, vc, light, overlay);
+        pose.popPose();
     }
 
     /** Часть руки из точки from, направленная на to. */

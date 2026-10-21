@@ -2,6 +2,7 @@ package com.heroicpaths.client;
 
 import com.heroicpaths.item.DaggerItem;
 import com.heroicpaths.item.FocusItem;
+import com.heroicpaths.item.GreatswordItem;
 import com.heroicpaths.registry.ModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -47,6 +48,8 @@ import java.util.WeakHashMap;
  * <ul>
  *   <li>Длинный меч (стальной и дамасский) — в одной руке клинком вверх. Удары: вторая рука ложится на рукоять и широкий
  *       горизонтальный взмах справа налево; меч обеими руками над головой и удар сверху вниз; обычный косой удар одной рукой.</li>
+ *   <li>Двуручный меч — так же, но всегда обеими руками: в покое перед собой клинком вверх-вперёд, все три удара двуручные
+ *       и через стойку.</li>
  *   <li>Кинжалы парные: взятый в основную руку кинжал держат вместе со вторым таким же (вторая рука закрыта, второй кинжал
  *       рисуется здесь). Удары: укол одним кинжалом; оба кинжала над головой и удар сверху вниз; серия «одной рукой, другой, обеими»; удар с разворотом
  *       на месте — разворот виден от третьего лица, от первого лица это широкий взмах.</li>
@@ -72,13 +75,14 @@ public final class WeaponMoves {
     static final float RESTART_AT = 0.7F;
 
     enum Style {
-        LONGSWORD, DAGGERS, STAFF
+        LONGSWORD, GREATSWORD, DAGGERS, STAFF
     }
 
     @Nullable
     static Style style(ItemStack stack) {
         if (stack.is(ModItems.STEEL_SWORD.get()) || stack.is(ModItems.DAMASCUS_SWORD.get())) return Style.LONGSWORD;
         if (stack.getItem() instanceof FocusItem focus && focus.isStaff()) return Style.STAFF;
+        if (stack.getItem() instanceof GreatswordItem) return Style.GREATSWORD;
         return stack.getItem() instanceof DaggerItem ? Style.DAGGERS : null;
     }
 
@@ -182,6 +186,12 @@ public final class WeaponMoves {
             Quaternionf b = blade(n(0, -0.55F, -0.85F), LEFT);
             return new Pose(b, new Quaternionf(b), arm(R_SHOULDER, n(0.1F, 0.9F, -0.45F), 10), arm(L_SHOULDER, n(-0.1F, 0.9F, -0.45F), 10), 1, 0, 0);
         }
+        if (style == Style.GREATSWORD) {
+            // Двуручник обеими руками перед собой, клинок вверх-вперёд («плуг»), локти согнуты.
+            Vector3f dir = n(0.1F, -1, -0.45F), main = new Vector3f(-2, 8, -6);
+            Quaternionf b = blade(dir, LEFT);
+            return new Pose(b, new Quaternionf(b), main, new Vector3f(main).sub(new Vector3f(dir).mul(gap(true))), 1, 0, 0);
+        }
         if (style == Style.LONGSWORD) {
             // Меч в правой руке клинком вверх, локоть согнут, кулак перед поясом; лезвия смотрят вперёд и назад.
             Vector3f main = new Vector3f(-5, 9, -5);
@@ -196,13 +206,18 @@ public final class WeaponMoves {
 
     /**
      * Стойки длинного меча перед ударом (как в фехтовании на длинных мечах): перед горизонтальным — «с крыши» у правого
-     * плеча, перед ударом сверху — меч высоко над головой. Обе руки на рукояти, локти согнуты.
+     * плеча, перед ударом сверху — меч высоко над головой. Обе руки на рукояти, локти согнуты. У двуручника так же.
      */
-    private static Pose guard(int step) {
+    private static Pose guard(int step, boolean great) {
         Vector3f dir = step == 0 ? n(0.2F, -0.85F, 0.5F) : n(0, -0.55F, 0.85F);
         Vector3f main = step == 0 ? new Vector3f(-6, -1, -4) : new Vector3f(-1, -5, -2);
         Quaternionf q = blade(dir, LEFT);
-        return new Pose(q, q, main, new Vector3f(main).sub(new Vector3f(dir).mul(2.5F)), 1, 0, 0);
+        return new Pose(q, q, main, new Vector3f(main).sub(new Vector3f(dir).mul(gap(great))), 1, 0, 0);
+    }
+
+    /** Расстояние между кулаками на рукояти: у двуручника рукоять длиннее. */
+    private static float gap(boolean great) {
+        return great ? 3.5F : 2.5F;
     }
 
     /** Взмах: начальное направление клинка, ось поворота (по правилу правой руки) и угол в градусах. */
@@ -226,7 +241,8 @@ public final class WeaponMoves {
         return switch (style) {
             case DAGGERS -> daggerSwing(step, t);
             case STAFF -> staffSwing(step, t);
-            case LONGSWORD -> longswordSwing(step, t);
+            case LONGSWORD -> longswordSwing(step, t, false);
+            case GREATSWORD -> longswordSwing(step, t, true);
         };
     }
 
@@ -250,7 +266,14 @@ public final class WeaponMoves {
         return new Pose(q, q, main, new Vector3f(main), 0, 0, 0);
     }
 
-    private static Pose longswordSwing(int step, float t) {
+    private static Pose longswordSwing(int step, float t, boolean great) {
+        if (step == 2 && great) {
+            // Двуручником и косой удар наносят обеими руками: из-за правого плеча налево вниз.
+            Vector3f dir = DIAGONAL.dir(t);
+            Quaternionf q = blade(dir, DIAGONAL.axis);
+            Vector3f main = new Vector3f(-1, 4, -6).add(new Vector3f(dir).mul(4));
+            return new Pose(q, q, main, new Vector3f(main).sub(new Vector3f(dir).mul(gap(true))), 1, 0, 0);
+        }
         if (step == 2) {
             // Косой удар справа сверху налево вниз одной рукой.
             Vector3f dir = DIAGONAL.dir(t);
@@ -267,7 +290,7 @@ public final class WeaponMoves {
         // ближе к навершию. Пока кулаки близко к телу, локти согнуты; в конце удара руки выпрямляются.
         Vector3f center = step == 0 ? new Vector3f(0, 5, -6) : new Vector3f(0, 1, -4);
         Vector3f main = center.add(new Vector3f(dir).mul(step == 0 ? 3 : 6));
-        Vector3f off = new Vector3f(main).sub(new Vector3f(dir).mul(2.5F));
+        Vector3f off = new Vector3f(main).sub(new Vector3f(dir).mul(gap(great)));
         return new Pose(q, q, main, off, 1, 0, 0);
     }
 
@@ -296,9 +319,9 @@ public final class WeaponMoves {
         Pose idle = idle(style), start = from != null ? from : idle;
         if (step < 0 || p >= 1) return idle;
         if (style == Style.DAGGERS && step == FLURRY) return flurry(p, start);
-        if (style == Style.LONGSWORD && step < 2 && p < 0.3F) {
+        if ((style == Style.LONGSWORD && step < 2 || style == Style.GREATSWORD) && p < 0.3F) {
             // Двуручные удары длинным мечом идут через стойку: сначала меч в стойку, потом замах.
-            Pose guard = guard(step);
+            Pose guard = guard(step == 1 ? 1 : 0, style == Style.GREATSWORD);
             return p < 0.15F ? start.lerp(guard, ease(p / 0.15F)) : guard.lerp(swing(style, step, 0), ease((p - 0.15F) / 0.15F));
         }
         if (p < 0.3F) return start.lerp(swing(style, step, 0), ease(p / 0.3F));
@@ -388,8 +411,10 @@ public final class WeaponMoves {
     static WeaponPoses.Hold hold(Pose p, Style style, float dip, int side) {
         p = firstPerson(p);
         WeaponPoses.Hold h = hold(p.main, idle(style).main, FP_IDLE, p.blade, dip, side);
-        h.mainAt = style == Style.DAGGERS ? ONE_HAND_AT : Mth.lerp(p.offW, ONE_HAND_AT, MAIN_AT);
-        h.offAt = OFF_AT;
+        // У двуручника рукоять длиннее: кулаки у гарды и у навершия дальше друг от друга.
+        boolean great = style == Style.GREATSWORD;
+        h.mainAt = style == Style.DAGGERS ? ONE_HAND_AT : great ? 2.6F : Mth.lerp(p.offW, ONE_HAND_AT, MAIN_AT);
+        h.offAt = great ? -3.2F : OFF_AT;
         return h;
     }
 
@@ -460,7 +485,8 @@ public final class WeaponMoves {
 
     /** Поворот корпуса (радианы): у длинного меча — в сторону, куда смотрит клинок. */
     static float twist(LivingEntity entity, Pose p) {
-        if (style(entity.getMainHandItem()) != Style.LONGSWORD) return 0;
+        Style style = style(entity.getMainHandItem());
+        if (style != Style.LONGSWORD && style != Style.GREATSWORD) return 0;
         float x = p.blade.transform(new Vector3f(0, 1, 0)).x * -0.5F;
         return entity.getMainArm() == HumanoidArm.LEFT ? -x : x;
     }
