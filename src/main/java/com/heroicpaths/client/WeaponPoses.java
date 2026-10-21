@@ -199,12 +199,12 @@ public final class WeaponPoses {
     static boolean chargeTransform(PoseStack pose, LocalPlayer player, HumanoidArm arm, ItemStack stack, float partialTick, float equip) {
         if (!channeling(player, stack)) return false;
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
-        float t = player.getTicksUsingItem() + partialTick, k = ease(t / FocusItem.CHARGE_TICKS);
+        float t = player.getTicksUsingItem() + partialTick, k = ease(t / FocusItem.chargeTicks(stack));
         pose.translate(side * 0.56F, -0.52F + equip * -0.6F, -0.72F);
         pose.translate(-side * 0.22F * k, 0.18F * k, -0.12F * k);
         pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-28 * k));
         pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(side * 12 * k));
-        if (t >= FocusItem.CHARGE_TICKS) pose.translate(Mth.sin(t * 2.3F) * 0.004F, Mth.cos(t * 1.9F) * 0.004F, 0);
+        if (t >= FocusItem.chargeTicks(stack)) pose.translate(Mth.sin(t * 2.3F) * 0.004F, Mth.cos(t * 1.9F) * 0.004F, 0);
         return true;
     }
 

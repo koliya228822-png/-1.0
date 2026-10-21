@@ -9,6 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 
 /** Полоска каста под прицелом: название умения и сколько осталось; без каста — заряд стрелы жезла или посоха. */
 public class CastBarLayer implements LayeredDraw.Layer {
@@ -58,12 +59,13 @@ public class CastBarLayer implements LayeredDraw.Layer {
     private static void renderFocusCharge(GuiGraphics graphics, DeltaTracker deltaTracker, Minecraft mc) {
         if (!mc.player.isUsingItem() || !(mc.player.getUseItem().getItem() instanceof FocusItem)) return;
         float ticks = mc.player.getTicksUsingItem() + deltaTracker.getGameTimeDeltaPartialTick(false);
-        float k = FocusItem.charge((int) ticks);
-        boolean full = ticks >= FocusItem.CHARGE_TICKS;
+        ItemStack focus = mc.player.getUseItem();
+        float k = FocusItem.charge(focus, (int) ticks);
+        boolean full = ticks >= FocusItem.chargeTicks(focus);
         int w = 80, h = 5, x = (graphics.guiWidth() - w) / 2, y = graphics.guiHeight() / 2 + 14;
         graphics.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0xC0000000);
         graphics.fill(x, y, x + w, y + h, 0x80201830);
-        int fill = Math.round(w * Mth.clamp(ticks / FocusItem.CHARGE_TICKS, 0, 1));
+        int fill = Math.round(w * Mth.clamp(ticks / FocusItem.chargeTicks(focus), 0, 1));
         graphics.fill(x, y, x + fill, y + h, full ? 0xFFC8A0FF : 0xFF7850D0);
         graphics.fill(x, y, x + fill, y + 1, full ? 0xFFFFFFFF : 0xFFB8A0F0);
         Component label = full ? Component.translatable("hud.heroicpaths.charge_full")

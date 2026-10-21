@@ -46,6 +46,8 @@ public class FocusItem extends Item {
     public static final float REFERENCE_POWER = 5f;
     /** Полная зарядка: лук натягивается за 20 тиков, фокус — на 20% дольше. */
     public static final int CHARGE_TICKS = 24;
+    /** Посох заряжается на 20% быстрее жезла. */
+    public static final int STAFF_CHARGE_TICKS = 20;
     /** Выстрел стоит 5% маны (у мага крови — 5% здоровья). */
     public static final float SHOT_COST = 0.05f;
     /** Какая доля силы заклинаний мага добавляется к урону стрелы. */
@@ -126,10 +128,15 @@ public class FocusItem extends Item {
                 + SPELL_POWER_SHARE * PlayerStats.get(player).get(Stat.FLAT_SPELL_DAMAGE);
     }
 
-    /** Насколько заряжен выстрел после ticks тиков: как у лука, но полная зарядка за CHARGE_TICKS. */
-    public static float charge(int ticks) {
-        float k = Math.min(1f, ticks / (float) CHARGE_TICKS);
+    /** Насколько заряжен выстрел после ticks тиков: как у лука, но полная зарядка за chargeTicks. */
+    public static float charge(ItemStack stack, int ticks) {
+        float k = Math.min(1f, ticks / (float) chargeTicks(stack));
         return (k * k + k * 2f) / 3f;
+    }
+
+    /** За сколько тиков фокус заряжается полностью: посох быстрее жезла. */
+    public static int chargeTicks(ItemStack stack) {
+        return stack.getItem() instanceof FocusItem focus && focus.isStaff() ? STAFF_CHARGE_TICKS : CHARGE_TICKS;
     }
 
     /** Почему маг не может выстрелить (null — может). */
@@ -180,7 +187,7 @@ public class FocusItem extends Item {
             Vec3 v = tip.subtract(from).scale(0.2);
             level.addParticle(ModParticles.ember(palette), from.x, from.y, from.z, v.x, v.y, v.z);
         }
-        if (used == CHARGE_TICKS) {
+        if (used == chargeTicks(stack)) {
             for (int i = 0; i < 12; i++) {
                 double a = Math.PI * 2 * i / 12;
                 Vec3 v = right.scale(Math.cos(a) * 0.08).add(0, Math.sin(a) * 0.08, 0);
@@ -194,7 +201,7 @@ public class FocusItem extends Item {
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int remaining) {
         if (!(entity instanceof ServerPlayer player)) return;
-        float charge = charge(getUseDuration(stack, entity) - remaining);
+        float charge = charge(stack, getUseDuration(stack, entity) - remaining);
         if (charge < 0.1f) return;
         Component problem = shotProblem(player);
         if (problem != null) {
@@ -223,6 +230,8 @@ public class FocusItem extends Item {
             default -> SoundEvents.AMETHYST_BLOCK_CHIME;
         }, SoundSource.PLAYERS, 0.7f, 1.5f);
         player.awardStat(Stats.ITEM_USED.get(this));
+        // Взмах выстрела видят все: у посоха это одно из трёх движений (WeaponMoves на клиентах).
+        if (isStaff()) player.swing(player.getUsedItemHand(), true);
     }
 
     /** Сила магии фокуса в руках игрока с учётом редкости; 0 — фокуса нет. */

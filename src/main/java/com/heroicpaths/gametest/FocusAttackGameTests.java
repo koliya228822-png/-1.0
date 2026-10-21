@@ -66,6 +66,8 @@ public class FocusAttackGameTests {
         helper.assertTrue(spell > 0, "the mage has no spell power to test with");
         helper.assertTrue(Math.abs(actual - expected) < 1.0E-4, "bolt damage " + actual + " != " + expected);
         helper.assertTrue(FocusItem.CHARGE_TICKS == 24, "the focus must charge 20% longer than a bow (24 ticks)");
+        helper.assertTrue(FocusItem.chargeTicks(new ItemStack(ModItems.APPRENTICE_STAFF.get())) == 20
+                && FocusItem.chargeTicks(new ItemStack(ModItems.APPRENTICE_WAND.get())) == 24, "a staff charges 20% faster than a wand");
         helper.assertTrue(Math.abs(MagicBoltEntity.SPEED * 20 - 5f) < 1.0E-4, "the bolt must fly 5 blocks per second");
         helper.succeed();
     }

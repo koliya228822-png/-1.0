@@ -53,8 +53,10 @@ import java.util.WeakHashMap;
  *   <li>Кинжалы парные: взятый в основную руку кинжал держат вместе со вторым таким же (вторая рука закрыта, второй кинжал
  *       рисуется здесь). Удары: укол одним кинжалом; оба кинжала над головой и удар сверху вниз; серия «одной рукой, другой, обеими»; удар с разворотом
  *       на месте — разворот виден от третьего лица, от первого лица это широкий взмах.</li>
- *   <li>Посох — в покое стоит вертикально, удары одной рукой размашисто: из-за спины снизу вперёд, выпад вперёд, сильный
- *       удар из-за левого плеча. Пока посох заряжает стрелу (ПКМ), он в позе заряда из WeaponPoses.</li>
+ *   <li>Посох — в покое стоит вертикально. Выстрел заряженной стрелой (ПКМ) — размашистое движение одной рукой: из-за
+ *       спины снизу вперёд, выпад вперёд или сильный
+ *       удар из-за левого плеча; начинается из позы заряда (WeaponPoses.CHANNEL). Обычный удар посохом (ЛКМ) — короткий
+ *       взмах сверху вниз.</li>
  * </ul>
  * Выбор удара каждый клиент делает сам по взмахам (их рассылает игра) с зерном из существа и игрового времени,
  * поэтому другие игроки обычно видят тот же удар без своих пакетов.
@@ -107,6 +109,9 @@ public final class WeaponMoves {
         /** Откуда начался текущий удар: прошлый удар и его ход в тот момент (fromP < 0 — из стойки). */
         int fromStep;
         float fromP = -1;
+        /** Когда посох последний раз заряжал стрелу (тик) и начался ли текущий взмах из позы заряда. */
+        int channelTick = -1000;
+        boolean fromChannel;
     }
 
     private static final Map<LivingEntity, State> STATES = new WeakHashMap<>();
@@ -114,21 +119,36 @@ public final class WeaponMoves {
     /** Каждый тик: начался ли у существа новый взмах основной рукой. */
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (!event.getEntity().level().isClientSide || !(event.getEntity() instanceof LivingEntity entity)) return;
-        if (!entity.swinging || entity.swingTime != 0 || entity.swingingArm != InteractionHand.MAIN_HAND || !is(entity.getMainHandItem())) return;
+        Style style = style(entity.getMainHandItem());
+        if (style == null) return;
         State s = STATES.computeIfAbsent(entity, e -> new State());
+        if (style == Style.STAFF && channeling(entity, entity.getMainHandItem())) s.channelTick = entity.tickCount;
+        if (!entity.swinging || entity.swingTime != 0 || entity.swingingArm != InteractionHand.MAIN_HAND) return;
+        // Посох: взмах сразу после заряда — это выстрел (одно из трёх движений), иначе обычный удар посохом.
+        boolean shot = style == Style.STAFF && entity.tickCount - s.channelTick <= SHOT_WINDOW;
         float p = progress(s, entity.tickCount, 0);
-        if (s.step >= 0 && p < RESTART_AT) return;
+        if (s.step >= 0 && p < RESTART_AT && !shot) return;
         s.fromStep = s.step;
         s.fromP = s.step >= 0 && p < 1 ? p : -1;
+        s.fromChannel = shot;
+        s.start = entity.tickCount;
+        if (style == Style.STAFF && !shot) {
+            s.step = STAFF_MELEE;
+            s.duration = DURATION;
+            return;
+        }
         // Случайный удар, но не тот же, что только что. Зерно — существо и игровое время, одинаковые у всех клиентов.
         long seed = entity.getUUID().getLeastSignificantBits() ^ entity.level().getGameTime() * 0x9E3779B97F4A7C15L;
-        Style style = style(entity.getMainHandItem());
         int moves = moves(style), last = s.step < moves ? s.step : -1;
         int roll = (int) Math.floorMod(seed ^ (seed >>> 29), last >= 0 ? moves - 1L : moves);
         s.step = last >= 0 ? (last + 1 + roll) % moves : roll;
-        s.start = entity.tickCount;
         s.duration = duration(style, s.step);
     }
+
+    /** Сколько тиков после заряда взмах посохом ещё считается выстрелом (взмах приходит с сервера с задержкой). */
+    static final int SHOT_WINDOW = 10;
+    /** Обычный удар посохом (не выстрел): короткий взмах сверху вниз. */
+    static final int STAFF_MELEE = 3;
 
     /** Сколько видов ударов: у кинжалов ещё серия «одной рукой, другой, обеими». */
     static int moves(Style style) {
@@ -250,7 +270,23 @@ public final class WeaponMoves {
     private static final Swing STAFF_UNDERHAND = new Swing(n(0, 0.35F, 0.95F), new Vector3f(-1, 0, 0), 165);
     private static final Swing STAFF_LEFT_SHOULDER = diagonal(n(0.55F, -0.75F, 0.35F), n(-0.6F, 0.5F, -0.6F), 15);
 
+    private static final Swing STAFF_CHOP = diagonal(n(-0.3F, -0.9F, 0.25F), n(0.2F, 0.3F, -0.9F), 0);
+
+    /** Посох в позе заряда: рука вытянута к прицелу, навершие вперёд-вверх — с неё начинается выстрел. */
+    static Pose channelPose() {
+        Vector3f main = arm(R_SHOULDER, n(0.05F, 0, -1), 10);
+        Quaternionf q = blade(n(0, -0.55F, -0.85F), LEFT);
+        return new Pose(q, q, main, new Vector3f(main), 0, 0, 0);
+    }
+
     private static Pose staffSwing(int step, float t) {
+        if (step == STAFF_MELEE) {
+            // Обычный удар посохом: короткий взмах сверху вниз одной рукой.
+            Vector3f dir = STAFF_CHOP.dir(t);
+            Vector3f main = arm(R_SHOULDER, new Vector3f(dir).mul(0.5F).add(new Vector3f(FWD).mul(0.8F)), 10);
+            Quaternionf q = blade(dir, STAFF_CHOP.axis);
+            return new Pose(q, q, main, new Vector3f(main), 0, 0, 0);
+        }
         if (step == 1) {
             // Выпад: рука отводится назад и выбрасывается вперёд, посох навершием вперёд.
             Vector3f u = new Vector3f(n(0, 0.9F, 0.45F)).lerp(n(0.1F, 0.05F, -1), t);
@@ -359,7 +395,7 @@ public final class WeaponMoves {
         State s = STATES.get(entity);
         if (s == null || s.step < 0) return idle(style);
         float p = progress(s, entity.tickCount, partial);
-        Pose from = s.fromP >= 0 ? at(style, s.fromStep, s.fromP, null) : null;
+        Pose from = s.fromChannel ? channelPose() : s.fromP >= 0 ? at(style, s.fromStep, s.fromP, null) : null;
         return at(style, s.step, p, from);
     }
 
