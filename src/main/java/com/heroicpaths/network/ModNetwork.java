@@ -16,7 +16,7 @@ public final class ModNetwork {
     private ModNetwork() {}
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("8");
+        PayloadRegistrar registrar = event.registrar("9");
 
         // Клиент хранит копию данных прямо в attachment своего игрока: HUD и меню читают её оттуда.
         registrar.playToClient(SyncRpgDataPayload.TYPE, SyncRpgDataPayload.STREAM_CODEC, (payload, context) ->
@@ -67,6 +67,10 @@ public final class ModNetwork {
         });
         registrar.playToClient(CastBarPayload.TYPE, CastBarPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.CastBarLayer.set(payload.ability(), payload.ticks()));
+        registrar.playToClient(MobLevelPayload.TYPE, MobLevelPayload.STREAM_CODEC, (payload, context) -> {
+            net.minecraft.world.entity.Entity entity = context.player().level().getEntity(payload.entityId());
+            if (entity != null) com.heroicpaths.combat.MobLevels.applyOnClient(entity, payload);
+        });
         registrar.playToClient(PartySyncPayload.TYPE, PartySyncPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.ClientHooks.setParty(payload.members()));
         registrar.playToServer(TreeActionPayload.TYPE, TreeActionPayload.STREAM_CODEC, (payload, context) -> {

@@ -108,7 +108,7 @@ public final class OrderCatalog {
         return result;
     }
 
-    /** Дополнительная награда: эликсир у новичков, кристаллы и топазы у опытных, том опыта или книга умения у ветеранов. */
+    /** Дополнительная награда: эликсир у новичков, кристаллы и топазы у опытных, рубины или книга умения у ветеранов. */
     private static ItemStack bonus(int tier, RandomSource random) {
         return switch (tier) {
             case 0 -> random.nextFloat() < 0.3f ? new ItemStack(ModItems.SPIRIT_ELIXIR.get(), 2) : ItemStack.EMPTY;
@@ -123,7 +123,7 @@ public final class OrderCatalog {
                 if (random.nextFloat() < 0.4f && !books.isEmpty()) {
                     yield AbilityBookItem.create(ModItems.ABILITY_BOOK.get(), books.get(random.nextInt(books.size())));
                 }
-                yield new ItemStack(ModItems.EXPERIENCE_TOME.get());
+                yield new ItemStack(ModItems.RUBY.get(), 2); // книги опыта только для тестов, в награды они не идут
             }
         };
     }

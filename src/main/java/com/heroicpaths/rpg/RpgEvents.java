@@ -41,13 +41,17 @@ public final class RpgEvents {
         if (event.getSource().getEntity() instanceof ServerPlayer player) awardKillXp(player, event.getEntity());
     }
 
-    /** Опыт класса за убийство: половина здоровья жертвы, за монстров вдвое больше. Существа игроков опыта не дают. */
+    /**
+     * Опыт класса за убийство: половина здоровья жертвы, за монстров вдвое больше. Существа игроков опыта не дают.
+     * Разница уровней: моб на 5+ уровней выше игрока даёт +20%, на 5+ ниже — только 10%.
+     */
     public static void awardKillXp(ServerPlayer player, LivingEntity victim) {
         if (victim instanceof Player || victim instanceof com.heroicpaths.minion.Minion) return;
         float xp = Math.max(1, victim.getMaxHealth() / 2f);
         if (victim instanceof Enemy) xp *= 2;
         xp *= 1f + PlayerStats.get(player).get(Stat.XP_GAIN) / 100f;
-        RpgManager.addXp(player, Math.round(xp));
+        xp *= com.heroicpaths.combat.MobLevels.xpFactor(RpgManager.get(player).getLevel(), com.heroicpaths.combat.MobLevels.level(victim));
+        RpgManager.addXp(player, Math.max(1, Math.round(xp)));
     }
 
     @SubscribeEvent

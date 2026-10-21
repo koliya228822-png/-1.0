@@ -371,7 +371,7 @@ public class DungeonPortalGameTests {
         helper.assertTrue(data.getContractDungeon().isEmpty(), "contract was not cleared: " + data.getContractDungeon());
         helper.assertTrue(data.getLevel() > levelBefore, "boss reward gave no levels");
         helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == DungeonType.CRYPT.rewardEmeralds(), "wrong emerald reward");
-        helper.assertTrue(player.getInventory().countItem(ModItems.EXPERIENCE_TOME.get()) == DungeonType.CRYPT.rewardTomes(), "wrong tome reward");
+        helper.assertTrue(player.getInventory().countItem(ModItems.EXPERIENCE_TOME.get()) == 0, "experience tomes are for tests only and must not be a reward");
         helper.assertTrue(player.getInventory().countItem(ModItems.CRYPT_CROWN_SHARD.get()) == 1, "every party member must get a boss trophy");
         int gate = countBlocks(level, BoundingBox.fromCorners(instance.bossArrival.offset(-6, -1, -6), instance.bossArrival.offset(6, 6, 6)), ModBlocks.DUNGEON_PORTAL.get());
         helper.assertTrue(gate == 12, "the arena gate must open as the way home, got " + gate + " portal blocks");

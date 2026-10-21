@@ -70,6 +70,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(PartyManager.class);
         NeoForge.EVENT_BUS.register(GearEvents.class);
         NeoForge.EVENT_BUS.register(WeaponCombat.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.combat.MobLevels.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.TwoHandedGrip.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.ClassTraits.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.guild.GuildOrders.class);

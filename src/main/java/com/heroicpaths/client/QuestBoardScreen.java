@@ -126,7 +126,7 @@ public class QuestBoardScreen extends Screen {
             String health = String.format(Locale.ROOT, "%.2f", type.healthMultiplier(partySize));
             String damage = String.format(Locale.ROOT, "%.2f", type.damageMultiplier(partySize));
             graphics.drawString(font, Component.translatable("screen.heroicpaths.enemy_stats", health, damage), left, y + 13, 0xFF8080, true);
-            graphics.drawString(font, Component.translatable("screen.heroicpaths.rewards", type.rewardXp(), type.rewardEmeralds(), type.rewardTomes()),
+            graphics.drawString(font, Component.translatable("screen.heroicpaths.rewards", type.rewardXp(), type.rewardEmeralds()),
                     left, y + 24, 0x80FF80, true);
             if (type.requiresScroll()) {
                 boolean hasScroll = minecraft.player.getInventory().contains(new ItemStack(type.scroll()));

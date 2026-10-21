@@ -63,7 +63,7 @@ public final class RpgManager {
         RpgData data = get(player);
         if (amount <= 0 || data.getLevel() >= RpgData.MAX_LEVEL) return;
         int level = data.getLevel();
-        int xp = data.getXp() + amount;
+        long xp = (long) data.getXp() + amount; // на высоких уровнях порог близок к пределу int
         int previous = level;
         while (level < RpgData.MAX_LEVEL && xp >= RpgData.xpToNextLevel(level)) {
             xp -= RpgData.xpToNextLevel(level);
@@ -71,7 +71,7 @@ public final class RpgManager {
         }
         if (level >= RpgData.MAX_LEVEL) xp = 0;
         data.setLevel(level);
-        data.setXp(xp);
+        data.setXp((int) Math.min(Integer.MAX_VALUE, xp));
         if (level > previous) {
             onLevelUp(player, previous, level);
             autoFillSlots(data);
