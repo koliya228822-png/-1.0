@@ -51,13 +51,15 @@ public class ArmorGen {
                 case "warrior" -> warrior(b);
                 case "archer" -> archer(b);
                 default -> {
-                    if (set.equals("mage_wool") || set.equals("mage")) wanderer(b);
+                    if (set.startsWith("mage")) wanderer(b);
                     else mage(b);
                 }
             }
             b.pack();
-            BufferedImage painted = b.paint();
+            BufferedImage painted = b.paint(false);
             ImageIO.write(downscale(painted, R), "png", texDir.resolve(set + ".png").toFile());
+            // Текстура свечения рун (её рисует слой ArmorGlow): всё прозрачное, кроме самих рун.
+            if (b.hasRunes()) ImageIO.write(downscale(b.paint(true), R), "png", texDir.resolve(set + "_glow.png").toFile());
             String[] items = {"helmet", "chestplate", "leggings", "boots"};
             for (int i = 0; i < SLOTS.length; i++)
                 ImageIO.write(icon(b, SLOTS[i], painted), "png",
@@ -242,14 +244,19 @@ public class ArmorGen {
                 }
         }
 
-        BufferedImage paint() {
+        boolean hasRunes() {
+            for (Cube c : blocks.values()) if (Arrays.asList(c.deco).contains("runes")) return true;
+            return false;
+        }
+
+        BufferedImage paint(boolean glow) {
             BufferedImage img = new BufferedImage(TW * R, TH * R, BufferedImage.TYPE_INT_ARGB);
             Map<String, Pal> pal = palettes(set);
             for (Cube c : blocks.values()) {
                 int[] uv = null;
                 for (List<Cube> list : slots.values())
                     for (Cube k : list) if (k.key().equals(c.key())) uv = new int[]{k.u, k.v};
-                Painter p = new Painter(img, pal, set, c, uv[0], uv[1]);
+                Painter p = new Painter(img, pal, set, c, uv[0], uv[1], glow);
                 p.all();
             }
             return img;
@@ -391,7 +398,7 @@ public class ArmorGen {
 
         b.slot("chest");
         b.box("body", -4, 0, -2, 8, 12, 4, 0.55, "cloth2", "folds");
-        b.box("body", -4.6, 0, -2.9, 9.2, 7.25, 5.8, 0, "metal", "ridge", "engrave", "bevel", gold ? "trim_t" : "", gold ? "trim_b" : "");
+        b.box("body", -4.6, 0, -2.9, 9.2, 7.25, 5.8, 0, "metal", "ridge", "engrave", "bevel", gold ? "trim_t" : "", gold ? "trim_b" : "", b.grade >= 3 ? "runes" : "");
         if (gold) b.box("body", -0.9, 1.5, -3.3, 1.8, 1.8, 0.5, 0, "gem");
         b.box("body", -4.4, 7, -2.75, 8.8, 1.75, 5.5, 0, "metal2", "rivets", "bevel");
         b.box("body", -4.1, -1.25, -3.1, 8.2, 1.75, 6.2, 0, gold ? "trim" : "metal2", "bevel");
@@ -404,14 +411,14 @@ public class ArmorGen {
             b.box("body", -2.2, -0.6, -3.7, 4.4, 0.4, 0.3, 0, "trim");
         }
         b.box("body", -4.9, -1, 2.6, 9.8, 2, 1, 0, gold ? "trim" : "cloth", gold ? "bevel" : "stitch");
-        b.part("body", -1, 0, 0, 3.15, 8 * P, 0, 0, -5.5, 0, 0, 11, 23.5, 0.5, 0, "cloth", "folds", "torn");
+        b.part("body", -1, 0, 0, 3.15, 8 * P, 0, 0, -5.5, 0, 0, 11, 23.5, 0.5, 0, "cloth", "folds", "torn", b.grade >= 3 ? "runes" : "");
         int[] pd = {
                 b.box("right_arm", -4.5, -3.6, -3.4, 6, 2.5, 6.8, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : ""),
                 b.box("right_arm", -4.75, -1.4, -3.5, 5.5, 1.75, 7, 0, "metal2", "rivets", "bevel"),
                 b.box("right_arm", -4.9, 0.1, -3.6, 5.1, 1.6, 7.2, 0, "metal", "bevel", b.grade >= 2 ? "trim_b" : "")};
         b.mirror(true, pd);
         b.limb("right_arm", -3, -2, -2, 4, 12, 4, 0.5, "cloth2", "folds");
-        b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : "");
+        b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : "", b.grade >= 3 ? "runes" : "");
         b.limb("right_arm", -3.75, 9.75, -2.75, 5.5, 0.75, 5.5, 0, gold ? "trim" : "leather2", gold ? "bevel" : "");
 
         b.slot("legs");
@@ -436,7 +443,7 @@ public class ArmorGen {
         b.limb("right_leg", -2.2, 4.75, -3.6, 4.4, 1.5, 0.5, 0, "metal2", "bevel");
 
         b.slot("feet");
-        b.limb("right_leg", -2.4, 6.75, -2.4, 4.8, 5.5, 4.8, 0.3, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_t" : "");
+        b.limb("right_leg", -2.4, 6.75, -2.4, 4.8, 5.5, 4.8, 0.3, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_t" : "", b.grade >= 3 ? "runes" : "");
         b.limb("right_leg", -2.75, 6.5, -2.75, 5.5, 1, 5.5, 0, gold ? "trim" : "leather2", gold ? "bevel" : "");
         b.limb("right_leg", -2.25, 10.25, -4, 4.5, 2.25, 1.75, 0, "metal2", "bevel");
         b.limb("right_leg", -1.5, 10.75, -4.75, 3, 1.5, 0.9, 0, "trim", "bevel");
@@ -500,6 +507,10 @@ public class ArmorGen {
     static Color c(String hex) {
         return new Color(Integer.parseInt(hex, 16));
     }
+
+    /** Знаки рун 3×4 (строки сверху вниз) и цвет их свечения. */
+    static final String[] RUNES = {"010111010010", "100110101100", "111100110100", "101101111001", "110101110101", "011100010001", "101010010010"};
+    static final Color RUNE_GLOW = new Color(0x78E8FF);
 
     static final Pal IRON = Pal.of("24262E", "5A5F6C", "969CA8", "D0D5DE", "F4F6FA");
     static final Pal IRON2 = Pal.of("1C1E24", "464A55", "707684", "A0A6B2", "C8CCD4");
@@ -582,7 +593,13 @@ public class ArmorGen {
             default -> {
                 p.put("cloth", Pal.of("060A24", "10184E", "1E2C7E", "3448AE", "5C70D4"));
                 p.put("cloth2", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4"));
-                p.put("leather", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4")); p.put("trim", GOLD);
+                // Маг III: звёздный странник — полуночная ткань со звёздами, тёмно-синие латы, золото и руны.
+                p.put("scarf", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4"));
+                p.put("leather", Pal.of("080C1E", "141C40", "222E62", "34448A", "4E62B0")); p.put("trim", GOLD);
+                p.put("leather2", LEATHER_BLACK);
+                p.put("metal", Pal.of("10141E", "2A3448", "4A5A78", "7486A8", "A8B8D8"));
+                p.put("metal2", Pal.of("0C0E16", "222838", "3A4458", "5A6680", "8290AC"));
+                p.put("book", Pal.of("06102A", "102454", "1C3A80", "3058AC", "5A80D0"));
                 p.put("gem", Pal.of("0A3A6A", "1A78B0", "3AB8F0", "A8E8FF", "F4FEFF"));
             }
         }
@@ -621,11 +638,12 @@ public class ArmorGen {
         final Map<String, Pal> pal;
         final Cube c;
         final int u, v;
-        final boolean astral, damascus, gilded;
+        final boolean astral, damascus, gilded, glow;
         final List<String> deco;
         final Random rnd;
 
-        Painter(BufferedImage img, Map<String, Pal> pal, String set, Cube c, int u, int v) {
+        Painter(BufferedImage img, Map<String, Pal> pal, String set, Cube c, int u, int v, boolean glow) {
+            this.glow = glow;
             this.img = img;
             this.pal = pal;
             this.c = c;
@@ -633,7 +651,7 @@ public class ArmorGen {
             this.v = v;
             this.astral = set.equals("mage_astral");
             this.damascus = set.equals("warrior_damascus");
-            this.gilded = set.equals("mage");
+            this.gilded = set.equals("mage") || set.equals("mage_astral");
             this.deco = List.of(c.deco);
             this.rnd = new Random(c.key().hashCode());
         }
@@ -685,6 +703,10 @@ public class ArmorGen {
                 if (fh > 8 && hash(Math.floor(fx / 1.5), Math.floor(fy / 1.5), 21) > 0.9
                         && Math.abs((fx / 1.5) % 1.0 - 0.5) < 0.3 && Math.abs((fy / 1.5) % 1.0 - 0.5) < 0.22) return null;
             }
+            // Руны считаются по центру пикселя итоговой текстуры, чтобы каждый пиксель был целиком знаком или фоном.
+            double sx = fx - ((px + 0.5) / R - (Math.floor(px / (double) R) + 0.5)), sy = fy - ((py + 0.5) / R - (Math.floor(py / (double) R) + 0.5));
+            boolean rune = deco.contains("runes") && rune(f, sx, sy, fw, fh);
+            if (glow) return rune ? RUNE_GLOW : null;
             Color col = base(m, p, f, fx, fy, fw, fh, px, py);
             // Отделка: полосы, кайма, знаки.
             Pal trim = pal.getOrDefault("trim", GOLD);
@@ -766,6 +788,7 @@ public class ArmorGen {
             // Тонкие ярусы гладкого конуса: ровный цвет без контура, иначе каждый ярус читается полоской.
             if (deco.contains("smooth")) col = shade(p.m(), 1 + (hash(px / 2.0, py / 2.0, 17) - 0.5) * 0.12);
             else if (fx < 0.25 || fy < 0.25 || fx > fw - 0.25 || fy > fh - 0.25) col = mix(col, p.o(), 0.5);
+            if (rune) col = mix(col, RUNE_GLOW, 0.8);
             double light = switch (f) {
                 case TOP -> 1.1;
                 case BOTTOM -> 0.75;
@@ -774,6 +797,23 @@ public class ArmorGen {
                 default -> 1.0;
             };
             return shade(col, light);
+        }
+
+        /**
+         * Руны: строки знаков 3×4 пикселя с шагом в пиксель по сетке грани (иначе тонкие штрихи пропадут при
+         * уменьшении текстуры); знаки ставятся по центру грани, на высоких гранях — в несколько строк.
+         */
+        boolean rune(Face f, double fx, double fy, double fw, double fh) {
+            if (f != Face.FRONT && f != Face.BACK && f != Face.LEFT && f != Face.RIGHT) return false;
+            int n = (int) ((fw - 1) / 4), rows = Math.max(1, (int) ((fh - 1) / 6));
+            if (n < 1 || fh < 4.5) return false;
+            double lx = fx - Math.floor((fw - (4 * n - 1)) / 2), ly = fy - Math.floor((fh - (6 * rows - 2)) / 2);
+            int gi = (int) Math.floor(lx / 4), ri = (int) Math.floor(ly / 6);
+            if (lx < 0 || ly < 0 || gi >= n || ri >= rows) return false;
+            int gx = (int) Math.floor(lx - gi * 4), gy = (int) Math.floor(ly - ri * 6);
+            if (gx > 2 || gy > 3) return false;
+            String glyph = RUNES[(int) (hash(gi, ri + f.ordinal() * 7, (int) (fw * 13 + fh * 31)) * RUNES.length) % RUNES.length];
+            return glyph.charAt(gy * 3 + gx) == '1';
         }
 
         Color band(Pal t, double pos, double size) {

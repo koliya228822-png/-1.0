@@ -69,6 +69,8 @@ public class HeroicPathsClient {
         modBus.addListener(WeaponMoves::addLayers);
         // Руки сгибаются в локтях, пока в руке оружие с особыми ударами.
         modBus.addListener(BentArms::addLayers);
+        // Светящиеся руны на броне мага III.
+        modBus.addListener(com.heroicpaths.client.armor.ArmorGlow::addLayers);
         NeoForge.EVENT_BUS.addListener(BentArms::onRenderPre);
         NeoForge.EVENT_BUS.addListener(WeaponMoves::onEntityTick);
         NeoForge.EVENT_BUS.addListener(WeaponMoves::onRenderPre);

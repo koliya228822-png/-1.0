@@ -107,7 +107,7 @@ public final class ArmorModels {
         return model(armor.setName(), EquipmentSlot.CHEST);
     }
 
-    private static HumanoidModel<?> model(String set, EquipmentSlot slot) {
+    static HumanoidModel<?> model(String set, EquipmentSlot slot) {
         String key = set + "/" + slotName(slot);
         if (ArmorShapes.get(key) == null) return null;
         return CACHE.computeIfAbsent(key, k -> new HumanoidModel<>(Minecraft.getInstance().getEntityModels().bakeLayer(layer(set, slot))));
