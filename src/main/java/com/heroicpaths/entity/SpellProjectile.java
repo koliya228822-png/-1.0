@@ -36,12 +36,14 @@ public class SpellProjectile extends ThrowableItemProjectile {
         FIRE(Items.FIRE_CHARGE, ParticleTypes.FLAME, SoundEvents.FIRECHARGE_USE, Palette.FIRE),
         /** Ледяное копьё: сильно замедляет цель. */
         ICE(Items.PACKED_ICE, ParticleTypes.SNOWFLAKE, SoundEvents.GLASS_BREAK, Palette.FROST),
-        /** Ядовитый плевок Королевы пауков: отравляет и замедляет. */
+        /** Ядовитый плевок Матери выводка и плевальщиков: отравляет и замедляет. */
         POISON(Items.FERMENTED_SPIDER_EYE, ParticleTypes.SNEEZE, SoundEvents.SPIDER_HURT, Palette.POISON),
         /** Водяной сгусток Утопшего пророка: отбрасывает и замедляет. */
         WATER(Items.PRISMARINE_CRYSTALS, ParticleTypes.SPLASH, SoundEvents.GENERIC_SPLASH, Palette.WATER),
         /** Тёмная стрела Лича: иссушает. */
-        SHADOW(Items.WITHER_SKELETON_SKULL, ParticleTypes.SOUL, SoundEvents.WITHER_SHOOT, Palette.SHADOW);
+        SHADOW(Items.WITHER_SKELETON_SKULL, ParticleTypes.SOUL, SoundEvents.WITHER_SHOOT, Palette.SHADOW),
+        /** Сгусток паутины Матери выводка: сковывает цель почти намертво. */
+        WEB(Items.COBWEB, ParticleTypes.WHITE_ASH, SoundEvents.WOOL_PLACE, Palette.STEEL);
 
         final Item item;
         final SimpleParticleType particle;
@@ -199,6 +201,7 @@ public class SpellProjectile extends ThrowableItemProjectile {
                     living.knockback(0.6, getX() - living.getX(), getZ() - living.getZ());
                 }
                 case SHADOW -> living.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 1));
+                case WEB -> living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 5));
                 default -> { }
             }
         }

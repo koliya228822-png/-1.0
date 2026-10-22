@@ -128,6 +128,7 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
     /**
      * Кто выходит из спавнера на этаже. В Глиняных копях состав зависит от этажа: на 1–2 только глиняные големы,
      * на 3-м половина — метатели, с 4-го каждый пятый — голем-танк, остальные поровну ближние и дальние.
+     * В Паучьем логове так же: пауки выводка, плевальщики и толстобрюхи.
      * Ледяную цитадель заселяет нежить ({@link #undeadFloorMob}). В других данжах — монстр, записанный в спавнере.
      * number — порядковый номер монстра на этаже.
      */
@@ -137,6 +138,11 @@ public enum DungeonType implements net.minecraft.util.StringRepresentable {
                 if (floor >= 4 && number % 5 == 0) yield ModEntities.CLAY_BRUTE.get();
                 if (floor >= 3 && number % 2 == 1) yield ModEntities.CLAY_THROWER.get();
                 yield ModEntities.CLAY_GOLEM.get();
+            }
+            case SPIDER_LAIR -> {
+                if (floor >= 4 && number % 5 == 0) yield ModEntities.BROOD_TANK.get();
+                if (floor >= 3 && number % 2 == 1) yield ModEntities.VENOM_SPITTER.get();
+                yield ModEntities.BROOD_SPIDER.get();
             }
             case FROST -> undeadFloorMob(floor, number);
             default -> original;

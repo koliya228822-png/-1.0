@@ -22,17 +22,6 @@ public final class BossRenderers {
         }
     }
 
-    public static class SpiderQueenRenderer extends net.minecraft.client.renderer.entity.SpiderRenderer<com.heroicpaths.entity.SpiderQueen> {
-        public SpiderQueenRenderer(EntityRendererProvider.Context context) {
-            super(context);
-        }
-
-        @Override
-        protected void scale(com.heroicpaths.entity.SpiderQueen entity, PoseStack poseStack, float partialTick) {
-            poseStack.scale(2.0f, 2.0f, 2.0f);
-        }
-    }
-
     public static class DrownedProphetRenderer extends net.minecraft.client.renderer.entity.DrownedRenderer {
         public DrownedProphetRenderer(EntityRendererProvider.Context context) {
             super(context);

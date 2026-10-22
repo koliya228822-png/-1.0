@@ -89,8 +89,8 @@ public final class ModEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.SpiderQueen>> SPIDER_QUEEN =
             ENTITY_TYPES.register("spider_queen", () -> EntityType.Builder
                     .<com.heroicpaths.entity.SpiderQueen>of(com.heroicpaths.entity.SpiderQueen::new, MobCategory.MONSTER)
-                    .sized(2.8f, 1.8f)
-                    .eyeHeight(1.3f)
+                    .sized(3.0f, 2.4f)
+                    .eyeHeight(1.2f)
                     .clientTrackingRange(10)
                     .build("spider_queen"));
 
@@ -197,6 +197,24 @@ public final class ModEntities {
                     .<com.heroicpaths.entity.ClayDebris>of(com.heroicpaths.entity.ClayDebris::new, MobCategory.MISC)
                     .sized(1.0f, 0.6f).clientTrackingRange(8).updateInterval(1).noSave().build("clay_debris"));
 
+    // Паучье логово: пауки выводка Матери
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.BroodSpider>> BROOD_SPIDER =
+            ENTITY_TYPES.register("brood_spider", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.BroodSpider>of(com.heroicpaths.entity.BroodSpider::new, MobCategory.MONSTER)
+                    .sized(1.1f, 0.7f).eyeHeight(0.5f).clientTrackingRange(8).build("brood_spider"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.VenomSpitter>> VENOM_SPITTER =
+            ENTITY_TYPES.register("venom_spitter", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.VenomSpitter>of(com.heroicpaths.entity.VenomSpitter::new, MobCategory.MONSTER)
+                    .sized(1.1f, 1.0f).eyeHeight(0.6f).clientTrackingRange(8).build("venom_spitter"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.BroodTank>> BROOD_TANK =
+            ENTITY_TYPES.register("brood_tank", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.BroodTank>of(com.heroicpaths.entity.BroodTank::new, MobCategory.MONSTER)
+                    .sized(1.7f, 1.3f).eyeHeight(0.8f).clientTrackingRange(8).build("brood_tank"));
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.SpiderEggSac>> SPIDER_EGG_SAC =
+            ENTITY_TYPES.register("spider_egg_sac", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.SpiderEggSac>of(com.heroicpaths.entity.SpiderEggSac::new, MobCategory.MONSTER)
+                    .sized(0.8f, 0.6f).eyeHeight(0.3f).clientTrackingRange(8).build("spider_egg_sac"));
+
     // Зверь охотника растёт вместе с ним: пёс → волк → кабан → медведь → совомедведь.
     public static final DeferredHolder<EntityType<?>, EntityType<CompanionWolf>> COMPANION_DOG = wolf("companion_dog");
     public static final DeferredHolder<EntityType<?>, EntityType<CompanionWolf>> COMPANION_WOLF = wolf("companion_wolf");
@@ -255,6 +273,10 @@ public final class ModEntities {
         event.put(CLAY_GOLEM.get(), com.heroicpaths.entity.ClayGolem.createAttributes().build());
         event.put(CLAY_THROWER.get(), com.heroicpaths.entity.ClayThrower.createAttributes().build());
         event.put(CLAY_BRUTE.get(), com.heroicpaths.entity.ClayBrute.createAttributes().build());
+        event.put(BROOD_SPIDER.get(), com.heroicpaths.entity.BroodSpider.createAttributes().build());
+        event.put(VENOM_SPITTER.get(), com.heroicpaths.entity.VenomSpitter.createAttributes().build());
+        event.put(BROOD_TANK.get(), com.heroicpaths.entity.BroodTank.createAttributes().build());
+        event.put(SPIDER_EGG_SAC.get(), com.heroicpaths.entity.SpiderEggSac.createAttributes().build());
         event.put(COMPANION_DOG.get(), Wolf.createAttributes().build());
         event.put(COMPANION_WOLF.get(), Wolf.createAttributes().build());
         event.put(SPIRIT_WOLF.get(), Wolf.createAttributes().build());

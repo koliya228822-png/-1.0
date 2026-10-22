@@ -79,7 +79,7 @@ public final class ModItems {
 
     // Этап J: Паучье логово, Затопленный храм, Некрополь — их боссы, трофеи и свитки
     public static final DeferredItem<DeferredSpawnEggItem> SPIDER_QUEEN_SPAWN_EGG = ITEMS.register("spider_queen_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.SPIDER_QUEEN, 0x2A1A28, 0xC02030, new Item.Properties()));
+            () -> new DeferredSpawnEggItem(ModEntities.SPIDER_QUEEN, 0x3E1E58, 0x78FF6E, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> DROWNED_PROPHET_SPAWN_EGG = ITEMS.register("drowned_prophet_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.DROWNED_PROPHET, 0x2A6A6A, 0x8AF0E0, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> LICH_SPAWN_EGG = ITEMS.register("lich_spawn_egg",
@@ -110,6 +110,13 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.CLAY_THROWER, 0xAA9C8C, 0x78E6FF, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> CLAY_BRUTE_SPAWN_EGG = ITEMS.register("clay_brute_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.CLAY_BRUTE, 0x6E4634, 0xFF5032, new Item.Properties()));
+    // Паучье логово: пауки выводка
+    public static final DeferredItem<DeferredSpawnEggItem> BROOD_SPIDER_SPAWN_EGG = ITEMS.register("brood_spider_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BROOD_SPIDER, 0x181B2E, 0xC8A46A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> VENOM_SPITTER_SPAWN_EGG = ITEMS.register("venom_spitter_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.VENOM_SPITTER, 0x181B2E, 0x78FF6E, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> BROOD_TANK_SPAWN_EGG = ITEMS.register("brood_tank_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.BROOD_TANK, 0x281E3A, 0xC8A46A, new Item.Properties()));
     public static final DeferredItem<TrophyItem> BROODMOTHER_FANG = ITEMS.register("broodmother_fang",
             () -> new TrophyItem(new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<TrophyItem> TIDE_PEARL = ITEMS.register("tide_pearl",

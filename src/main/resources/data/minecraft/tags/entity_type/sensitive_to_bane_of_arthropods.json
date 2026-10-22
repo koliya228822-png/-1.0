@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "heroicpaths:spider_queen",
+    "heroicpaths:brood_spider",
+    "heroicpaths:venom_spitter",
+    "heroicpaths:brood_tank"
+  ]
+}

@@ -58,6 +58,8 @@ public class HeroicPathsClient {
         modBus.addListener(com.heroicpaths.client.armor.ArmorModels::registerLayers);
         modBus.addListener(com.heroicpaths.client.clay.ClayRenderers::registerLayers);
         modBus.addListener(com.heroicpaths.client.clay.ClayRenderers::registerRenderers);
+        modBus.addListener(com.heroicpaths.client.spider.SpiderRenderers::registerLayers);
+        modBus.addListener(com.heroicpaths.client.spider.SpiderRenderers::registerRenderers);
         modBus.addListener(com.heroicpaths.client.armor.ArmorModels::registerExtensions);
         // Двуручное оружие: поза обеих рук, руки на рукояти от первого лица, закрытый слот второй руки.
         modBus.addListener(WeaponPoses::registerExtensions);
@@ -161,7 +163,6 @@ public class HeroicPathsClient {
         event.registerEntityRenderer(ModEntities.CRYPT_KING.get(), CryptKingRenderer::new);
         event.registerEntityRenderer(ModEntities.FLAME_TYRANT.get(), BossRenderers.FlameTyrantRenderer::new);
         event.registerEntityRenderer(ModEntities.FROST_LORD.get(), BossRenderers.FrostLordRenderer::new);
-        event.registerEntityRenderer(ModEntities.SPIDER_QUEEN.get(), BossRenderers.SpiderQueenRenderer::new);
         event.registerEntityRenderer(ModEntities.DROWNED_PROPHET.get(), BossRenderers.DrownedProphetRenderer::new);
         event.registerEntityRenderer(ModEntities.LICH.get(), BossRenderers.LichRenderer::new);
         event.registerEntityRenderer(ModEntities.COMPANION_DOG.get(), WolfRenderer::new);

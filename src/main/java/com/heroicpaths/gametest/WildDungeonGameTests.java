@@ -11,7 +11,6 @@ import com.heroicpaths.entity.DrownedProphet;
 import com.heroicpaths.entity.DungeonBoss;
 import com.heroicpaths.entity.Lich;
 import com.heroicpaths.entity.SpellProjectile;
-import com.heroicpaths.entity.SpiderQueen;
 import com.heroicpaths.registry.ModBlocks;
 import com.heroicpaths.registry.ModEntities;
 import com.heroicpaths.registry.ModItems;
@@ -77,13 +76,12 @@ public class WildDungeonGameTests {
         ServerLevel level = helper.getLevel();
         Player target = RpgGameTests.playerInArena(helper);
         int bolts = 0;
-        for (var type : List.of(ModEntities.SPIDER_QUEEN.get(), ModEntities.DROWNED_PROPHET.get(), ModEntities.LICH.get())) {
+        for (var type : List.of(ModEntities.DROWNED_PROPHET.get(), ModEntities.LICH.get())) {
             Mob boss = (Mob) helper.spawn(type, new BlockPos(3, 2, 3));
             helper.assertTrue(boss instanceof DungeonBoss, type + " is not a dungeon boss");
             helper.assertTrue(boss.getMaxHealth() >= 250, type + " is too weak: " + boss.getMaxHealth());
             boss.setTarget(target);
             var controller = switch (boss) {
-                case SpiderQueen queen -> queen.controller();
                 case DrownedProphet prophet -> prophet.controller();
                 case Lich lich -> lich.controller();
                 default -> throw new IllegalStateException();
@@ -103,7 +101,7 @@ public class WildDungeonGameTests {
             level.getEntitiesOfClass(Mob.class, target.getBoundingBox().inflate(30),
                     mob -> mob.getTags().contains(com.heroicpaths.entity.BossController.MINION_TAG)).forEach(Mob::discard);
         }
-        helper.assertTrue(bolts == 9, "each boss must fire a fan of 3 bolts, got " + bolts);
+        helper.assertTrue(bolts == 6, "each boss must fire a fan of 3 bolts, got " + bolts);
         helper.succeed();
     }
 
