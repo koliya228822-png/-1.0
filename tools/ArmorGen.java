@@ -369,13 +369,14 @@ public class ArmorGen {
         b.part("head", -1, 0, -7.6, 6.25, -17 * P, 0, 0, -9.5, 0, 0, 19, 0.8, 3.5, 0, "leather");
         int br = b.part("head", -1, -6.25, -7.6, 0, 0, 0, -17 * P, -3.5, 0, -6.25, 3.5, 0.8, 12.5, 0, "leather");
         b.mirror(false, br);
-        // Высокая тулья: ярусы сужаются и заваливаются назад, кончик заломлен.
-        double[][] tiers = {{8.6, 1.25}, {7.6, 1.25}, {6.5, 1.2}, {5.4, 1.15}, {4.3, 1.1}};
+        // Высокая тулья: много тонких ярусов, чтобы конус шёл почти гладко и плавно заваливался назад.
+        int steps = 13;
         double ty = -9.25, tz = 0;
-        for (double[] tr : tiers) {
-            ty -= tr[1];
-            tz += 0.45;
-            b.box("head", -tr[0] / 2, ty, -tr[0] / 2 + tz, tr[0], tr[1], tr[0], 0, "leather", "folds");
+        for (int i = 0; i < steps; i++) {
+            double k = i / (steps - 1.0), size = 8.6 - 5.0 * k, hgt = 0.5;
+            ty -= hgt;
+            tz = 2.4 * k * k;
+            b.box("head", -size / 2, ty, -size / 2 + tz, size, hgt, size, 0, "leather", "smooth");
         }
         int t1 = b.part("head", -1, 0, ty, tz, -30 * P, 0, 0, -1.6, -2.4, -1.6, 3.2, 2.4, 3.2, 0, "leather");
         int t2 = b.part("head", t1, 0, -2.4, 0, -40 * P, 0, 0, -1.1, -2.2, -1.1, 2.2, 2.2, 2.2, 0, "leather");
@@ -722,7 +723,9 @@ public class ArmorGen {
                 if (fy < 0.55 || fx < 0.45) col = mix(col, p.h(), 0.28);
                 else if (fy > fh - 0.5 || fx > fw - 0.45) col = mix(col, p.d(), 0.3);
             }
-            if (fx < 0.25 || fy < 0.25 || fx > fw - 0.25 || fy > fh - 0.25) col = mix(col, p.o(), 0.5);
+            // Тонкие ярусы гладкого конуса: ровный цвет без контура, иначе каждый ярус читается полоской.
+            if (deco.contains("smooth")) col = shade(p.m(), 1 + (hash(px / 2.0, py / 2.0, 17) - 0.5) * 0.12);
+            else if (fx < 0.25 || fy < 0.25 || fx > fw - 0.25 || fy > fh - 0.25) col = mix(col, p.o(), 0.5);
             double light = switch (f) {
                 case TOP -> 1.1;
                 case BOTTOM -> 0.75;
