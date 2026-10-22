@@ -32,9 +32,11 @@ public class OrderBoardScreen extends Screen {
     private final BlockPos pos;
     private final List<Order> offers;
     private int seenVersion = -1;
+    private final boolean bounty;
 
-    public OrderBoardScreen(BlockPos pos, List<Order> offers) {
-        super(Component.translatable("screen.heroicpaths.order_board"));
+    public OrderBoardScreen(BlockPos pos, List<Order> offers, boolean bounty) {
+        super(Component.translatable(bounty ? "screen.heroicpaths.bounty_board" : "screen.heroicpaths.order_board"));
+        this.bounty = bounty;
         this.pos = pos;
         this.offers = List.copyOf(offers);
     }
@@ -120,7 +122,7 @@ public class OrderBoardScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, 8, 0xFFD27F);
-        List<FormattedCharSequence> hint = font.split(Component.translatable("screen.heroicpaths.order_hint"), Math.max(120, width - 30));
+        List<FormattedCharSequence> hint = font.split(Component.translatable(bounty ? "screen.heroicpaths.bounty_hint" : "screen.heroicpaths.order_hint"), Math.max(120, width - 30));
         for (int i = 0; i < Math.min(2, hint.size()); i++) graphics.drawCenteredString(font, hint.get(i), width / 2, 19 + i * 10, 0x9A9A9A);
 
         int column = columnWidth();

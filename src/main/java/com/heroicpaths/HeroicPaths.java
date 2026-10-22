@@ -74,6 +74,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.TwoHandedGrip.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.ClassTraits.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.guild.GuildOrders.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.guild.BountyHerald.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.Finishers.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.minion.CompanionManager.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.minion.MinionEvents.class);

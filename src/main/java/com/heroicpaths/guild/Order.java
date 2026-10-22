@@ -1,5 +1,6 @@
 package com.heroicpaths.guild;
 
+import com.heroicpaths.dungeon.DungeonType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -28,8 +29,15 @@ public record Order(String id, OrderType type, String target, String targetKey, 
     public static final int[] TIER_MIN_LEVEL = {1, 15, 30};
     private static final ChatFormatting[] TIER_COLORS = {ChatFormatting.GREEN, ChatFormatting.AQUA, ChatFormatting.LIGHT_PURPLE};
 
+    /** Наказы на боссов хранят в {@code tier} номер данжа, и уровень берётся у него. */
     public int minLevel() {
+        if (type == OrderType.BOSS) return bossDungeon().minLevel();
         return TIER_MIN_LEVEL[Math.max(0, Math.min(2, tier))];
+    }
+
+    public DungeonType bossDungeon() {
+        DungeonType[] types = DungeonType.values();
+        return types[Math.max(0, Math.min(types.length - 1, tier))];
     }
 
     public Order withProgress(int value) {
@@ -46,6 +54,9 @@ public record Order(String id, OrderType type, String target, String targetKey, 
     }
 
     public MutableComponent tierName() {
+        if (type == OrderType.BOSS) {
+            return Component.translatable("dungeon.heroicpaths." + bossDungeon().id()).withStyle(ChatFormatting.RED);
+        }
         return Component.translatable("order.heroicpaths.tier." + tier).withStyle(TIER_COLORS[Math.max(0, Math.min(2, tier))]);
     }
 

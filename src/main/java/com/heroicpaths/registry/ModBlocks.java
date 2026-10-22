@@ -71,6 +71,9 @@ public final class ModBlocks {
                     .strength(3f, 6f).lightLevel(state -> 6)));
 
     /** Доска заказов гильдии искателей приключений (рабочее место распорядителя гильдии). */
+    /** Доска наказов глашатая гильдии: наказы на боссов данжей. */
+    public static final DeferredBlock<com.heroicpaths.guild.BountyBoardBlock> BOUNTY_BOARD = BLOCKS.register("bounty_board",
+            () -> new com.heroicpaths.guild.BountyBoardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DARK_OAK_PLANKS).strength(2.5f)));
     public static final DeferredBlock<com.heroicpaths.guild.OrderBoardBlock> ORDER_BOARD = BLOCKS.register("order_board",
             () -> new com.heroicpaths.guild.OrderBoardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS).strength(2.5f)));
 

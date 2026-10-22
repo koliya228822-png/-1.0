@@ -1,5 +1,7 @@
 package com.heroicpaths.guild;
 
+import com.heroicpaths.HeroicPaths;
+import com.heroicpaths.dungeon.DungeonType;
 import com.heroicpaths.item.AbilityBookItem;
 import com.heroicpaths.registry.ModItems;
 import com.heroicpaths.rpg.ability.AbilityDef;
@@ -13,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.heroicpaths.guild.OrderType.BOSS;
 import static com.heroicpaths.guild.OrderType.DELIVERY;
 import static com.heroicpaths.guild.OrderType.DUNGEON;
 import static com.heroicpaths.guild.OrderType.GATHER;
@@ -106,6 +109,30 @@ public final class OrderCatalog {
                     bonus(tier, random), 0));
         }
         return result;
+    }
+
+    /**
+     * Наказы глашатая на этот день: по одному на босса каждого данжа. Награда вдвое больше, чем за обычный проход,
+     * а сверху — камень душ, у старших боссов — искра реликвии. Номер данжа хранится в {@code tier}.
+     */
+    public static List<Order> bounties(long day, BlockPos board) {
+        List<Order> result = new ArrayList<>();
+        for (DungeonType type : DungeonType.values()) {
+            String boss = HeroicPaths.MODID + ":" + type.bossId();
+            String id = "d" + day + ":b" + board.asLong() + ":" + type.id();
+            result.add(new Order(id, BOSS, boss, "entity." + HeroicPaths.MODID + "." + type.bossId(), net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(type.trophy()).toString(), 1,
+                    type.ordinal(), type.rewardXp() * 2, type.rewardEmeralds() * 2, bountyBonus(type), 0));
+        }
+        return result;
+    }
+
+    private static ItemStack bountyBonus(DungeonType type) {
+        return switch (type) {
+            case CRYPT, SPIDER_LAIR -> new ItemStack(ModItems.LESSER_SOUL_STONE.get());
+            case FORGE, SUNKEN_TEMPLE -> new ItemStack(ModItems.GREATER_SOUL_STONE.get());
+            case FROST -> new ItemStack(ModItems.ANCIENT_SOUL_STONE.get());
+            case NECROPOLIS -> new ItemStack(ModItems.RELIC_SPARK.get());
+        };
     }
 
     /** Дополнительная награда: эликсир у новичков, кристаллы и топазы у опытных, рубины или книга умения у ветеранов. */

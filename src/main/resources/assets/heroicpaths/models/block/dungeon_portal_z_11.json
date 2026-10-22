@@ -1,0 +1,20 @@
+{
+  "render_type": "minecraft:translucent",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "heroicpaths:block/dungeon_portal_gate",
+    "portal": "heroicpaths:block/dungeon_portal_gate"
+  },
+  "elements": [
+    {
+      "from": [7.5, 0, 0],
+      "to": [8.5, 16, 16],
+      "shade": false,
+      "neoforge_data": { "block_light": 15, "sky_light": 15 },
+      "faces": {
+        "east": { "uv": [0, 0, 5.3333, 4], "texture": "#portal" },
+        "west": { "uv": [10.6667, 0, 16, 4], "texture": "#portal" }
+      }
+    }
+  ]
+}

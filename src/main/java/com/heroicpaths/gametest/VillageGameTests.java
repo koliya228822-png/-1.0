@@ -62,8 +62,7 @@ public class VillageGameTests {
     private static final Map<String, DeferredBlock<? extends Block>> WORKSTATIONS = Map.of(
             "swordmaster_guild", ModBlocks.WEAPON_RACK,
             "archer_guild", ModBlocks.ARCHERY_TARGET,
-            "mage_guild", ModBlocks.ARCANE_LECTERN,
-            "adventurers_guild", ModBlocks.ORDER_BOARD);
+            "mage_guild", ModBlocks.ARCANE_LECTERN);
 
     private static Registry<StructureTemplatePool> pools(ServerLevel level) {
         return level.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);

@@ -29,6 +29,9 @@ public final class ModVillagers {
     public static final DeferredHolder<PoiType, PoiType> GUILDMASTER_POI =
             POI_TYPES.register("guildmaster", () -> workstation(ModBlocks.ORDER_BOARD.get()));
 
+    public static final DeferredHolder<PoiType, PoiType> BOUNTY_HERALD_POI =
+            POI_TYPES.register("bounty_herald", () -> workstation(ModBlocks.BOUNTY_BOARD.get()));
+
     public static final DeferredHolder<VillagerProfession, VillagerProfession> SWORDMASTER =
             PROFESSIONS.register("swordmaster", () -> profession("swordmaster", SWORDMASTER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
     public static final DeferredHolder<VillagerProfession, VillagerProfession> MASTER_ARCHER =
@@ -38,6 +41,9 @@ public final class ModVillagers {
     /** Распорядитель гильдии искателей приключений. */
     public static final DeferredHolder<VillagerProfession, VillagerProfession> GUILDMASTER =
             PROFESSIONS.register("guildmaster", () -> profession("guildmaster", GUILDMASTER_POI.getKey(), SoundEvents.VILLAGER_WORK_CARTOGRAPHER));
+    /** Глашатай гильдии: выдаёт наказы на боссов данжей. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> BOUNTY_HERALD =
+            PROFESSIONS.register("bounty_herald", () -> profession("bounty_herald", BOUNTY_HERALD_POI.getKey(), SoundEvents.VILLAGER_WORK_ARMORER));
 
     private ModVillagers() {}
 

@@ -200,16 +200,16 @@ public class GateAltarBlockEntity extends BlockEntity {
         Direction facing = getBlockState().getValue(HorizontalDirectionalBlock.FACING);
         Direction lateral = facing.getClockWise();
         BlockPos base = worldPosition.relative(facing, 2);
-        BlockState portal = ModBlocks.DUNGEON_PORTAL.get().defaultBlockState()
-                .setValue(BlockStateProperties.HORIZONTAL_AXIS, lateral.getAxis());
+        java.util.List<BlockPos> cells = new java.util.ArrayList<>();
         for (int side = -1; side <= 1; side++) {
             for (int y = 0; y < 4; y++) {
                 BlockPos pos = base.relative(lateral, side).above(y);
                 BlockState current = level.getBlockState(pos);
-                if (open && current.isAir()) level.setBlock(pos, portal, 3);
+                if (open && (current.isAir() || current.is(ModBlocks.DUNGEON_PORTAL.get()))) cells.add(pos);
                 else if (!open && current.is(ModBlocks.DUNGEON_PORTAL.get())) level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
+        if (open && !cells.isEmpty()) DungeonPortalBlock.fill(level, cells, lateral.getAxis());
     }
 
     /** Ищет открытый алтарь рядом с порталом. */

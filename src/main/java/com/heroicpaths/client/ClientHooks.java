@@ -30,7 +30,7 @@ public final class ClientHooks {
             com.heroicpaths.guild.Order order = com.heroicpaths.guild.Order.load(minecraft.level.registryAccess(), (net.minecraft.nbt.CompoundTag) tag);
             if (order != null) offers.add(order);
         }
-        minecraft.setScreen(new OrderBoardScreen(pos, offers));
+        minecraft.setScreen(new OrderBoardScreen(pos, offers, offersTag.getBoolean("bounty")));
     }
 
     public static void setParty(List<PartySyncPayload.Member> members) {
