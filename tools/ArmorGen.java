@@ -19,7 +19,7 @@ import java.util.Random;
  * раскладка их развёрток по текстуре 128×128 и сама текстура: рисуется в 4 раза подробнее и уменьшается
  * до 128×128 усреднением, чтобы мелкий рисунок (стёжка, кольчуга, узоры) не пропадал.
  * Пишет текстуры в textures/models/armor3d/, данные моделей в client/armor/ArmorShapes.java
- * и иконки предметов брони (textures/item/) — отрисовку тех же деталей в 3/4.
+ * и плоские иконки предметов брони (textures/item/), снятые с тех же деталей.
  *
  * Координаты — как у моделей Minecraft: y вниз, лицо смотрит в −z; детали рук и ног задаются для правой
  * стороны и зеркалятся на левую. Запуск: java tools/ArmorGen.java .
@@ -930,31 +930,40 @@ public class ArmorGen {
     }
 
     // =====================================================================================
-    // Иконки предметов: та же объёмная броня, отрисованная в 3/4
+    // Иконки предметов: плоские, как у ванильной брони, но снятые с той же объёмной брони
     // =====================================================================================
 
-    static final int ICON = 64, SS = 4;
+    static final int ICON = 32, SS = 8;
     /** Точки поворота костей, как у модели гуманоида. */
     static final double[][] BONE_PIVOT = {{0, 0, 0}, {0, 0, 0}, {-5, 2, 0}, {5, 2, 0}, {-1.9, 12, 0}, {1.9, 12, 0}};
 
     /**
-     * Иконка слота: детали комплекта с его же текстурой (подробной, до уменьшения), повёрнутые на 3/4 и
-     * освещённые сверху слева; рисуется в SS раз крупнее, уменьшается и обводится тёмным контуром.
+     * Плоская иконка слота, как ванильная: шлем, нагрудник и поножи — вид спереди, ботинки — два ботинка сбоку
+     * (дальний чуть выше и правее). Детали комплекта рисуются с его же текстурой (подробной, до уменьшения)
+     * в SS раз крупнее, уменьшаются до пиксельной иконки и обводятся тёмным контуром.
      */
     static BufferedImage icon(Builder b, String slot, BufferedImage tex) {
         List<Cube> cubes = b.slots.get(slot);
-        double yaw = (slot.equals("head") ? 32 : 24) * P, pitch = (slot.equals("head") ? 22 : 14) * P;
-        // Вид: поворот вокруг вертикали, затем наклон, чтобы смотреть чуть сверху (y модели — вниз).
-        double[][] view = mul(rotX(pitch), rotY(yaw));
-        List<double[][]> quads = new ArrayList<>();
-        for (int i = 0; i < cubes.size(); i++) {
-            double[][] m = mul(view, partMatrix(cubes, i));
-            for (double[][] face : faces(cubes.get(i))) {
-                double[][] q = new double[4][];
-                for (int k = 0; k < 4; k++) q[k] = apply(m, face[k]);
-                quads.add(q);
-            }
+        boolean boots = slot.equals("feet");
+        List<double[][]> views = new ArrayList<>();
+        if (boots) {
+            // Сбоку носком влево: дальний ботинок сдвинут вправо-вверх и стоит глубже.
+            views.add(mul(translate(3.5, -1.5, 6), rotY(90 * P)));
+            views.add(rotY(90 * P));
+        } else {
+            views.add(translate(0, 0, 0));
         }
+        List<double[][]> quads = new ArrayList<>();
+        for (double[][] view : views)
+            for (int i = 0; i < cubes.size(); i++) {
+                if (boots && cubes.get(i).bone == 5) continue;
+                double[][] m = mul(view, partMatrix(cubes, i));
+                for (double[][] face : faces(cubes.get(i))) {
+                    double[][] q = new double[4][];
+                    for (int k = 0; k < 4; k++) q[k] = apply(m, face[k]);
+                    quads.add(q);
+                }
+            }
         double minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
         for (double[][] q : quads)
             for (double[] p : q) {
@@ -964,7 +973,7 @@ public class ArmorGen {
                 maxY = Math.max(maxY, p[1]);
             }
         int size = ICON * SS;
-        double scale = (size - 2 * 3 * SS) / Math.max(maxX - minX, maxY - minY);
+        double scale = (size - 2 * SS) / Math.max(maxX - minX, maxY - minY);
         double ox = size / 2.0 - (minX + maxX) / 2 * scale, oy = size / 2.0 - (minY + maxY) / 2 * scale;
         BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         double[] depth = new double[size * size];
