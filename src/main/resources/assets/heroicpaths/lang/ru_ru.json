@@ -1109,8 +1109,6 @@
   "hud.heroicpaths.charge": "Заряд %s%%",
   "hud.heroicpaths.charge_full": "Полный заряд",
   "hud.heroicpaths.mob_level": "Ур. %s",
-  "hud.heroicpaths.mob_base": "обычно %s",
-  "hud.heroicpaths.resist": "Сопротивление: %s",
   "hud.heroicpaths.resist.physical": "ближний бой",
   "hud.heroicpaths.resist.projectile": "стрелы и снаряды",
   "hud.heroicpaths.resist.magic": "магия",

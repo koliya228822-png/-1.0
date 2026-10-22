@@ -77,6 +77,7 @@ public class HeroicPathsClient {
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onScreenRender);
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onMouseClick);
         NeoForge.EVENT_BUS.addListener(HeroicPathsClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(MobPlates::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(HeroicPathsClient::onTooltip);
     }
 
@@ -149,7 +150,6 @@ public class HeroicPathsClient {
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(HeroicPaths.id("rpg_hud"), new RpgHudLayer());
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("cast_bar"), new CastBarLayer());
-        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("mob_info"), new MobInfoLayer());
     }
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
