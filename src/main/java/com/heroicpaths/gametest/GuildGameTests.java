@@ -173,6 +173,41 @@ public class GuildGameTests {
             helper.assertTrue(pool != null && !pool.templates.isEmpty(), "missing pool " + mentor);
         }
         helper.assertTrue(ModVillagers.GUILDMASTER_POI.get().is(ModBlocks.ORDER_BOARD.get().defaultBlockState()), "the order board must be the guildmaster's workstation");
+        helper.assertTrue(ModVillagers.BOUNTY_HERALD_POI.get().is(ModBlocks.BOUNTY_BOARD.get().defaultBlockState()), "the bounty board must be the herald's workstation");
+        helper.succeed();
+    }
+
+    /** Глашатай: на доске наказов по наказу на босса каждого данжа, уровень — как у данжа, засчитывается всем у босса. */
+    @GameTest(template = ARENA)
+    public static void bossBountiesFromTheHerald(GameTestHelper helper) {
+        ServerPlayer player = adventurer(helper);
+        ServerLevel level = helper.getLevel();
+        BlockPos board = player.blockPosition().east(2);
+        level.setBlockAndUpdate(board, ModBlocks.BOUNTY_BOARD.get().defaultBlockState());
+        List<Order> bounties = GuildOrders.offers(level, board);
+        helper.assertTrue(bounties.size() == DungeonType.values().length, "the herald must offer one bounty per dungeon boss");
+        for (int i = 0; i < bounties.size(); i++) {
+            Order bounty = bounties.get(i);
+            DungeonType type = DungeonType.values()[i];
+            helper.assertTrue(bounty.type() == OrderType.BOSS && bounty.minLevel() == type.minLevel(), "bad bounty " + bounty.id());
+            helper.assertTrue(BuiltInRegistries.ENTITY_TYPE.containsKey(ResourceLocation.parse(bounty.target())), "unknown boss " + bounty.target());
+            helper.assertTrue(!bounty.iconStack().isEmpty() && !bounty.bonus().isEmpty(), "bounty " + bounty.id() + " needs an icon and a bonus");
+        }
+        RpgData data = RpgManager.get(player);
+        helper.assertTrue(GuildOrders.take(player, board, 0), "a level 1 hero must be able to take the clay colossus bounty");
+        helper.assertTrue(!GuildOrders.take(player, board, DungeonType.values().length - 1), "the necropolis bounty needs level 50");
+
+        LivingEntity colossus = (LivingEntity) helper.spawn(ModEntities.CLAY_COLOSSUS.get(), new BlockPos(6, 2, 6));
+        LivingEntity spider = (LivingEntity) helper.spawn(ModEntities.SPIDER_QUEEN.get(), new BlockPos(2, 2, 6));
+        GuildOrders.onBossKilled(level, spider, null);
+        helper.assertTrue(!data.getOrders().get(0).isDone(), "another boss must not count");
+        GuildOrders.onBossKilled(level, colossus, null);
+        helper.assertTrue(data.getOrders().get(0).isDone(), "a player next to the slain boss must get the bounty");
+        player.getInventory().clearContent();
+        helper.assertTrue(GuildOrders.turnIn(player, board, 0), "the bounty was not turned in");
+        helper.assertTrue(player.getInventory().countItem(ModItems.LESSER_SOUL_STONE.get()) == 1, "the colossus bounty pays a lesser soul stone");
+        colossus.discard();
+        spider.discard();
         helper.succeed();
     }
 

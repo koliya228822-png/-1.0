@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/nether_portal_ns",
-  "render_type": "minecraft:translucent",
-  "textures": {
-    "particle": "heroicpaths:block/dungeon_portal",
-    "portal": "heroicpaths:block/dungeon_portal"
-  }
-}

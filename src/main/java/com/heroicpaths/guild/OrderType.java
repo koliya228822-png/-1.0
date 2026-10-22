@@ -15,7 +15,9 @@ public enum OrderType {
     /** Добыть N блоков (руды, брёвна). */
     GATHER,
     /** Зачистить данж (убить его босса). */
-    DUNGEON;
+    DUNGEON,
+    /** Наказ глашатая гильдии: убить босса данжа (засчитывается всем игрокам у босса и их группам). */
+    BOSS;
 
     public String id() {
         return name().toLowerCase(Locale.ROOT);

@@ -43,6 +43,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import com.heroicpaths.dungeon.DungeonPortalBlock;
+import com.heroicpaths.registry.ModVillagers;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
@@ -399,7 +403,10 @@ public class DungeonPortalGameTests {
         helper.succeed();
     }
 
-    /** Во всех пяти типах деревень центром становится площадь с алтарём, рамкой врат и досками заданий. */
+    /**
+     * Во всех пяти типах деревень центром становится зал гильдии: помост с алтарём и аркой врат, доски заданий,
+     * доски заказов распорядителя, доска наказов глашатая и сами распорядитель с глашатаем.
+     */
     @GameTest(template = ARENA, batch = "gate_plazas", timeoutTicks = 300)
     public static void gatePlazasHaveWorkingAltar(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -411,27 +418,43 @@ public class DungeonPortalGameTests {
             helper.assertTrue(centers != null, "missing " + VillageInjector.townCentersPool(biome));
             String plazaId = VillageInjector.plazaTemplate(biome).toString();
             long plazas = centers.templates.stream().filter(e -> e.toString().contains(plazaId)).count();
-            helper.assertTrue(plazas * 2 > centers.templates.size(), biome + " town centers are not mostly gate plazas");
+            helper.assertTrue(plazas * 2 > centers.templates.size(), biome + " town centers are not mostly guild halls");
 
             StructureTemplate plaza = level.getStructureManager().get(VillageInjector.plazaTemplate(biome)).orElse(null);
             helper.assertTrue(plaza != null, "missing template " + plazaId);
-            BlockPos pos = origin.offset(index++ * 24, 0, 0);
+            BlockPos pos = origin.offset(index++ * 40, 0, 0);
             plaza.placeInWorld(level, pos, pos, new StructurePlaceSettings(), level.getRandom(), Block.UPDATE_CLIENTS);
-            BlockPos altarPos = pos.offset(7, 1, 9);
-            helper.assertTrue(level.getBlockState(altarPos).is(ModBlocks.GATE_ALTAR.get()), biome + " plaza has no altar at " + altarPos);
-            helper.assertTrue(level.getBlockState(altarPos).getValue(HorizontalDirectionalBlock.FACING) == Direction.SOUTH,
+            BoundingBox hall = BoundingBox.fromCorners(pos, pos.offset(plaza.getSize().getX() - 1, plaza.getSize().getY() - 1, plaza.getSize().getZ() - 1));
+            BlockPos altarPos = pos.offset(17, 2, 10);
+            helper.assertTrue(level.getBlockState(altarPos).is(ModBlocks.GATE_ALTAR.get()), biome + " hall has no altar at " + altarPos);
+            helper.assertTrue(level.getBlockState(altarPos).getValue(HorizontalDirectionalBlock.FACING) == Direction.NORTH,
                     biome + " altar must face the gate");
-            helper.assertTrue(countBlocks(level, BoundingBox.fromCorners(pos, pos.offset(14, 7, 14)), ModBlocks.QUEST_BOARD.get()) >= 2,
-                    biome + " plaza must have quest boards");
+            helper.assertTrue(countBlocks(level, hall, ModBlocks.QUEST_BOARD.get()) >= 2, biome + " hall must have quest boards");
+            helper.assertTrue(countBlocks(level, hall, ModBlocks.ORDER_BOARD.get()) >= 2, biome + " hall must have order boards");
+            helper.assertTrue(countBlocks(level, hall, ModBlocks.BOUNTY_BOARD.get()) == 1, biome + " hall must have the herald's bounty board");
+            AABB box = AABB.of(hall);
+            var villagers = level.getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, box);
+            helper.assertTrue(villagers.stream().anyMatch(v -> v.getVillagerData().getProfession() == ModVillagers.GUILDMASTER.get()),
+                    biome + " hall has no guildmaster");
+            helper.assertTrue(villagers.stream().anyMatch(v -> v.getVillagerData().getProfession() == ModVillagers.BOUNTY_HERALD.get()),
+                    biome + " hall has no herald");
             GateAltarBlockEntity altar = (GateAltarBlockEntity) level.getBlockEntity(altarPos);
             helper.assertTrue(altar != null, biome + " altar has no block entity");
             altar.setPortal(true);
-            int portals = countBlocks(level, BoundingBox.fromCorners(pos, pos.offset(14, 7, 14)), ModBlocks.DUNGEON_PORTAL.get());
+            int portals = countBlocks(level, hall, ModBlocks.DUNGEON_PORTAL.get());
             helper.assertTrue(portals == 12, biome + " gate frame must hold a 3x4 portal, got " + portals);
-            helper.assertTrue(GateAltarBlockEntity.findNear(level, pos.offset(7, 2, 11)) == null, "a closed altar must not be found");
+            // Проём рисуется одной воронкой: у каждой клетки своя часть.
+            java.util.Set<Integer> parts = new java.util.HashSet<>();
+            for (BlockPos p : BlockPos.betweenClosed(pos.offset(16, 2, 8), pos.offset(18, 5, 8))) {
+                BlockState state = level.getBlockState(p);
+                helper.assertTrue(state.is(ModBlocks.DUNGEON_PORTAL.get()), biome + " portal missing at " + p);
+                parts.add(state.getValue(DungeonPortalBlock.PART));
+            }
+            helper.assertTrue(parts.size() == 12 && !parts.contains(DungeonPortalBlock.LONE), biome + " portal parts must be distinct: " + parts);
+            helper.assertTrue(GateAltarBlockEntity.findNear(level, pos.offset(17, 3, 8)) == null, "a closed altar must not be found");
             altar.setPortal(false);
-            helper.assertTrue(countBlocks(level, BoundingBox.fromCorners(pos, pos.offset(14, 7, 14)), ModBlocks.DUNGEON_PORTAL.get()) == 0,
-                    biome + " portal did not close");
+            helper.assertTrue(countBlocks(level, hall, ModBlocks.DUNGEON_PORTAL.get()) == 0, biome + " portal did not close");
+            for (var villager : villagers) villager.discard();
         }
         helper.runAfterDelay(40, helper::succeed);
     }

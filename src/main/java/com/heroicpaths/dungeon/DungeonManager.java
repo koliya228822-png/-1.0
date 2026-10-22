@@ -642,9 +642,7 @@ public final class DungeonManager {
                         && level.getBlockState(center.offset(ax * 2, y, az * 2)).is(Blocks.OBSIDIAN);
             for (int i = -1; i <= 1 && ok; i++) ok = level.getBlockState(center.offset(ax * i, 4, az * i)).is(Blocks.OBSIDIAN);
             if (!ok) continue;
-            BlockState portal = ModBlocks.DUNGEON_PORTAL.get().defaultBlockState()
-                    .setValue(BlockStateProperties.HORIZONTAL_AXIS, ax == 1 ? Direction.Axis.X : Direction.Axis.Z);
-            for (BlockPos pos : inside) level.setBlock(pos, portal, 3);
+            DungeonPortalBlock.fill(level, inside, ax == 1 ? Direction.Axis.X : Direction.Axis.Z);
             BlockPos middle = center.above(2);
             level.sendParticles(ParticleTypes.REVERSE_PORTAL, middle.getX() + 0.5, middle.getY(), middle.getZ() + 0.5, 80, 1.2, 1.2, 1.2, 0.1);
             level.playSound(null, middle, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 1f, 1.2f);

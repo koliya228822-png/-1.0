@@ -1,6 +1,30 @@
 {
   "variants": {
-    "axis=x": { "model": "heroicpaths:block/dungeon_portal_ns" },
-    "axis=z": { "model": "heroicpaths:block/dungeon_portal_ew" }
+    "axis=x,part=0": { "model": "heroicpaths:block/dungeon_portal_x_0" },
+    "axis=x,part=1": { "model": "heroicpaths:block/dungeon_portal_x_1" },
+    "axis=x,part=2": { "model": "heroicpaths:block/dungeon_portal_x_2" },
+    "axis=x,part=3": { "model": "heroicpaths:block/dungeon_portal_x_3" },
+    "axis=x,part=4": { "model": "heroicpaths:block/dungeon_portal_x_4" },
+    "axis=x,part=5": { "model": "heroicpaths:block/dungeon_portal_x_5" },
+    "axis=x,part=6": { "model": "heroicpaths:block/dungeon_portal_x_6" },
+    "axis=x,part=7": { "model": "heroicpaths:block/dungeon_portal_x_7" },
+    "axis=x,part=8": { "model": "heroicpaths:block/dungeon_portal_x_8" },
+    "axis=x,part=9": { "model": "heroicpaths:block/dungeon_portal_x_9" },
+    "axis=x,part=10": { "model": "heroicpaths:block/dungeon_portal_x_10" },
+    "axis=x,part=11": { "model": "heroicpaths:block/dungeon_portal_x_11" },
+    "axis=x,part=12": { "model": "heroicpaths:block/dungeon_portal_x_12" },
+    "axis=z,part=0": { "model": "heroicpaths:block/dungeon_portal_z_0" },
+    "axis=z,part=1": { "model": "heroicpaths:block/dungeon_portal_z_1" },
+    "axis=z,part=2": { "model": "heroicpaths:block/dungeon_portal_z_2" },
+    "axis=z,part=3": { "model": "heroicpaths:block/dungeon_portal_z_3" },
+    "axis=z,part=4": { "model": "heroicpaths:block/dungeon_portal_z_4" },
+    "axis=z,part=5": { "model": "heroicpaths:block/dungeon_portal_z_5" },
+    "axis=z,part=6": { "model": "heroicpaths:block/dungeon_portal_z_6" },
+    "axis=z,part=7": { "model": "heroicpaths:block/dungeon_portal_z_7" },
+    "axis=z,part=8": { "model": "heroicpaths:block/dungeon_portal_z_8" },
+    "axis=z,part=9": { "model": "heroicpaths:block/dungeon_portal_z_9" },
+    "axis=z,part=10": { "model": "heroicpaths:block/dungeon_portal_z_10" },
+    "axis=z,part=11": { "model": "heroicpaths:block/dungeon_portal_z_11" },
+    "axis=z,part=12": { "model": "heroicpaths:block/dungeon_portal_z_12" }
   }
 }

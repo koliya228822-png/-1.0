@@ -20,11 +20,9 @@ import java.util.List;
  */
 public final class VillageInjector {
     public static final List<String> BIOMES = List.of("plains", "desert", "savanna", "snowy", "taiga");
-    public static final List<String> GUILDS = List.of("swordmaster_guild", "archer_guild", "mage_guild", "adventurers_guild");
+    public static final List<String> GUILDS = List.of("swordmaster_guild", "archer_guild", "mage_guild");
     /** Вес каждой гильдии в пуле домов. Для сравнения: у обычных домов равнин вес 2–3. */
     private static final int GUILD_WEIGHT = 4;
-    /** Гильдия искателей приключений встречается чаще: в ней все заказы. */
-    private static final int ADVENTURERS_WEIGHT = 7;
 
     private VillageInjector() {}
 
@@ -90,8 +88,8 @@ public final class VillageInjector {
                 StructurePoolElement element = StructurePoolElement
                         .single(guildTemplate(biome, guild).toString(), noProcessors)
                         .apply(StructureTemplatePool.Projection.RIGID);
-                int weight = guild.equals("adventurers_guild") ? ADVENTURERS_WEIGHT : GUILD_WEIGHT;
-                for (int i = 0; i < weight; i++) pool.templates.add(element);
+
+                for (int i = 0; i < GUILD_WEIGHT; i++) pool.templates.add(element);
             }
             HeroicPaths.LOGGER.info("Added class guilds to {}: {} -> {} entries", housesPool(biome), before, pool.templates.size());
         }

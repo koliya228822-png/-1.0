@@ -61,6 +61,7 @@ public class OrderBoardBlock extends HorizontalDirectionalBlock {
         for (Order order : GuildOrders.offers(player.serverLevel(), pos)) list.add(order.save(player.registryAccess()));
         CompoundTag tag = new CompoundTag();
         tag.put("offers", list);
+        tag.putBoolean("bounty", player.level().getBlockState(pos).getBlock() instanceof BountyBoardBlock);
         return tag;
     }
 }

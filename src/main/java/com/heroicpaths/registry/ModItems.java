@@ -63,6 +63,7 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> DUNGEON_GATE = ITEMS.registerSimpleBlockItem("dungeon_gate", ModBlocks.DUNGEON_GATE,
             new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<BlockItem> ORDER_BOARD = ITEMS.registerSimpleBlockItem("order_board", ModBlocks.ORDER_BOARD);
+    public static final DeferredItem<BlockItem> BOUNTY_BOARD = ITEMS.registerSimpleBlockItem("bounty_board", ModBlocks.BOUNTY_BOARD);
 
     // Трофеи боссов: из них крафтятся свитки доступа в следующий данж
     public static final DeferredItem<TrophyItem> CRYPT_CROWN_SHARD = ITEMS.register("crypt_crown_shard",

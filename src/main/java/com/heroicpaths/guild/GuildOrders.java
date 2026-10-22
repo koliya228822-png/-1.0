@@ -1,6 +1,7 @@
 package com.heroicpaths.guild;
 
 import com.heroicpaths.dungeon.DungeonType;
+import com.heroicpaths.entity.DungeonBoss;
 import com.heroicpaths.minion.Minion;
 import com.heroicpaths.party.PartyManager;
 import com.heroicpaths.rpg.RpgData;
@@ -40,6 +41,7 @@ public final class GuildOrders {
     public static final int MAX_ACTIVE = 3;
     /** Как далеко от доски можно брать и сдавать заказы (квадрат расстояния). */
     public static final double BOARD_RANGE_SQR = 8 * 8;
+    public static final double BOUNTY_RANGE_SQR = 24 * 24;
     public static final long DAY_TICKS = 24000L;
 
     private GuildOrders() {}
@@ -52,13 +54,18 @@ public final class GuildOrders {
         return "d" + day + ":";
     }
 
+    /** На доске наказов глашатая — наказы на боссов, на обычной доске заказов — заказы дня. */
     public static List<Order> offers(ServerLevel level, BlockPos board) {
+        if (level.getBlockState(board).getBlock() instanceof BountyBoardBlock) return OrderCatalog.bounties(day(level), board);
         return OrderCatalog.offers(level.getSeed(), day(level), board);
     }
 
     private static boolean nearBoard(ServerPlayer player, BlockPos board) {
-        return player.level().getBlockState(board).getBlock() instanceof OrderBoardBlock
-                && player.distanceToSqr(board.getCenter()) <= BOARD_RANGE_SQR;
+        net.minecraft.world.level.block.Block block = player.level().getBlockState(board).getBlock();
+        // Наказы берут у глашатая, а он ходит по залу гильдии, поэтому до его доски можно быть дальше.
+        double range = block instanceof BountyBoardBlock ? BOUNTY_RANGE_SQR : BOARD_RANGE_SQR;
+        return block instanceof OrderBoardBlock
+                && player.distanceToSqr(board.getCenter()) <= range;
     }
 
     private static void tell(ServerPlayer player, Component message, ChatFormatting color) {
@@ -208,9 +215,22 @@ public final class GuildOrders {
     public static void onDeath(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
         if (victim instanceof Player || !(victim.level() instanceof ServerLevel level)) return;
+        if (victim instanceof DungeonBoss) onBossKilled(level, victim, creditedPlayer(event.getSource().getEntity()));
         ServerPlayer player = creditedPlayer(event.getSource().getEntity());
         if (player == null) return;
         progress(level.getServer(), List.of(player), OrderType.HUNT, order -> order.matchesEntity(victim.getType()));
+    }
+
+    /** Как далеко от убитого босса игроки получают засчитанный наказ. */
+    public static final double BOSS_CREDIT_RANGE = 48;
+
+    /** Босс убит: наказ засчитывается убийце и всем игрокам в его логове, а через них — их группам. */
+    public static void onBossKilled(ServerLevel level, LivingEntity boss, @Nullable ServerPlayer killer) {
+        List<ServerPlayer> witnesses = new ArrayList<>(level.getEntitiesOfClass(ServerPlayer.class,
+                boss.getBoundingBox().inflate(BOSS_CREDIT_RANGE), player -> !player.isSpectator()));
+        if (killer != null && !witnesses.contains(killer)) witnesses.add(killer);
+        if (witnesses.isEmpty()) return;
+        progress(level.getServer(), witnesses, OrderType.BOSS, order -> order.matchesEntity(boss.getType()));
     }
 
     @SubscribeEvent
