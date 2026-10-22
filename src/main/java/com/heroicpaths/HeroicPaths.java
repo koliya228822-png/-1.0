@@ -62,6 +62,7 @@ public class HeroicPaths {
 
         NeoForge.EVENT_BUS.register(RpgEvents.class);
         NeoForge.EVENT_BUS.register(MentorEvents.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.village.MentorHomes.class);
         NeoForge.EVENT_BUS.register(ItemRarity.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.CraftEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.SoulStones.class);

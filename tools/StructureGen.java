@@ -1614,176 +1614,381 @@ public class StructureGen {
         return "{\n  \"fallback\": \"" + fallback + "\",\n  \"elements\": [\n" + elements + "\n  ]\n}\n";
     }
 
-    // ---------------------------------------------------------------- здания
+    // ---------------------------------------------------------------- дома наставников
 
-    /** Зал 7x9 (x = 1..7, z = 0..8); x = 0 — крыльцо с jigsaw-входом. Глубина 8 помещается на участки пустынных улиц. */
-    static final int HALL_MAX_X = 7;
+    /*
+     * Дом наставника — уменьшенная родня зала гильдии: каменный первый этаж, фахверковый второй с выносом
+     * на улицу и во двор, крутая крыша между двумя ступенчатыми щипцами. Дом стоит длинной стороной к улице
+     * (x = 0 — jigsaw-вход, дверь под выносом в x = 2), за северным щипцом — пристройка своего класса:
+     * двор мечника со сторожевой башней, стрельбище лучника, круглая башня мага со шпилем.
+     * Участок 12x13 и высота 18 — как у крупных ванильных домов: такие ещё влезают на участки улиц
+     * всех пяти типов деревень (шире или выше — уже нет: улицы растягивают место под дома до высоты самого
+     * высокого ванильного дома).
+     */
+    /** Каменные стены: x = HB_X1..HB_X2, южный щипец z = HB_Z1 (северный — у каждого дома свой). */
+    static final int HB_X1 = 2, HB_X2 = 9, HB_Z1 = 1;
+    /** Пол второго этажа, верх фахверка, карниз; размеры участка с карнизами на x = 0 и 11. */
+    static final int HB_FLOOR2 = 5, HB_TIMBER_TOP = 8, HB_EAVES = 9, HB_SX = 12, HB_SY = 18, HB_SZ = 13;
+
+    /** Корпус дома: северный щипец {@code z2} и дверь в {@code door}. */
+    record HouseBody(int z2, int door) {}
 
     static Template buildGuild(Biome b, Guild g) {
-        int height = switch (g.name()) {
-            case "swordmaster_guild" -> 7;
-            case "archer_guild" -> 8;
-            default -> 15;
-        };
-        Template t = new Template(HALL_MAX_X + 1, height, 9);
+        HallStyle s = hallStyle(b);
+        // У мага корпус короче: за ним целиком встаёт круглая башня.
+        HouseBody h = g.name().equals("mage_guild") ? new HouseBody(7, 4) : new HouseBody(9, 5);
+        int z2 = h.z2(), door = h.door();
+        Template t = new Template(HB_SX, HB_SY, HB_SZ);
+        String woodStairs = "minecraft:" + s.wood() + "_stairs", planks = "minecraft:" + s.wood() + "_planks";
+        String beam = s.timber().replace("stripped_", "");
+        int[] windows = {HB_Z1 + 2, z2 - 2};
 
-        // Фундамент по периметру, пол внутри.
-        for (int x = 1; x <= HALL_MAX_X; x++) {
-            for (int z = 0; z <= 8; z++) {
-                boolean edge = x == 1 || x == HALL_MAX_X || z == 0 || z == 8;
-                t.set(x, 0, z, edge ? b.foundation() : b.floor());
+        // Над участком — чистый воздух (вычищает рельеф), на улице (x = 0) — только выше крыльца.
+        for (int x = 0; x < HB_SX; x++) {
+            for (int z = 0; z < HB_SZ; z++) {
+                for (int y = x == 0 ? HB_FLOOR2 : 1; y < HB_SY; y++) t.set(x, y, z, AIR);
             }
         }
-        // Стены 4 блока высотой, углы из брёвен, внутри воздух (вычищает рельеф).
-        for (int y = 1; y <= 4; y++) {
-            for (int x = 1; x <= HALL_MAX_X; x++) {
-                for (int z = 0; z <= 8; z++) {
-                    boolean edgeX = x == 1 || x == HALL_MAX_X;
-                    boolean edgeZ = z == 0 || z == 8;
-                    if (edgeX && edgeZ) t.set(x, y, z, b.corner());
-                    else if (edgeX || edgeZ) t.set(x, y, z, b.wall());
-                    else t.set(x, y, z, "minecraft:air");
+        // Пол: доски с каменной окантовкой, крыльцо под выносом.
+        for (int x = HB_X1; x <= HB_X2; x++) {
+            for (int z = HB_Z1; z <= z2; z++) {
+                boolean edge = x == HB_X1 || x == HB_X2 || z == HB_Z1 || z == z2;
+                t.set(x, 0, z, edge ? s.plinth() : (x == HB_X1 + 1 || z == HB_Z1 + 1 || z == z2 - 1 ? "minecraft:polished_andesite" : planks));
+            }
+        }
+        for (int z = HB_Z1; z <= z2; z++) t.set(1, 0, z, s.path());
+
+        // ---------------------------------------------------------------- первый этаж: камень
+        for (int y = 1; y < HB_FLOOR2; y++) {
+            for (int x = HB_X1; x <= HB_X2; x++) {
+                for (int z = HB_Z1; z <= z2; z++) {
+                    boolean edgeX = x == HB_X1 || x == HB_X2, edgeZ = z == HB_Z1 || z == z2;
+                    if (!edgeX && !edgeZ) continue;
+                    t.set(x, y, z, (edgeX && edgeZ) || y == 1 ? s.plinth() : s.stone());
                 }
             }
         }
-        // Окна.
-        for (int y = 2; y <= 3; y++) {
-            for (int z : new int[]{2, 6}) t.set(1, y, z, pane("glass_pane", false));
-            for (int z : new int[]{2, 4, 6}) t.set(HALL_MAX_X, y, z, pane("glass_pane", false));
-            for (int x : new int[]{3, 5}) {
-                t.set(x, y, 0, pane("glass_pane", true));
-                t.set(x, y, 8, pane("glass_pane", true));
+        // Окна в длинных стенах и в южном щипце, дверь под выносом, факелы у входа.
+        for (int z : windows) {
+            for (int y = 2; y <= 3; y++) {
+                t.set(HB_X1, y, z, pane("glass_pane", false));
+                t.set(HB_X2, y, z, pane("glass_pane", false));
             }
+            t.set(HB_X1, 4, z, s.accent());
+            t.set(HB_X2, 4, z, s.accent());
         }
-        // Дверь на западной стене и jigsaw-вход перед ней. Если пол выше улицы (вход на уровне пола),
-        // jigsaw превращается в ступеньку крыльца, как у ванильных домов равнин.
-        t.set(1, 1, 4, b.door() + "[facing=east,half=lower,hinge=right,open=false,powered=false]");
-        t.set(1, 2, 4, b.door() + "[facing=east,half=upper,hinge=right,open=false,powered=false]");
-        String doorstep = b.entranceY() == 0 ? stairs(b, "east") : "minecraft:structure_void";
-        t.set(0, b.entranceY(), 4, "minecraft:jigsaw[orientation=west_up]",
+        for (int y = 2; y <= 3; y++) t.set(6, y, HB_Z1, pane("glass_pane", true));
+        t.set(6, 4, HB_Z1, s.accent());
+        door(t, HB_X1, 1, door, s.door(), "east", "right");
+        t.set(HB_X1, 3, door, s.accent());
+        t.set(HB_X1 - 1, 3, door - 1, "minecraft:wall_torch[facing=west]");
+        t.set(HB_X1 - 1, 3, door + 1, "minecraft:wall_torch[facing=west]");
+        String doorstep = b.entranceY() == 0 ? st(woodStairs, "east", false) : "minecraft:structure_void";
+        t.set(0, b.entranceY(), door, "minecraft:jigsaw[orientation=west_up]",
                 jigsaw("minecraft:building_entrance", "minecraft:empty", doorstep, "aligned"));
 
-        // Общее убранство: рабочее место наставника, сундук, кровать, дорожка, фонари, знамёна.
-        t.set(6, 1, 4, g.workstation());
-        t.set(2, 1, 1, "minecraft:chest[facing=south,type=single,waterlogged=false]",
-                map("id", "minecraft:chest", "LootTable", MODID + ":chests/" + g.name()));
-        t.set(2, 1, 7, "minecraft:" + g.color() + "_bed[facing=east,occupied=false,part=foot]");
-        t.set(3, 1, 7, "minecraft:" + g.color() + "_bed[facing=east,occupied=false,part=head]");
-        for (int x = 2; x <= 5; x++) t.set(x, 1, 4, "minecraft:" + g.color() + "_carpet");
-        for (int[] p : new int[][]{{3, 2}, {3, 6}, {5, 2}, {5, 6}}) {
-            t.set(p[0], 4, p[1], "minecraft:lantern[hanging=true,waterlogged=false]");
+        // ---------------------------------------------------------------- второй этаж: фахверк с выносом
+        for (int x = HB_X1; x <= HB_X2; x++) {
+            for (int z = HB_Z1 + 1; z < z2; z++) t.set(x, HB_FLOOR2, z, x == HB_X1 || x == HB_X2 ? log(beam, 'z') : planks);
         }
-        t.set(6, 3, 3, "minecraft:" + g.color() + "_wall_banner[facing=west]");
-        t.set(6, 3, 5, "minecraft:" + g.color() + "_wall_banner[facing=west]");
-        // Доска заданий гильдии у южной стены.
-        t.set(5, 1, 7, MODID + ":quest_board[facing=north]");
+        for (int[] side : new int[][]{{HB_X1 - 1, -1}, {HB_X2 + 1, 1}}) {
+            int x = side[0], d = side[1];
+            String out = d < 0 ? "west" : "east", in = d < 0 ? "east" : "west";
+            for (int z = HB_Z1; z <= z2; z++) {
+                for (int y = HB_FLOOR2; y <= HB_TIMBER_TOP; y++) t.set(x, y, z, houseTimber(s, woodStairs, h, y, z));
+                // Кронштейны-подкосы под выносом.
+                if (z == HB_Z1 || z == door || z == z2) t.set(x, HB_FLOOR2 - 1, z, st(s.stoneStairs(), in, true));
+            }
+            // Окна с цветочными ящиками под ними.
+            for (int z : windows) {
+                for (int y = 6; y <= 7; y++) t.set(x, y, z, pane("glass_pane", false));
+                t.set(x + d, 5, z, "minecraft:" + s.wood() + "_trapdoor[facing=" + out + ",half=top,open=false,powered=false,waterlogged=false]");
+            }
+            // Внутри: стены второго этажа заменены выносом.
+            for (int z = HB_Z1 + 1; z < z2; z++) for (int y = HB_FLOOR2 + 1; y <= HB_TIMBER_TOP; y++) t.set(x - d, y, z, AIR);
+        }
+        for (int z = HB_Z1 + 1; z < z2; z++) {
+            t.set(HB_X1 - 1, HB_FLOOR2, z, log(beam, 'z'));
+            t.set(HB_X2 + 1, HB_FLOOR2, z, log(beam, 'z'));
+        }
+
+        houseRoof(t, s, z2);
+        houseGable(t, s, HB_Z1, false);
+        houseGable(t, s, z2, true);
+        // Затяжки под крышей и люстры на них.
+        for (int z : windows) {
+            for (int x = HB_X1; x <= HB_X2; x++) t.set(x, HB_EAVES + 1, z, log(beam, 'x'));
+            chandelier(t, 4, z, HB_EAVES, HB_EAVES - 1);
+            chandelier(t, 7, z, HB_EAVES, HB_EAVES - 1);
+        }
+
+        // ---------------------------------------------------------------- убранство
+        String color = g.color();
+        // Знамя гильдии над входом, на стойке выноса.
+        t.set(0, 7, door, "minecraft:" + color + "_wall_banner[facing=west]");
+        // Лестница на второй этаж у южного щипца.
+        for (int y = 1; y <= HB_FLOOR2; y++) t.set(8, y, HB_Z1 + 1, "minecraft:ladder[facing=south,waterlogged=false]");
+        // Рабочее место наставника у задней стены напротив двери, к нему — ковровая дорожка.
+        t.set(8, 1, door, g.workstation());
+        for (int x = HB_X1 + 1; x <= 7; x++) t.set(x, 1, door, "minecraft:" + color + "_carpet");
+        t.set(8, 3, door - 1, "minecraft:" + color + "_wall_banner[facing=west]");
+        t.set(8, 3, door + 1, "minecraft:" + color + "_wall_banner[facing=west]");
+        t.set(3, 1, HB_Z1 + 1, "minecraft:chest[facing=south,type=single,waterlogged=false]",
+                map("id", "minecraft:chest", "LootTable", MODID + ":chests/" + g.name()));
+        t.set(3, 1, z2 - 1, MODID + ":quest_board[facing=north]");
+        for (int z : windows) for (int x : new int[]{4, 7}) t.set(x, 4, z, "minecraft:lantern[hanging=true,waterlogged=false]");
+        // Второй этаж: кровать наставника, бочка, полки, столик со свечой.
+        t.set(3, 6, z2 - 1, "minecraft:" + color + "_bed[facing=west,occupied=false,part=head]");
+        t.set(4, 6, z2 - 1, "minecraft:" + color + "_bed[facing=west,occupied=false,part=foot]");
+        t.set(7, 6, z2 - 1, "minecraft:barrel[facing=up,open=false]");
+        t.set(8, 6, z2 - 1, "minecraft:bookshelf");
+        t.set(3, 6, HB_Z1 + 1, slab("minecraft:" + s.wood() + "_slab", true));
+        t.set(3, 7, HB_Z1 + 1, "minecraft:candle[candles=2,lit=true,waterlogged=false]");
+        t.set(4, 6, HB_Z1 + 1, st(woodStairs, "west", false));
+        for (int x = 4; x <= 7; x++) t.set(x, 6, door, "minecraft:" + color + "_carpet");
 
         // Jigsaw в полу: к нему крепится шаблон с наставником (житель с нужной профессией).
-        t.set(4, 0, 6, "minecraft:jigsaw[orientation=up_north]",
-                jigsaw("minecraft:bottom", MODID + ":village/" + b.name() + "/" + g.profession() + "_mentor", b.floor(), "rollable"));
+        t.set(6, 0, door + 1, "minecraft:jigsaw[orientation=up_north]",
+                jigsaw("minecraft:bottom", MODID + ":village/" + b.name() + "/" + g.profession() + "_mentor", planks, "rollable"));
 
         switch (g.name()) {
-            case "swordmaster_guild" -> decorateBarracks(t, b);
-            case "archer_guild" -> decorateArcheryHall(t, b);
-            default -> decorateMageTower(t, b);
+            case "swordmaster_guild" -> swordYard(t, s, z2);
+            case "archer_guild" -> archeryRange(t, s, z2);
+            default -> mageTower(t, s, z2);
         }
         return t;
     }
 
-    /** Мечники: плоская крыша с зубцами, тренировочные манекены, наковальня. */
-    static void decorateBarracks(Template t, Biome b) {
-        t.fill(1, 5, 0, HALL_MAX_X, 5, 8, b.roofBlock());
-        for (int x = 1; x <= HALL_MAX_X; x++) {
-            for (int z = 0; z <= 8; z++) {
-                boolean edge = x == 1 || x == HALL_MAX_X || z == 0 || z == 8;
-                if (edge && (x + z) % 2 == 0) t.set(x, 6, z, b.foundation());
-            }
-        }
-        for (int x : new int[]{4, 6}) {
-            t.set(x, 1, 1, "minecraft:hay_block[axis=y]");
-            t.set(x, 2, 1, "minecraft:carved_pumpkin[facing=south]");
-        }
-        t.set(6, 1, 7, "minecraft:anvil[facing=north]");
+    /** Фахверк длинной стены: лежни по низу и верху, стойки у углов и двери, подкосы у углов, белёные филёнки. */
+    static String houseTimber(HallStyle s, String woodStairs, HouseBody h, int y, int z) {
+        if (y == HB_FLOOR2 || y == HB_TIMBER_TOP) return log(s.timber(), 'z');
+        if (z == HB_Z1 || z == h.z2() || z == h.door()) return log(s.timber(), 'y');
+        if ((z == HB_Z1 + 1 || z == h.z2() - 1) && y == 6) return st(woodStairs, z == HB_Z1 + 1 ? "north" : "south", true);
+        if ((z == h.door() - 1 || z == h.door() + 1) && y == 7) return st(woodStairs, z < h.door() ? "south" : "north", false);
+        return s.plaster();
     }
 
-    /** Лучники: двускатная крыша, мишени в стене, тюки сена. */
-    static void decorateArcheryHall(Template t, Biome b) {
-        for (int z = 0; z <= 8; z++) {
-            t.set(1, 5, z, stairs(b, "east"));
-            t.set(HALL_MAX_X, 5, z, stairs(b, "west"));
-            for (int x = 2; x < HALL_MAX_X; x++) t.set(x, 5, z, b.roofBlock());
-        }
-        for (int z = 0; z <= 8; z++) {
-            t.set(2, 6, z, stairs(b, "east"));
-            t.set(6, 6, z, stairs(b, "west"));
-            for (int x = 3; x <= 5; x++) t.set(x, 6, z, (z == 0 || z == 8) ? b.wall() : "minecraft:air");
-            t.set(3, 7, z, stairs(b, "east"));
-            t.set(5, 7, z, stairs(b, "west"));
-            t.set(4, 7, z, b.roofSlab() + "[type=bottom,waterlogged=false]");
-        }
-        t.set(4, 2, 0, "minecraft:target[power=0]");
-        t.set(4, 1, 1, "minecraft:hay_block[axis=y]");
-        t.set(5, 1, 1, "minecraft:hay_block[axis=y]");
-        t.set(4, 2, 1, "minecraft:hay_block[axis=y]");
-        t.set(5, 2, 1, "minecraft:target[power=0]");
-        t.set(6, 1, 7, "minecraft:hay_block[axis=x]");
-    }
-
-    /** Маги: башня с комнатой наверху (лестница из зала), книжные полки, свечи и аметисты. */
-    static void decorateMageTower(Template t, Biome b) {
-        t.fill(1, 5, 0, HALL_MAX_X, 5, 8, b.roofBlock());
-
-        // Книжные полки вдоль северной стены и колонна для лестницы.
-        t.fill(3, 1, 1, 6, 2, 1, "minecraft:bookshelf");
-        t.set(3, 3, 1, "minecraft:purple_candle[candles=3,lit=true,waterlogged=false]");
-        t.set(5, 3, 1, "minecraft:amethyst_cluster[facing=up,waterlogged=false]");
-        t.set(6, 3, 1, "minecraft:purple_candle[candles=3,lit=true,waterlogged=false]");
-        t.fill(4, 1, 2, 4, 4, 2, "minecraft:bookshelf");
-        for (int y = 1; y <= 5; y++) t.set(4, y, 3, "minecraft:ladder[facing=south,waterlogged=false]");
-
-        // Башня 5x5 над центром зала.
-        for (int y = 6; y <= 10; y++) {
-            for (int x = 2; x <= 6; x++) {
-                for (int z = 2; z <= 6; z++) {
-                    boolean edge = x == 2 || x == 6 || z == 2 || z == 6;
-                    t.set(x, y, z, edge ? b.foundation() : "minecraft:air");
+    /** Крутая двускатная крыша от карнизов над выносом (x = 0 и 11) до двойного конька, изнутри — подшивка. */
+    static void houseRoof(Template t, HallStyle s, int z2) {
+        for (int z = HB_Z1 + 1; z < z2; z++) {
+            for (int k = 0; k <= 5; k++) {
+                int y = HB_EAVES + k, xl = k, xr = HB_SX - 1 - k;
+                if (k == 5) {
+                    t.set(xl, y, z, s.roofBlock());
+                    t.set(xr, y, z, s.roofBlock());
+                    t.set(xl, y + 1, z, slab(s.roofSlab(), false));
+                    t.set(xr, y + 1, z, slab(s.roofSlab(), false));
+                    continue;
+                }
+                t.set(xl, y, z, st(s.roofStairs(), "east", false));
+                t.set(xr, y, z, st(s.roofStairs(), "west", false));
+                if (k >= 1) {
+                    t.set(xl + 1, y, z, st(s.roofStairs(), "west", true));
+                    t.set(xr - 1, y, z, st(s.roofStairs(), "east", true));
                 }
             }
         }
-        t.set(4, 8, 2, pane("purple_stained_glass_pane", true));
-        t.set(4, 8, 6, pane("purple_stained_glass_pane", true));
-        t.set(2, 8, 4, pane("purple_stained_glass_pane", false));
-        t.set(6, 8, 4, pane("purple_stained_glass_pane", false));
-
-        // Шатровая крыша башни со шпилем.
-        pyramidRing(t, b, 11, 2, 6, 2, 6);
-        pyramidRing(t, b, 12, 3, 5, 3, 5);
-        t.set(4, 13, 4, "minecraft:amethyst_block");
-        t.set(4, 14, 4, "minecraft:end_rod[facing=up]");
-
-        // Комната в башне.
-        t.set(4, 10, 4, "minecraft:lantern[hanging=true,waterlogged=false]");
-        t.set(3, 6, 5, "minecraft:chest[facing=north,type=single,waterlogged=false]",
-                map("id", "minecraft:chest", "LootTable", MODID + ":chests/mage_guild"));
-        t.set(5, 6, 5, "minecraft:bookshelf");
-        t.set(5, 7, 5, "minecraft:bookshelf");
-        t.set(5, 6, 3, "minecraft:amethyst_cluster[facing=up,waterlogged=false]");
     }
 
-    /** Кольцо ступенек, поднимающихся к центру, со сплошными углами и серединой. */
-    static void pyramidRing(Template t, Biome b, int y, int x1, int x2, int z1, int z2) {
-        for (int x = x1; x <= x2; x++) {
-            for (int z = z1; z <= z2; z++) {
-                boolean cornerX = x == x1 || x == x2;
-                boolean cornerZ = z == z1 || z == z2;
-                if (cornerX && cornerZ) t.set(x, y, z, b.roofBlock());
-                else if (z == z1) t.set(x, y, z, stairs(b, "south"));
-                else if (z == z2) t.set(x, y, z, stairs(b, "north"));
-                else if (x == x1) t.set(x, y, z, stairs(b, "east"));
-                else if (x == x2) t.set(x, y, z, stairs(b, "west"));
-                else t.set(x, y, z, b.roofBlock());
+    /** Каменный щипец со ступенчатым верхом; в нём окно второго этажа и чердачное окошко. */
+    static void houseGable(Template t, HallStyle s, int z, boolean north) {
+        for (int x = 1; x <= HB_SX - 2; x++) {
+            int k = Math.min(x, HB_SX - 1 - x);
+            int top = HB_EAVES + 2 * (k / 2) + 1;
+            for (int y = HB_FLOOR2; y <= top; y++) t.set(x, y, z, x == 1 || x == HB_SX - 2 ? s.plinth() : s.stone());
+            boolean stepEdge = k % 2 == 1 || k == 5;
+            t.set(x, top + 1, z, stepEdge ? wall(s.stoneWall(), false, false) : slab(s.stoneSlab(), false));
+            // Пояс-карниз между этажами.
+            t.set(x, HB_FLOOR2, z + (north ? 1 : -1), st(s.stoneStairs(), north ? "north" : "south", true));
+        }
+        for (int x = 5; x <= 6; x++) {
+            for (int y = 6; y <= 7; y++) t.set(x, y, z, pane("glass_pane", true));
+            t.set(x, 8, z, s.accent());
+            t.set(x, 11, z, pane("glass_pane", true));
+        }
+    }
+
+    /** Мечник: мощёный учебный двор с манекенами, точилом и наковальней, сторожевая башня с зубцами и знаменем. */
+    static void swordYard(Template t, HallStyle s, int z2) {
+        String fence = "minecraft:" + s.wood() + "_fence";
+        yardGround(t, s, z2);
+        yardFence(t, s, fence, "red", z2);
+        // Труба горна на северном щипце.
+        for (int y = 12; y <= 15; y++) t.set(8, y, z2, "minecraft:bricks");
+        t.set(8, 16, z2, "minecraft:campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
+        // Манекены: столб, тюк сена, тыква-голова, знамя на груди.
+        for (int x : new int[]{3, 5}) {
+            t.set(x, 1, z2 + 2, fence + "[east=false,north=false,south=false,waterlogged=false,west=false]");
+            t.set(x, 2, z2 + 2, "minecraft:hay_block[axis=y]");
+            t.set(x, 3, z2 + 2, "minecraft:carved_pumpkin[facing=north]");
+            t.set(x, 2, z2 + 1, "minecraft:red_wall_banner[facing=north]");
+        }
+        t.set(2, 1, z2 + 1, "minecraft:anvil[facing=east]");
+        t.set(4, 1, z2 + 1, "minecraft:grindstone[face=floor,facing=east]");
+        t.set(6, 1, z2 + 1, "minecraft:barrel[facing=up,open=false]");
+        t.set(6, 2, z2 + 1, "minecraft:lantern[hanging=false,waterlogged=false]");
+        // Сторожевая башня 3x3 в углу двора, сплошная (без тёмных пустот), с зубцами.
+        int cz = z2 + 2;
+        for (int x = 7; x <= 9; x++) {
+            for (int z = cz - 1; z <= cz + 1; z++) {
+                boolean corner = (x == 7 || x == 9) && z != cz;
+                t.set(x, 0, z, s.plinth());
+                for (int y = 1; y <= 12; y++) t.set(x, y, z, y == 1 || y == 12 || (corner && y % 3 == 0) ? s.plinth() : s.stone());
+                if ((x + z) % 2 == 0) t.set(x, 13, z, s.stone());
             }
         }
+        t.set(8, 13, cz, "minecraft:lantern[hanging=false,waterlogged=false]");
+        t.set(6, 9, cz, "minecraft:red_wall_banner[facing=west]");
+        t.set(6, 10, cz, AIR);
+        for (int y = 5; y <= 6; y++) t.set(8, y, cz - 1, "minecraft:iron_bars[east=true,north=false,south=false,waterlogged=false,west=true]");
+        t.set(8, 14, cz, wall(s.stoneWall(), false, false));
+        t.set(8, 15, cz, "minecraft:red_banner[rotation=8]");
+    }
+
+    /** Лучник: стрельбище с мишенями в изгороди, навес у линии стрельбы, деревянная дозорная вышка. */
+    static void archeryRange(Template t, HallStyle s, int z2) {
+        String fence = "minecraft:" + s.wood() + "_fence", planks = "minecraft:" + s.wood() + "_planks";
+        String beam = s.timber().replace("stripped_", "");
+        yardGround(t, s, z2);
+        yardFence(t, s, fence, "green", z2);
+        int back = HB_SZ - 1;
+        // Мишени на тюках сена прямо в дальней изгороди.
+        for (int x : new int[]{5, 7, 9}) {
+            t.set(x, 1, back, "minecraft:hay_block[axis=y]");
+            t.set(x, 2, back, "minecraft:target[power=0]");
+            t.set(x, 3, back, "minecraft:hay_block[axis=x]");
+        }
+        // Навес над линией стрельбы.
+        for (int x = 4; x <= 9; x++) t.set(x, 4, z2 + 1, st(s.roofStairs(), "north", false));
+        for (int x : new int[]{4, 9}) for (int y = 1; y <= 3; y++) t.set(x, y, z2 + 1, fence + "[east=false,north=false,south=false,waterlogged=false,west=false]");
+        t.set(5, 1, z2 + 1, "minecraft:fletching_table");
+        t.set(6, 1, z2 + 1, "minecraft:barrel[facing=up,open=false]");
+        t.set(7, 1, z2 + 1, "minecraft:hay_block[axis=x]");
+        t.set(8, 1, z2 + 1, "minecraft:barrel[facing=up,open=false]");
+        t.set(8, 2, z2 + 1, "minecraft:lantern[hanging=false,waterlogged=false]");
+        // Дозорная вышка на четырёх столбах с площадкой и шатровой крышей.
+        int cz = z2 + 2;
+        for (int x : new int[]{1, 3}) {
+            for (int z : new int[]{cz - 1, cz + 1}) for (int y = 1; y <= 10; y++) t.set(x, y, z, log(beam, 'y'));
+        }
+        for (int x = 1; x <= 3; x++) for (int z = cz - 1; z <= cz + 1; z++) if (x == 2 || z == cz) t.set(x, 7, z, planks);
+        for (int y = 1; y <= 6; y++) t.set(2, y, cz + 1, log(beam, 'y'));
+        for (int y = 1; y <= 7; y++) t.set(2, y, cz, "minecraft:ladder[facing=north,waterlogged=false]");
+        for (int z : new int[]{cz - 1, cz + 1}) t.set(2, 8, z, fence + "[east=true,north=false,south=false,waterlogged=false,west=true]");
+        for (int x : new int[]{1, 3}) t.set(x, 8, cz, fence + "[east=false,north=true,south=true,waterlogged=false,west=false]");
+        for (int x = 1; x <= 3; x++) {
+            for (int z = cz - 1; z <= cz + 1; z++) {
+                int dx = x - 2, dz = z - cz;
+                String facing = Math.abs(dx) >= Math.abs(dz) ? (dx < 0 ? "east" : "west") : (dz < 0 ? "south" : "north");
+                t.set(x, 11, z, dx != 0 && dz != 0 ? s.roofBlock() : st(s.roofStairs(), facing, false));
+            }
+        }
+        // Свес крыши вышки над улицей и двором.
+        t.set(0, 11, cz, st(s.roofStairs(), "east", false));
+        t.set(4, 11, cz, st(s.roofStairs(), "west", false));
+        t.set(2, 11, cz, s.roofBlock());
+        t.set(2, 12, cz, s.roofBlock());
+        t.set(2, 13, cz, slab(s.roofSlab(), false));
+        t.set(2, 10, cz, "minecraft:lantern[hanging=true,waterlogged=false]");
+        t.set(0, 8, cz - 1, "minecraft:green_wall_banner[facing=west]");
+    }
+
+    /** Маг: круглая башня за северным щипцом — кабинет наверху, фиолетовые окна, шпиль с аметистом. */
+    static void mageTower(Template t, HallStyle s, int z2) {
+        int cx = 6, cz = z2 + 3, top = 10;
+        double r = 2.6;
+        for (int x = cx - 3; x <= cx + 3; x++) {
+            for (int z = z2 + 1; z < HB_SZ; z++) {
+                double d = Math.hypot(x - cx, z - cz);
+                if (d > r) continue;
+                boolean ring = d > r - 1.1;
+                t.set(x, 0, z, ring ? s.plinth() : ((x + z) % 2 == 0 ? "minecraft:polished_deepslate" : "minecraft:polished_blackstone"));
+                for (int y = 1; y <= top; y++) {
+                    if (!ring) {
+                        t.set(x, y, z, y == 7 ? "minecraft:" + s.wood() + "_planks" : AIR);
+                        continue;
+                    }
+                    boolean window = (x == cx || z == cz) && (y == 3 || y == 4 || y == 8 || y == 9);
+                    String block = y == 1 || y == 6 || y == top ? s.plinth() : s.stone();
+                    t.set(x, y, z, window ? pane("purple_stained_glass_pane", z == cz) : block);
+                }
+            }
+        }
+        // Проход из дома в башню через северный щипец.
+        for (int y = 1; y <= 2; y++) {
+            t.set(cx, y, z2, AIR);
+            t.set(cx, y, z2 + 1, AIR);
+        }
+        t.set(cx, 3, z2 + 1, s.accent());
+        // Лестница в кабинет.
+        for (int y = 1; y <= 7; y++) t.set(cx + 1, y, cz, "minecraft:ladder[facing=west,waterlogged=false]");
+        // Шатёр-конус: кольца ступеней к оси, сверху аметист и шпиль.
+        for (int level = 0; level < 6; level++) {
+            double rr = 3.4 - level * 0.55;
+            for (int x = cx - 4; x <= cx + 4; x++) {
+                for (int z = z2 + 1; z < HB_SZ; z++) {
+                    double d = Math.hypot(x - cx, z - cz);
+                    if (d > rr || d <= rr - 1.2) continue;
+                    int dx = x - cx, dz = z - cz;
+                    String facing = Math.abs(dx) >= Math.abs(dz) ? (dx < 0 ? "east" : "west") : (dz < 0 ? "south" : "north");
+                    t.set(x, top + 1 + level, z, d < 0.5 ? s.roofBlock() : st(s.roofStairs(), facing, false));
+                }
+            }
+        }
+        for (int y = top + 1; y <= top + 5; y++) t.set(cx, y, cz, s.roofBlock());
+        t.set(cx, top + 6, cz, "minecraft:amethyst_block");
+        t.set(cx, top + 7, cz, "minecraft:end_rod[facing=up]");
+        // Нижний ярус: аметисты и свечи. Кабинет наверху: полки, стойка зелий, сундук.
+        t.set(cx - 1, 1, cz, "minecraft:amethyst_block");
+        t.set(cx - 1, 2, cz, "minecraft:amethyst_cluster[facing=up,waterlogged=false]");
+        t.set(cx, 1, cz + 1, "minecraft:purple_candle[candles=4,lit=true,waterlogged=false]");
+        t.set(cx, 6, cz, "minecraft:lantern[hanging=true,waterlogged=false]");
+        t.set(cx - 1, 8, cz, "minecraft:bookshelf");
+        t.set(cx - 1, 9, cz, "minecraft:purple_candle[candles=3,lit=true,waterlogged=false]");
+        t.set(cx, 8, cz + 1, "minecraft:brewing_stand[has_bottle_0=true,has_bottle_1=false,has_bottle_2=true]");
+        t.set(cx, 8, cz - 1, "minecraft:chest[facing=south,type=single,waterlogged=false]",
+                map("id", "minecraft:chest", "LootTable", MODID + ":chests/mage_guild"));
+        t.set(cx, 8, cz, "minecraft:purple_carpet");
+        t.set(cx, top, cz, "minecraft:lantern[hanging=true,waterlogged=false]");
+        // Дом мага: полки и аметисты у южной стены, фиолетовые витражи.
+        t.set(4, 1, HB_Z1 + 1, "minecraft:bookshelf");
+        t.set(5, 1, HB_Z1 + 1, "minecraft:bookshelf");
+        t.set(4, 2, HB_Z1 + 1, "minecraft:purple_candle[candles=3,lit=true,waterlogged=false]");
+        t.set(5, 2, HB_Z1 + 1, "minecraft:amethyst_cluster[facing=up,waterlogged=false]");
+        for (int y = 2; y <= 3; y++) t.set(6, y, HB_Z1, pane("purple_stained_glass_pane", true));
+        // Площадка вокруг башни.
+        for (int x = 1; x < HB_SX - 1; x++) {
+            for (int z = z2 + 1; z < HB_SZ; z++) {
+                if (Math.hypot(x - cx, z - cz) > r) t.set(x, 0, z, s.path());
+            }
+        }
+        t.set(2, 1, HB_SZ - 1, "minecraft:lantern[hanging=false,waterlogged=false]");
+        t.set(10, 1, HB_SZ - 1, "minecraft:amethyst_cluster[facing=up,waterlogged=false]");
+        t.set(10, 0, HB_SZ - 1, "minecraft:amethyst_block");
+    }
+
+    static void yardGround(Template t, HallStyle s, int z2) {
+        Random random = new Random(s.stone().hashCode() + 7);
+        for (int x = 1; x < HB_SX - 1; x++) {
+            for (int z = z2 + 1; z < HB_SZ; z++) t.set(x, 0, z, random.nextInt(3) == 0 ? s.plinth() : s.path());
+        }
+    }
+
+    /** Изгородь двора от углов дома, калитка со стороны улицы и знамёна на угловых столбах. */
+    static void yardFence(Template t, HallStyle s, String fence, String color, int z2) {
+        int x1 = 1, x2 = HB_SX - 2, back = HB_SZ - 1;
+        String post = log(s.timber().replace("stripped_", ""), 'y');
+        for (int z = z2 + 1; z <= back; z++) {
+            t.set(x1, 1, z, fence + "[east=false,north=true,south=" + (z < back) + ",waterlogged=false,west=false]");
+            t.set(x2, 1, z, fence + "[east=false,north=true,south=" + (z < back) + ",waterlogged=false,west=false]");
+        }
+        for (int x = x1 + 1; x < x2; x++) t.set(x, 1, back, fence + "[east=true,north=false,south=false,waterlogged=false,west=true]");
+        // Угловые столбы — брёвна: знамя держится только на сплошном блоке.
+        t.set(x1, 1, back, post);
+        t.set(x2, 1, back, post);
+        t.set(x1, 1, z2 + 1, fence.replace("_fence", "_fence_gate") + "[facing=west,in_wall=false,open=false,powered=false]");
+        t.set(x1, 2, back, "minecraft:" + color + "_banner[rotation=0]");
+        t.set(x2, 2, back, "minecraft:" + color + "_banner[rotation=0]");
     }
 
     /** Шаблон 1x3x1 с наставником, как ванильный village/plains/villagers/unemployed. */

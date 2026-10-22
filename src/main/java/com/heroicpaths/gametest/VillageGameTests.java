@@ -6,6 +6,7 @@ import com.heroicpaths.registry.ModVillagers;
 import com.heroicpaths.rpg.PlayerClass;
 import com.heroicpaths.rpg.RpgManager;
 import com.heroicpaths.village.MentorEvents;
+import com.heroicpaths.village.MentorHomes;
 import com.heroicpaths.village.VillageInjector;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
@@ -19,6 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -109,8 +111,10 @@ public class VillageGameTests {
 
     /**
      * Строит кусок деревни как настоящий генератор (улица → дочерние улицы → дома, с expansion hack),
-     * временно оставив в пуле улиц один отрезок, а в пуле домов — одну гильдию.
-     * Проверяет, что гильдия пристроилась: её рабочее место стоит рядом.
+     * временно оставив в пуле домов одну гильдию; улицы — все ванильные улицы биома.
+     * Проверяет, что гильдия пристраивается к улицам: хотя бы в одной из нескольких раскладок она встала,
+     * а после постройки этой раскладки её рабочее место стоит в мире. Дома наставников размером с крупные
+     * ванильные дома, поэтому, как и те, встают не на каждый участок.
      * Начинаем с улицы, а не с центра деревни: центр спавнит жителей и кошек в незагруженные чанки,
      * и тестовый сервер потом зависает при выгрузке.
      */
@@ -121,25 +125,32 @@ public class VillageGameTests {
         int index = 0;
         for (String biome : VillageInjector.BIOMES) {
             StructureTemplatePool houses = pools(level).get(VillageInjector.housesPool(biome));
-            StructureTemplatePool streets = pools(level).get(ResourceLocation.withDefaultNamespace("village/" + biome + "/streets"));
             // Пул кэширует максимальную высоту домов при первом обращении. В игре это происходит уже после
             // добавления гильдий, поэтому прогреваем кэш до подмены, иначе он запомнит высоту одной гильдии.
             houses.getMaxSize(level.getStructureManager());
             List<StructurePoolElement> housesBackup = new ArrayList<>(houses.templates);
-            List<StructurePoolElement> streetsBackup = new ArrayList<>(streets.templates);
             Holder<StructureTemplatePool> startStreet = singleElementPool(level, TEST_STREETS.get(biome));
             for (String guild : VillageInjector.GUILDS) {
+                String template = VillageInjector.guildTemplate(biome, guild).toString();
                 BlockPos pos = origin.offset(index++ * 128, 0, 0);
-                replace(houses, singleElementPool(level, VillageInjector.guildTemplate(biome, guild).toString()).value().templates);
-                replace(streets, singleElementPool(level, TEST_STREETS.get(biome)).value().templates);
+                // Раскладка строится заново при каждом обращении к заготовке, поэтому куски берём один раз.
+                List<StructurePiece> layout = null;
+                replace(houses, singleElementPool(level, template).value().templates);
                 try {
-                    helper.assertTrue(generateLikeVillage(level, startStreet, pos, 2), "village piece was not generated for " + biome);
+                    for (int attempt = 0; attempt < 30 && layout == null; attempt++) {
+                        List<StructurePiece> pieces = villageLayout(level, startStreet, pos, level.getSeed() + attempt, 3)
+                                .map(stub -> stub.getPiecesBuilder().build().pieces()).orElse(List.of());
+                        if (pieces.stream().anyMatch(p -> p.toString().contains(template))) layout = pieces;
+                    }
                 } finally {
                     replace(houses, housesBackup);
-                    replace(streets, streetsBackup);
                 }
-                helper.assertTrue(containsBlock(level, pos, WORKSTATIONS.get(guild).get()),
-                        guild + " did not attach to a " + biome + " street");
+                helper.assertTrue(layout != null, guild + " did not attach to any " + biome + " street layout");
+                place(level, layout, pos);
+                BoundingBox house = layout.stream().filter(p -> p.toString().contains(template)).findFirst().orElseThrow().getBoundingBox();
+                Block workstation = WORKSTATIONS.get(guild).get();
+                helper.assertTrue(BlockPos.betweenClosedStream(house).anyMatch(p -> level.getBlockState(p).is(workstation)),
+                        guild + " was laid out but its workstation is missing in " + biome);
             }
         }
         // Даём серверу доделать загрузку чанков, затронутых генерацией, иначе он зависает при остановке.
@@ -152,22 +163,25 @@ public class VillageGameTests {
         pool.templates.addAll(copy);
     }
 
-    /** Как JigsawPlacement.generateJigsaw, но с expansion hack, который включён у ванильных деревень. */
-    private static boolean generateLikeVillage(ServerLevel level, Holder<StructureTemplatePool> start, BlockPos pos, int maxDepth) {
+    /** Раскладка как у JigsawPlacement.generateJigsaw, но с expansion hack, который включён у ванильных деревень. */
+    private static Optional<Structure.GenerationStub> villageLayout(ServerLevel level, Holder<StructureTemplatePool> start, BlockPos pos,
+                                                                  long seed, int maxDepth) {
         ChunkGenerator generator = level.getChunkSource().getGenerator();
         Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
                 generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
-                level.getSeed(), new ChunkPos(pos), level, biome -> true);
-        Optional<Structure.GenerationStub> stub = JigsawPlacement.addPieces(context, start,
+                seed, new ChunkPos(pos), level, biome -> true);
+        return JigsawPlacement.addPieces(context, start,
                 Optional.of(ResourceLocation.withDefaultNamespace("street")), maxDepth, pos, true, Optional.empty(), 128,
                 PoolAliasLookup.EMPTY, JigsawStructure.DEFAULT_DIMENSION_PADDING, JigsawStructure.DEFAULT_LIQUID_SETTINGS);
-        if (stub.isEmpty()) return false;
-        for (StructurePiece piece : stub.get().getPiecesBuilder().build().pieces()) {
+    }
+
+    private static void place(ServerLevel level, List<StructurePiece> layout, BlockPos pos) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        for (StructurePiece piece : layout) {
             if (piece instanceof PoolElementStructurePiece poolPiece) {
                 poolPiece.place(level, level.structureManager(), generator, level.getRandom(), BoundingBox.infinite(), pos, false);
             }
         }
-        return true;
     }
 
     private static boolean containsBlock(ServerLevel level, BlockPos center, Block block) {
@@ -206,6 +220,38 @@ public class VillageGameTests {
                 for (int dz = -1; dz <= 1; dz++) level.setChunkForced(chunk.x + dx, chunk.z + dz, false);
             }
         });
+    }
+
+    /** Наставник помнит дом у рабочего места, ушедшего тянет назад, погибшего через пять дней сменяет новый. */
+    @GameTest(template = ARENA, batch = "village_mentor_home")
+    public static void fallenMentorIsReplacedAfterFiveDays(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos lectern = new BlockPos(2, 2, 2);
+        helper.setBlock(lectern, ModBlocks.ARCANE_LECTERN.get());
+        BlockPos home = helper.absolutePos(lectern);
+        Villager mentor = helper.spawn(EntityType.VILLAGER, new BlockPos(8, 2, 8));
+        mentor.setVillagerData(mentor.getVillagerData().setProfession(ModVillagers.ARCHMAGE.get()));
+        mentor.setVillagerXp(1);
+
+        MentorHomes.keepHome(level, mentor);
+        helper.assertTrue(home.equals(MentorHomes.home(mentor)), "mentor home is " + MentorHomes.home(mentor) + ", not the lectern " + home);
+        helper.assertTrue(mentor.hasRestriction() && mentor.getRestrictCenter().equals(home), "mentor is not leashed to the lectern");
+        helper.assertTrue(mentor.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                        .map(target -> target.getTarget().currentBlockPosition().equals(home)).orElse(false),
+                "a mentor far from home is not walking back");
+
+        MentorHomes.Graves graves = MentorHomes.Graves.get(level.getServer());
+        int before = graves.all().size();
+        mentor.kill();
+        helper.assertTrue(graves.all().size() == before + 1, "the fallen mentor was not remembered");
+        helper.assertTrue(MentorHomes.replaceFallen(level.getServer(), 0) == 0, "a new mentor came before five days passed");
+        helper.assertTrue(MentorHomes.replaceFallen(level.getServer(), MentorHomes.RESPAWN_TICKS) == 1, "no new mentor after five days");
+        List<Villager> successors = level.getEntitiesOfClass(Villager.class, new AABB(home).inflate(4),
+                v -> v.isAlive() && v.getVillagerData().getProfession() == ModVillagers.ARCHMAGE.get());
+        helper.assertTrue(successors.size() == 1, "expected one new archmage at the lectern, found " + successors.size());
+        helper.assertTrue(home.equals(MentorHomes.home(successors.get(0))), "the new mentor does not live at the old home");
+        successors.forEach(Villager::discard);
+        helper.succeed();
     }
 
     @GameTest(template = ARENA)
