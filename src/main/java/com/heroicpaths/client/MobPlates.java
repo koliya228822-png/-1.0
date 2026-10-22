@@ -14,13 +14,11 @@ import net.neoforged.neoforge.client.event.RenderLivingEvent;
 
 /**
  * Маленькая плашка над головой моба: уровень (цвет — насколько моб опасен для игрока), значок сопротивления и имя.
- * Без подложки, буквы с тёмной обводкой; видна, только когда игрок подошёл к мобу примерно на 3 блока.
+ * Без подложки, буквы с тёмной обводкой; видна, только когда игрок ближе к мобу, чем задано в настройках (по умолчанию 9 блоков).
  */
 public final class MobPlates {
     private MobPlates() {}
 
-    /** От игрока до края моба. */
-    private static final float SHOW_DISTANCE = 3f;
     private static final float SCALE = 0.014f;
     private static final int OUTLINE = 0xFF141018;
 
@@ -32,7 +30,8 @@ public final class MobPlates {
         int level = MobLevels.level(mob);
         if (level <= 0 || !mob.isAlive() || mob.isInvisibleTo(player)) return;
         float gap = (float) Math.sqrt(player.distanceToSqr(mob)) - mob.getBbWidth() / 2f;
-        if (gap > SHOW_DISTANCE) return;
+        int distance = ClientConfig.plateDistance(); // от игрока до края моба; 0 — плашки выключены
+        if (distance <= 0 || gap > distance) return;
 
         MutableComponent plate = Component.empty().append(Component.translatable("hud.heroicpaths.mob_level", level)
                 .withColor(MobInfo.levelColor(level - RpgManager.get(player).getLevel())));

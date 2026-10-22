@@ -1,6 +1,7 @@
 package com.heroicpaths.client;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
@@ -17,6 +18,7 @@ import java.util.List;
  */
 public class SettingsScreen extends Screen {
     private static final double[] SCALES = {0.5, 0.75, 1.0, 1.25, 1.5, 2.0};
+    private static final int MAX_PLATE_DISTANCE = 32;
     @Nullable
     private final Screen parent;
 
@@ -49,13 +51,30 @@ public class SettingsScreen extends Screen {
             ClientConfig.SPEC.save();
             b.setMessage(toggleLabel("screen.heroicpaths.settings.orders", ClientConfig.showOrders()));
         }).bounds(x, y + 72, 220, 20).build());
+        addRenderableWidget(new AbstractSliderButton(x, y + 96, 220, 20, plateLabel(ClientConfig.plateDistance()),
+                ClientConfig.plateDistance() / (double) MAX_PLATE_DISTANCE) {
+            @Override
+            protected void updateMessage() {
+                setMessage(plateLabel(distance()));
+            }
+
+            @Override
+            protected void applyValue() {
+                ClientConfig.PLATE_DISTANCE.set(distance());
+                ClientConfig.SPEC.save();
+            }
+
+            private int distance() {
+                return (int) Math.round(value * MAX_PLATE_DISTANCE);
+            }
+        });
         addRenderableWidget(Button.builder(Component.translatable("screen.heroicpaths.settings.controls"),
-                b -> minecraft.setScreen(new KeyBindsScreen(this, minecraft.options))).bounds(x, y + 96, 220, 20).build());
+                b -> minecraft.setScreen(new KeyBindsScreen(this, minecraft.options))).bounds(x, y + 120, 220, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose()).bounds(width / 2 - 50, height - 28, 100, 20).build());
     }
 
     private int buttonsTop() {
-        return Math.max(36, height / 2 - 82);
+        return Math.max(36, height / 2 - 94);
     }
 
     private static double nextScale(float current) {
@@ -67,6 +86,11 @@ public class SettingsScreen extends Screen {
         return Component.translatable("screen.heroicpaths.settings.scale", Math.round(ClientConfig.hudScale() * 100));
     }
 
+    private static Component plateLabel(int distance) {
+        return distance <= 0 ? Component.translatable("screen.heroicpaths.settings.plates_off")
+                : Component.translatable("screen.heroicpaths.settings.plates", distance);
+    }
+
     private static Component toggleLabel(String key, boolean value) {
         return Component.translatable(key, value ? CommonComponents.OPTION_ON : CommonComponents.OPTION_OFF);
     }
@@ -76,7 +100,7 @@ public class SettingsScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, 20, 0xFFD27F);
         List<FormattedCharSequence> hint = font.split(Component.translatable("screen.heroicpaths.settings.hint"), Math.min(320, width - 30));
-        int top = buttonsTop() + 5 * 24 + 6;
+        int top = buttonsTop() + 6 * 24 + 6;
         for (int i = 0; i < hint.size(); i++) graphics.drawCenteredString(font, hint.get(i), width / 2, top + i * 10, 0x888888);
     }
 
