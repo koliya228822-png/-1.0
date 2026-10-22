@@ -245,7 +245,8 @@ public class ArmorGen {
         }
 
         boolean hasRunes() {
-            for (Cube c : blocks.values()) if (Arrays.asList(c.deco).contains("runes")) return true;
+            for (Cube c : blocks.values())
+                for (String d : c.deco) if (d.equals("runes") || d.equals("glowall") || d.equals("lantern")) return true;
             return false;
         }
 
@@ -401,6 +402,8 @@ public class ArmorGen {
             b.part("head", t3, 0, -1.2, 0, 0, 45 * P, 0, -0.55, -0.9, -0.55, 1.1, 0.9, 1.1, 0, "trim", "bevel");
             b.part("head", -1, 4.85, -8.4, -1.5, 0, 0, 45 * P, -0.7, -0.7, -0.3, 1.4, 1.4, 0.6, 0, "trim", "bevel");
         }
+        // Перо за лентой шляпы.
+        b.part("head", -1, 4.9, -8.75, 1.5, -20 * P, 0, 25 * P, -0.25, -5.5, -0.8, 0.5, 5.5, 1.6, 0, "feather");
 
         b.slot("chest");
         b.box("body", -4, 0, -2, 8, 12, 4, 0.55, "cloth2", "folds");
@@ -423,6 +426,22 @@ public class ArmorGen {
                 b.box("right_arm", -4.75, -1.4, -3.5, 5.5, 1.75, 7, 0, "metal2", "rivets", "bevel"),
                 b.box("right_arm", -4.9, 0.1, -3.6, 5.1, 1.6, 7.2, 0, "metal", "bevel", b.grade >= 2 ? "trim_b" : "")};
         b.mirror(true, pd);
+        // Ремень через грудь с медальоном.
+        int st = b.part("body", -1, 0, 5.5, -3.2, 0, 0, 38 * P, -0.6, -7.5, -0.25, 1.2, 15, 0.5, 0, "leather2", "stitch");
+        b.part("body", st, 0, -2.5, -0.3, 0, 0, 0, -0.75, -0.75, -0.2, 1.5, 1.5, 0.4, 0, b.grade >= 3 ? "gem" : "trim", "bevel");
+        if (b.grade == 2) {
+            // Маг II: золотые шипы на наплечниках.
+            int s1 = b.part("right_arm", -1, -2.5, -3.6, 0, 0, 0, -25 * P, -0.45, -1.8, -0.45, 0.9, 1.8, 0.9, 0, "trim", "bevel");
+            int s2 = b.part("right_arm", -1, -2.25, -3.6, -2.2, 0, 0, -25 * P, -0.35, -1.3, -0.35, 0.7, 1.3, 0.7, 0, "trim", "bevel");
+            int s3 = b.part("right_arm", -1, -2.25, -3.6, 2.2, 0, 0, -25 * P, -0.35, -1.3, -0.35, 0.7, 1.3, 0.7, 0, "trim", "bevel");
+            b.mirror(true, s1, s2, s3);
+        } else if (b.grade >= 3) {
+            // Маг III: светящиеся кристаллы прорастают из наплечников.
+            int c1 = b.part("right_arm", -1, -2.25, -3.6, 0, 8 * P, 0, -22 * P, -0.55, -3.2, -0.55, 1.1, 3.2, 1.1, 0, "gem", "glowall");
+            int c2 = b.part("right_arm", -1, -2.75, -3.6, -2, -18 * P, 0, -35 * P, -0.45, -2.2, -0.45, 0.9, 2.2, 0.9, 0, "gem", "glowall");
+            int c3 = b.part("right_arm", -1, -1.75, -3.6, 2, 20 * P, 0, -12 * P, -0.4, -1.8, -0.4, 0.8, 1.8, 0.8, 0, "gem", "glowall");
+            b.mirror(true, c1, c2, c3);
+        }
         b.limb("right_arm", -3, -2, -2, 4, 12, 4, 0.5, "cloth2", "folds");
         b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : "", b.grade >= 3 ? "runes" : "");
         b.limb("right_arm", -3.75, 9.75, -2.75, 5.5, 0.75, 5.5, 0, gold ? "trim" : "leather2", gold ? "bevel" : "");
@@ -430,6 +449,14 @@ public class ArmorGen {
         b.slot("legs");
         b.box("body", -4.75, 9.5, -2.75, 9.5, 1.75, 5.5, 0, "leather2", "buckle", "stitch");
         b.box("body", 2.25, 10.5, -3.5, 2, 2.5, 1, 0, "leather2", "stitch");
+        if (!gold) {
+            // Маг I: фонарь на крюке у правого бедра и черепок-оберег под пряжкой.
+            b.box("body", -5.15, 9.6, -0.25, 0.5, 1.2, 0.5, 0, "metal2");
+            b.box("body", -6.05, 10.35, -1.05, 2.1, 0.4, 2.1, 0, "metal2", "bevel");
+            b.box("body", -5.9, 10.75, -0.9, 1.8, 2.0, 1.8, 0, "metal2", "lantern");
+            b.box("body", -6.05, 12.75, -1.05, 2.1, 0.35, 2.1, 0, "metal2", "bevel");
+            b.box("body", -3.9, 11.1, -3.45, 1.5, 1.5, 1.1, 0, "bone", "skull", "bevel");
+        }
         if (gold) {
             // Бляхи на поясе, гримуар на цепочке у левого бедра и склянка зелья у правого.
             int pl = b.box("body", -3.6, 9.65, -2.95, 1.2, 1.45, 0.3, 0, "trim", "bevel");
@@ -517,6 +544,7 @@ public class ArmorGen {
     /** Знаки рун 3×4 (строки сверху вниз) и цвет их свечения. */
     static final String[] RUNES = {"010111010010", "100110101100", "111100110100", "101101111001", "110101110101", "011100010001", "101010010010"};
     static final Color RUNE_GLOW = new Color(0x78E8FF);
+    static final Color LANTERN = new Color(0xFFB040);
 
     static final Pal IRON = Pal.of("24262E", "5A5F6C", "969CA8", "D0D5DE", "F4F6FA");
     static final Pal IRON2 = Pal.of("1C1E24", "464A55", "707684", "A0A6B2", "C8CCD4");
@@ -539,6 +567,7 @@ public class ArmorGen {
         p.put("shaft", Pal.of("3A2410", "6A4824", "9A7240", "C49A60", "E0C08A"));
         p.put("gem", Pal.of("2A0E4A", "5A2E9A", "8A4AD8", "C8A4F4", "F4ECFF"));
         p.put("star", Pal.of("5A4A10", "B09020", "F0D040", "FFF080", "FFFFE0"));
+        p.put("bone", Pal.of("4A4436", "8A826A", "C2B898", "E2DAC0", "F6F0DE"));
         switch (set) {
             case "warrior_iron" -> {
                 p.put("metal", IRON); p.put("metal2", IRON2); p.put("trim", BRASS);
@@ -579,6 +608,7 @@ public class ArmorGen {
                 p.put("cloth", Pal.of("0E0A12", "221A2A", "3A2E44", "54465E", "736480"));
                 p.put("cloth2", Pal.of("0E0C10", "1E1A22", "2E2834", "433C4A", "5C5464"));
                 p.put("scarf", Pal.of("061418", "12303A", "1E4C58", "306A78", "4C8E9C"));
+                p.put("feather", Pal.of("08080A", "18181E", "2A2A32", "3E3E48", "56566A"));
                 p.put("leather", Pal.of("1A1008", "3A2614", "5A3E22", "7A5834", "9A764C"));
                 p.put("leather2", LEATHER_DARK);
                 p.put("metal", Pal.of("121418", "30343A", "50565E", "7C828C", "A8AEB6")); p.put("metal2", IRON2);
@@ -601,6 +631,7 @@ public class ArmorGen {
                 p.put("cloth2", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4"));
                 // Маг III: звёздный странник — полуночная ткань со звёздами, тёмно-синие латы, золото и руны.
                 p.put("scarf", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4"));
+                p.put("feather", Pal.of("0A1E4A", "1E4A90", "3A78D0", "7AB0F0", "C8E4FF"));
                 p.put("leather", Pal.of("080C1E", "141C40", "222E62", "34448A", "4E62B0")); p.put("trim", GOLD);
                 p.put("leather2", LEATHER_BLACK);
                 p.put("metal", Pal.of("10141E", "2A3448", "4A5A78", "7486A8", "A8B8D8"));
@@ -712,7 +743,9 @@ public class ArmorGen {
             // Руны считаются по центру пикселя итоговой текстуры, чтобы каждый пиксель был целиком знаком или фоном.
             double sx = fx - ((px + 0.5) / R - (Math.floor(px / (double) R) + 0.5)), sy = fy - ((py + 0.5) / R - (Math.floor(py / (double) R) + 0.5));
             boolean rune = deco.contains("runes") && rune(f, sx, sy, fw, fh);
-            if (glow) return rune ? RUNE_GLOW : null;
+            // Окошки фонаря: стекло со свечой внутри.
+            boolean window = deco.contains("lantern") && vertical(f) && fx > 0.4 && fx < fw - 0.4 && fy > 0.35 && fy < fh - 0.35;
+            if (glow) return rune ? RUNE_GLOW : window ? LANTERN : deco.contains("glowall") ? base(m, p, f, fx, fy, fw, fh, px, py) : null;
             Color col = base(m, p, f, fx, fy, fw, fh, px, py);
             // Отделка: полосы, кайма, знаки.
             Pal trim = pal.getOrDefault("trim", GOLD);
@@ -795,6 +828,9 @@ public class ArmorGen {
             if (deco.contains("smooth")) col = shade(p.m(), 1 + (hash(px / 2.0, py / 2.0, 17) - 0.5) * 0.12);
             else if (fx < 0.25 || fy < 0.25 || fx > fw - 0.25 || fy > fh - 0.25) col = mix(col, p.o(), 0.5);
             if (rune) col = mix(col, RUNE_GLOW, 0.8);
+            if (window) col = mix(LANTERN, Color.WHITE, 0.25);
+            if (deco.contains("skull") && f == Face.FRONT && fy > fh * 0.3 && fy < fh * 0.6 && Math.abs(Math.abs(fx - fw / 2) - fw * 0.22) < fw * 0.13)
+                col = p.o();
             double light = switch (f) {
                 case TOP -> 1.1;
                 case BOTTOM -> 0.75;
