@@ -51,7 +51,7 @@ public class ArmorGen {
                 case "warrior" -> warrior(b);
                 case "archer" -> archer(b);
                 default -> {
-                    if (set.equals("mage_wool")) wanderer(b);
+                    if (set.equals("mage_wool") || set.equals("mage")) wanderer(b);
                     else mage(b);
                 }
             }
@@ -361,7 +361,7 @@ public class ArmorGen {
      */
     static void wanderer(Builder b) {
         b.slot("head");
-        b.box("head", -4.75, -9.25, -4.75, 9.5, 1.75, 9.5, 0, "leather2", "stitch");
+        b.box("head", -4.75, -9.25, -4.75, 9.5, 1.75, 9.5, 0, "leather2", b.grade >= 2 ? "trim_b" : "stitch");
         b.box("head", -0.9, -9.25, -5.15, 1.8, 1.75, 0.5, 0, "trim", "bevel");
         b.box("head", -6.25, -7.85, -6.25, 12.5, 0.8, 12.5, 0, "leather");
         // Поля шляпы: четыре пластины по краям чуть свисают вниз.
@@ -385,6 +385,7 @@ public class ArmorGen {
         b.slot("chest");
         b.box("body", -4, 0, -2, 8, 12, 4, 0.55, "cloth2", "folds");
         b.box("body", -4.6, 0, -2.9, 9.2, 7.25, 5.8, 0, "metal", "ridge", "engrave", "bevel");
+        if (b.grade >= 2) b.box("body", -0.9, 1.5, -3.3, 1.8, 1.8, 0.5, 0, "gem");
         b.box("body", -4.4, 7, -2.75, 8.8, 1.75, 5.5, 0, "metal2", "rivets", "bevel");
         b.box("body", -4.1, -1.25, -3.1, 8.2, 1.75, 6.2, 0, "metal2", "bevel");
         // Шарф на шее и плащ: полотнище почти до земли, низ изорван.
@@ -392,12 +393,12 @@ public class ArmorGen {
         b.box("body", -4.9, -1, 2.6, 9.8, 2, 1, 0, "cloth", "stitch");
         b.part("body", -1, 0, 0, 3.15, 8 * P, 0, 0, -5.5, 0, 0, 11, 23.5, 0.5, 0, "cloth", "folds", "torn");
         int[] pd = {
-                b.box("right_arm", -4.5, -3.6, -3.4, 6, 2.5, 6.8, 0, "metal", "engrave", "bevel"),
+                b.box("right_arm", -4.5, -3.6, -3.4, 6, 2.5, 6.8, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : ""),
                 b.box("right_arm", -4.75, -1.4, -3.5, 5.5, 1.75, 7, 0, "metal2", "rivets", "bevel"),
-                b.box("right_arm", -4.9, 0.1, -3.6, 5.1, 1.6, 7.2, 0, "metal", "bevel")};
+                b.box("right_arm", -4.9, 0.1, -3.6, 5.1, 1.6, 7.2, 0, "metal", "bevel", b.grade >= 2 ? "trim_b" : "")};
         b.mirror(true, pd);
         b.limb("right_arm", -3, -2, -2, 4, 12, 4, 0.5, "cloth2", "folds");
-        b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel");
+        b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : "");
         b.limb("right_arm", -3.75, 9.75, -2.75, 5.5, 0.75, 5.5, 0, "leather2");
 
         b.slot("legs");
@@ -412,7 +413,7 @@ public class ArmorGen {
         b.limb("right_leg", -2.2, 4.75, -3.6, 4.4, 1.5, 0.5, 0, "metal2", "bevel");
 
         b.slot("feet");
-        b.limb("right_leg", -2.4, 6.75, -2.4, 4.8, 5.5, 4.8, 0.3, "metal", "engrave", "bevel");
+        b.limb("right_leg", -2.4, 6.75, -2.4, 4.8, 5.5, 4.8, 0.3, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_t" : "");
         b.limb("right_leg", -2.75, 6.5, -2.75, 5.5, 1, 5.5, 0, "leather2");
         b.limb("right_leg", -2.25, 10.25, -4, 4.5, 2.25, 1.75, 0, "metal2", "bevel");
         b.limb("right_leg", -1.5, 10.75, -4.75, 3, 1.5, 0.9, 0, "trim", "bevel");
@@ -544,9 +545,14 @@ public class ArmorGen {
                 p.put("trim", Pal.of("2E1E08", "5E4418", "94702E", "C29E52", "E6CC88"));
             }
             case "mage" -> {
-                p.put("cloth", Pal.of("1A0A2E", "3A1A64", "5A2E96", "8250C4", "AC80E4"));
-                p.put("cloth2", Pal.of("0C0A28", "1C1A54", "2E2C82", "4A48AE", "7472D4"));
-                p.put("leather", Pal.of("0C0A28", "1C1A54", "2E2C82", "4A48AE", "7472D4")); p.put("trim", GOLD);
+                // Маг II: тот же странник, латы с серебряным отливом и золотые вставки.
+                p.put("cloth", Pal.of("140A22", "2C1848", "44286A", "5E3C8C", "8060B0"));
+                p.put("cloth2", Pal.of("0C0A1C", "1A1838", "2A2852", "3E3C70", "5A5892"));
+                p.put("scarf", Pal.of("0C0A28", "1C1A54", "2E2C82", "4A48AE", "7472D4"));
+                p.put("leather", Pal.of("120C1A", "261C34", "3A2C4C", "524066", "6E5884"));
+                p.put("leather2", LEATHER_BLACK);
+                p.put("metal", Pal.of("1A1E26", "404652", "6C7482", "9EA6B4", "CED4DE")); p.put("metal2", Pal.of("16181E", "343842", "565C68", "7E8694", "A6AEBA"));
+                p.put("trim", GOLD);
                 p.put("gem", Pal.of("5A1004", "A02808", "F0501A", "FFB060", "FFF0C8"));
             }
             default -> {
