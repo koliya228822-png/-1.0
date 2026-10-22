@@ -18,7 +18,8 @@ import java.util.Random;
  * Объёмная классовая броня: детали каждого комплекта (кубоиды на голове, теле, руках и ногах),
  * раскладка их развёрток по текстуре 128×128 и сама текстура: рисуется в 4 раза подробнее и уменьшается
  * до 128×128 усреднением, чтобы мелкий рисунок (стёжка, кольчуга, узоры) не пропадал.
- * Пишет текстуры в textures/models/armor3d/ и данные моделей в client/armor/ArmorShapes.java.
+ * Пишет текстуры в textures/models/armor3d/, данные моделей в client/armor/ArmorShapes.java
+ * и иконки предметов брони (textures/item/) — отрисовку тех же деталей в 3/4.
  *
  * Координаты — как у моделей Minecraft: y вниз, лицо смотрит в −z; детали рук и ног задаются для правой
  * стороны и зеркалятся на левую. Запуск: java tools/ArmorGen.java .
@@ -52,7 +53,12 @@ public class ArmorGen {
                 default -> mage(b);
             }
             b.pack();
-            ImageIO.write(downscale(b.paint(), R), "png", texDir.resolve(set + ".png").toFile());
+            BufferedImage painted = b.paint();
+            ImageIO.write(downscale(painted, R), "png", texDir.resolve(set + ".png").toFile());
+            String[] items = {"helmet", "chestplate", "leggings", "boots"};
+            for (int i = 0; i < SLOTS.length; i++)
+                ImageIO.write(icon(b, SLOTS[i], painted), "png",
+                        root.resolve("src/main/resources/assets/heroicpaths/textures/item/" + set + "_" + items[i] + ".png").toFile());
             for (String slot : SLOTS) {
                 String name = (set + "_" + slot).toUpperCase(Locale.ROOT);
                 java.append("    private static final float[][] ").append(name).append(" = {\n");
@@ -61,8 +67,6 @@ public class ArmorGen {
                 sw.append("            case \"").append(set).append('/').append(slot).append("\" -> ").append(name).append(";\n");
             }
             System.out.println(set + ": " + b.blocks.size() + " blocks, uv height " + b.usedH);
-            if (b.cls.equals("mage")) ImageIO.write(hatIcon(set, b.grade), "png",
-                    root.resolve("src/main/resources/assets/heroicpaths/textures/item/" + set + "_helmet.png").toFile());
         }
         sw.append("            default -> null;\n        };\n    }\n");
         java.append(sw).append("}\n");
@@ -708,70 +712,196 @@ public class ArmorGen {
     }
 
     // =====================================================================================
-    // Иконка колпака для инвентаря (32×32, пиксельная)
+    // Иконки предметов: та же объёмная броня, отрисованная в 3/4
     // =====================================================================================
 
-    static BufferedImage hatIcon(String set, int grade) {
-        Map<String, Pal> pal = palettes(set);
-        Pal cloth = pal.get("cloth"), band = pal.get("cloth2"), trim = pal.get("trim"), star = pal.get("star");
-        BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-        java.awt.Graphics2D g = img.createGraphics();
-        // Конус с загнутым назад кончиком: светлая левая сторона, тёмная правая.
-        int[] cx = {8, 23, 22, 21, 22, 24, 27, 28, 26, 22, 19, 16, 14, 11};
-        int[] cy = {21, 21, 15, 11, 8, 5, 2, 3, 4, 6, 8, 11, 14, 18};
-        g.setColor(cloth.m());
-        g.fillPolygon(cx, cy, cx.length);
-        // Загнутый кончик — толстой ломаной, чтобы не рвался на пиксели.
-        g.setStroke(new java.awt.BasicStroke(2.6f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
-        g.drawPolyline(new int[]{20, 22, 25, 28}, new int[]{10, 6, 4, 3}, 4);
-        g.setStroke(new java.awt.BasicStroke(1f));
-        g.setColor(cloth.l());
-        g.fillPolygon(new int[]{8, 13, 15, 17, 16, 14, 11}, new int[]{21, 21, 14, 10, 11, 14, 18}, 7);
-        g.setColor(cloth.d());
-        g.fillPolygon(new int[]{19, 23, 22, 21, 20}, new int[]{21, 21, 15, 11, 12}, 5);
-        // Поля шляпы и лента.
-        g.setColor(cloth.d());
-        g.fillRect(3, 23, 26, 3);
-        g.setColor(cloth.m());
-        g.fillRect(4, 22, 24, 2);
-        g.setColor(trim.l());
-        g.fillRect(3, 25, 26, 1);
-        g.setColor(band.m());
-        g.fillRect(8, 19, 16, 3);
-        g.setColor(band.l());
-        g.fillRect(8, 19, 16, 1);
-        if (grade >= 2) {
-            g.setColor(trim.l());
-            g.fillRect(14, 19, 4, 3);
-            g.setColor(pal.get("gem").l());
-            g.fillRect(15, 20, 2, 1);
-        }
-        if (grade >= 3) {
-            g.setColor(star.l());
-            for (int[] s : new int[][]{{11, 17}, {17, 14}, {14, 10}, {19, 17}}) {
-                g.fillRect(s[0], s[1], 1, 1);
-                g.setColor(star.h());
-                g.fillRect(s[0] - 1, s[1], 1, 1);
-                g.fillRect(s[0] + 1, s[1], 1, 1);
-                g.setColor(star.l());
+    static final int ICON = 64, SS = 4;
+    /** Точки поворота костей, как у модели гуманоида. */
+    static final double[][] BONE_PIVOT = {{0, 0, 0}, {0, 0, 0}, {-5, 2, 0}, {5, 2, 0}, {-1.9, 12, 0}, {1.9, 12, 0}};
+
+    /**
+     * Иконка слота: детали комплекта с его же текстурой (подробной, до уменьшения), повёрнутые на 3/4 и
+     * освещённые сверху слева; рисуется в SS раз крупнее, уменьшается и обводится тёмным контуром.
+     */
+    static BufferedImage icon(Builder b, String slot, BufferedImage tex) {
+        List<Cube> cubes = b.slots.get(slot);
+        double yaw = (slot.equals("head") ? 32 : 24) * P, pitch = (slot.equals("head") ? 22 : 14) * P;
+        // Вид: поворот вокруг вертикали, затем наклон, чтобы смотреть чуть сверху (y модели — вниз).
+        double[][] view = mul(rotX(pitch), rotY(yaw));
+        List<double[][]> quads = new ArrayList<>();
+        for (int i = 0; i < cubes.size(); i++) {
+            double[][] m = mul(view, partMatrix(cubes, i));
+            for (double[][] face : faces(cubes.get(i))) {
+                double[][] q = new double[4][];
+                for (int k = 0; k < 4; k++) q[k] = apply(m, face[k]);
+                quads.add(q);
             }
-            g.setColor(star.h());
-            g.fillRect(26, 2, 2, 2);
         }
-        g.dispose();
-        // Тёмный контур по краю силуэта.
-        BufferedImage out = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-        for (int y = 0; y < 32; y++)
-            for (int x = 0; x < 32; x++) {
+        double minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+        for (double[][] q : quads)
+            for (double[] p : q) {
+                minX = Math.min(minX, p[0]);
+                maxX = Math.max(maxX, p[0]);
+                minY = Math.min(minY, p[1]);
+                maxY = Math.max(maxY, p[1]);
+            }
+        int size = ICON * SS;
+        double scale = (size - 2 * 3 * SS) / Math.max(maxX - minX, maxY - minY);
+        double ox = size / 2.0 - (minX + maxX) / 2 * scale, oy = size / 2.0 - (minY + maxY) / 2 * scale;
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        double[] depth = new double[size * size];
+        Arrays.fill(depth, Double.MAX_VALUE);
+        double[] light = norm(new double[]{-0.45, -0.75, -0.55});
+        for (double[][] q : quads) {
+            double[] n = norm(cross(sub(q[1], q[0]), sub(q[3], q[0])));
+            if (Double.isNaN(n[0])) continue;
+            if (n[2] > 0) n = new double[]{-n[0], -n[1], -n[2]};
+            double shade = 0.62 + 0.48 * Math.max(0, dot(n, light));
+            double[][] s = new double[4][];
+            for (int k = 0; k < 4; k++) s[k] = new double[]{q[k][0] * scale + ox, q[k][1] * scale + oy, q[k][2], q[k][3], q[k][4]};
+            tri(img, depth, tex, s[0], s[1], s[2], shade);
+            tri(img, depth, tex, s[0], s[2], s[3], shade);
+        }
+        return outline(downscale(img, SS));
+    }
+
+    /** Треугольник с z-буфером и текстурой по вершинам (u, v — пиксели развёртки 128×128). */
+    static void tri(BufferedImage img, double[] depth, BufferedImage tex, double[] a, double[] b, double[] c, double shade) {
+        int w = img.getWidth(), k = tex.getWidth() / TW;
+        double area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        if (Math.abs(area) < 1e-9) return;
+        int x0 = Math.max(0, (int) Math.floor(Math.min(a[0], Math.min(b[0], c[0])))), x1 = Math.min(w - 1, (int) Math.ceil(Math.max(a[0], Math.max(b[0], c[0]))));
+        int y0 = Math.max(0, (int) Math.floor(Math.min(a[1], Math.min(b[1], c[1])))), y1 = Math.min(w - 1, (int) Math.ceil(Math.max(a[1], Math.max(b[1], c[1]))));
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++) {
+                double px = x + 0.5, py = y + 0.5;
+                double wa = ((b[0] - px) * (c[1] - py) - (b[1] - py) * (c[0] - px)) / area;
+                double wb = ((c[0] - px) * (a[1] - py) - (c[1] - py) * (a[0] - px)) / area;
+                double wc = 1 - wa - wb;
+                if (wa < -1e-6 || wb < -1e-6 || wc < -1e-6) continue;
+                double z = wa * a[2] + wb * b[2] + wc * c[2];
+                if (z >= depth[y * w + x]) continue;
+                double u = wa * a[3] + wb * b[3] + wc * c[3], v = wa * a[4] + wb * b[4] + wc * c[4];
+                int tx = Math.min(tex.getWidth() - 1, Math.max(0, (int) Math.floor(u * k)));
+                int ty = Math.min(tex.getHeight() - 1, Math.max(0, (int) Math.floor(v * k)));
+                int argb = tex.getRGB(tx, ty);
+                if ((argb >>> 24) < 128) continue;
+                depth[y * w + x] = z;
+                img.setRGB(x, y, 0xFF000000 | cl(((argb >> 16) & 0xFF) * shade) << 16 | cl(((argb >> 8) & 0xFF) * shade) << 8 | cl((argb & 0xFF) * shade));
+            }
+    }
+
+    /** Тёмный контур снаружи силуэта, чтобы иконка читалась на любом фоне. */
+    static BufferedImage outline(BufferedImage img) {
+        int s = img.getWidth();
+        BufferedImage out = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++) {
                 int argb = img.getRGB(x, y);
-                if ((argb >>> 24) == 0) continue;
-                boolean edge = false;
-                for (int[] dd : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-                    int nx = x + dd[0], ny = y + dd[1];
-                    if (nx < 0 || ny < 0 || nx >= 32 || ny >= 32 || (img.getRGB(nx, ny) >>> 24) == 0) edge = true;
+                if ((argb >>> 24) != 0) {
+                    out.setRGB(x, y, argb);
+                    continue;
                 }
-                out.setRGB(x, y, edge ? cloth.o().getRGB() : argb);
+                for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                    int nx = x + d[0], ny = y + d[1];
+                    if (nx >= 0 && ny >= 0 && nx < s && ny < s && (img.getRGB(nx, ny) >>> 24) != 0) {
+                        out.setRGB(x, y, 0xD0100C10);
+                        break;
+                    }
+                }
             }
         return out;
+    }
+
+    /** Матрица детали: кость, цепочка родителей, своё смещение и поворот (ZYX, как ModelPart). */
+    static double[][] partMatrix(List<Cube> cubes, int i) {
+        Cube c = cubes.get(i);
+        double[][] local = mul(translate(c.px, c.py, c.pz), mul(rotZ(c.rz), mul(rotY(c.ry), rotX(c.rx))));
+        if (c.parent >= 0) return mul(partMatrix(cubes, c.parent), local);
+        double[] p = BONE_PIVOT[c.bone];
+        // Руки чуть разведены, как у стойки для брони, чтобы не сливались с телом.
+        double spread = c.bone == 2 ? 0.1 : c.bone == 3 ? -0.1 : c.bone == 4 ? 0.05 : c.bone == 5 ? -0.05 : 0;
+        return mul(translate(p[0], p[1], p[2]), mul(rotZ(spread), local));
+    }
+
+    /** Шесть граней кубоида с развёрткой, как в ModelPart.Cube: у вершин x y z и u v в пикселях текстуры. */
+    static double[][][] faces(Cube c) {
+        double x0 = c.x - c.inflate, y0 = c.y - c.inflate, z0 = c.z - c.inflate;
+        double x1 = c.x + c.w + c.inflate, y1 = c.y + c.h + c.inflate, z1 = c.z + c.d + c.inflate;
+        if (c.mirror) {
+            double t = x0;
+            x0 = x1;
+            x1 = t;
+        }
+        double[] v0 = {x0, y0, z0}, v1 = {x1, y0, z0}, v2 = {x1, y1, z0}, v3 = {x0, y1, z0};
+        double[] v4 = {x0, y0, z1}, v5 = {x1, y0, z1}, v6 = {x1, y1, z1}, v7 = {x0, y1, z1};
+        double u = c.u, v = c.v, w = c.w, h = c.h, d = c.d;
+        double f7 = u, f8 = u + d, f9 = u + d + w, f10 = u + d + w + w, f11 = u + d + w + d, f12 = u + d + w + d + w;
+        double f13 = v, f14 = v + d, f15 = v + d + h;
+        return new double[][][]{
+                face(new double[][]{v5, v4, v0, v1}, f8, f13, f9, f14),
+                face(new double[][]{v2, v3, v7, v6}, f9, f14, f10, f13),
+                face(new double[][]{v0, v4, v7, v3}, f7, f14, f8, f15),
+                face(new double[][]{v1, v0, v3, v2}, f8, f14, f9, f15),
+                face(new double[][]{v5, v1, v2, v6}, f9, f14, f11, f15),
+                face(new double[][]{v4, v5, v6, v7}, f11, f14, f12, f15)};
+    }
+
+    static double[][] face(double[][] v, double u1, double v1, double u2, double v2) {
+        double[][] uv = {{u2, v1}, {u1, v1}, {u1, v2}, {u2, v2}};
+        double[][] out = new double[4][];
+        for (int k = 0; k < 4; k++) out[k] = new double[]{v[k][0], v[k][1], v[k][2], uv[k][0], uv[k][1]};
+        return out;
+    }
+
+    static double[][] translate(double x, double y, double z) {
+        return new double[][]{{1, 0, 0, x}, {0, 1, 0, y}, {0, 0, 1, z}, {0, 0, 0, 1}};
+    }
+
+    static double[][] rotX(double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return new double[][]{{1, 0, 0, 0}, {0, c, -s, 0}, {0, s, c, 0}, {0, 0, 0, 1}};
+    }
+
+    static double[][] rotY(double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return new double[][]{{c, 0, s, 0}, {0, 1, 0, 0}, {-s, 0, c, 0}, {0, 0, 0, 1}};
+    }
+
+    static double[][] rotZ(double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return new double[][]{{c, -s, 0, 0}, {s, c, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+    }
+
+    static double[][] mul(double[][] a, double[][] b) {
+        double[][] r = new double[4][4];
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                for (int k = 0; k < 4; k++) r[i][j] += a[i][k] * b[k][j];
+        return r;
+    }
+
+    /** Точка (x y z и что угодно после) через матрицу: меняются только x y z. */
+    static double[] apply(double[][] m, double[] p) {
+        double[] r = p.clone();
+        for (int i = 0; i < 3; i++) r[i] = m[i][0] * p[0] + m[i][1] * p[1] + m[i][2] * p[2] + m[i][3];
+        return r;
+    }
+
+    static double[] sub(double[] a, double[] b) {
+        return new double[]{a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+    }
+
+    static double[] cross(double[] a, double[] b) {
+        return new double[]{a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
+    }
+
+    static double dot(double[] a, double[] b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+
+    static double[] norm(double[] a) {
+        double l = Math.sqrt(dot(a, a));
+        return new double[]{a[0] / l, a[1] / l, a[2] / l};
     }
 }
