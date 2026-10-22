@@ -9,6 +9,7 @@ public final class ClientConfig {
     public static final ModConfigSpec.BooleanValue SHOW_PARTY;
     public static final ModConfigSpec.BooleanValue SHOW_COMPANION;
     public static final ModConfigSpec.BooleanValue SHOW_ORDERS;
+    public static final ModConfigSpec.IntValue PLATE_DISTANCE;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -20,6 +21,8 @@ public final class ClientConfig {
                 .define("showCompanion", true);
         SHOW_ORDERS = builder.comment("Показывать взятые заказы гильдии").translation("config.heroicpaths.show_orders")
                 .define("showOrders", true);
+        PLATE_DISTANCE = builder.comment("С какого расстояния (в блоках) видна плашка с уровнем над мобом; 0 — не показывать")
+                .translation("config.heroicpaths.plate_distance").defineInRange("plateDistance", 9, 0, 32);
         SPEC = builder.build();
     }
 
@@ -39,5 +42,9 @@ public final class ClientConfig {
 
     public static boolean showOrders() {
         return !SPEC.isLoaded() || SHOW_ORDERS.get();
+    }
+
+    public static int plateDistance() {
+        return SPEC.isLoaded() ? PLATE_DISTANCE.get() : 9;
     }
 }
