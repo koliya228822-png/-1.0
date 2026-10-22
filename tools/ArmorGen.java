@@ -369,14 +369,14 @@ public class ArmorGen {
         b.part("head", -1, 0, -7.6, 6.25, -17 * P, 0, 0, -9.5, 0, 0, 19, 0.8, 3.5, 0, "leather");
         int br = b.part("head", -1, -6.25, -7.6, 0, 0, 0, -17 * P, -3.5, 0, -6.25, 3.5, 0.8, 12.5, 0, "leather");
         b.mirror(false, br);
-        // Высокая тулья: много тонких ярусов, чтобы конус шёл почти гладко и плавно заваливался назад.
+        // Высокая тулья: много ярусов с шагом в полпикселя (каждый высотой в пиксель и заходит в нижний, чтобы не было щелей), чтобы конус шёл почти гладко и плавно заваливался назад.
         int steps = 13;
         double ty = -9.25, tz = 0;
         for (int i = 0; i < steps; i++) {
             double k = i / (steps - 1.0), size = 8.6 - 5.0 * k, hgt = 0.5;
             ty -= hgt;
             tz = 2.4 * k * k;
-            b.box("head", -size / 2, ty, -size / 2 + tz, size, hgt, size, 0, "leather", "smooth");
+            b.box("head", -size / 2, ty, -size / 2 + tz, size, 1, size, 0, "leather", "smooth");
         }
         int t1 = b.part("head", -1, 0, ty, tz, -30 * P, 0, 0, -1.6, -2.4, -1.6, 3.2, 2.4, 3.2, 0, "leather");
         int t2 = b.part("head", t1, 0, -2.4, 0, -40 * P, 0, 0, -1.1, -2.2, -1.1, 2.2, 2.2, 2.2, 0, "leather");
