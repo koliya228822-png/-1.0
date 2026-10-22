@@ -23,6 +23,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
@@ -90,21 +91,41 @@ public class MagicBoltEntity extends ThrowableProjectile {
         if (level().isClientSide) trail();
     }
 
-    /** Довернуть к ближайшему недружественному существу и держать скорость 5 блоков в секунду. */
+    /** Цель, выбранная при выстреле (враг, на которого смотрел маг); пока она жива и видна, стрела летит к ней. */
+    public void lockOn(@Nullable LivingEntity target) {
+        this.target = target;
+    }
+
+    @Nullable
+    public LivingEntity target() {
+        return target;
+    }
+
+    /** Довернуть к цели (только если её видно — сквозь стены стрела не наводится) и держать скорость 5 блоков в секунду. */
     private void steer() {
         Vec3 motion = getDeltaMovement();
         Vec3 dir = motion.lengthSqr() > 1.0E-6 ? motion.normalize() : getLookAngle();
         if (getOwner() instanceof ServerPlayer owner) {
             if (target == null || !target.isAlive() || target.distanceToSqr(this) > 24 * 24 || !AbilityLogic.isEnemy(owner, target))
                 target = nearest(owner);
-            if (target != null) {
-                Vec3 to = target.position().add(0, target.getBbHeight() * 0.55, 0).subtract(position());
+            if (target != null && visible(position(), target)) {
+                Vec3 to = center(target).subtract(position());
                 if (to.lengthSqr() > 1.0E-4) dir = dir.lerp(to.normalize(), TURN).normalize();
             }
         }
         setDeltaMovement(dir.scale(SPEED));
     }
 
+    private static Vec3 center(LivingEntity entity) {
+        return entity.position().add(0, entity.getBbHeight() * 0.55, 0);
+    }
+
+    /** Между точкой и существом нет блоков. */
+    private boolean visible(Vec3 from, LivingEntity entity) {
+        return level().clip(new ClipContext(from, center(entity), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getType() == HitResult.Type.MISS;
+    }
+
+    /** Ближайший к стреле враг, которого с неё видно. */
     @Nullable
     private LivingEntity nearest(ServerPlayer owner) {
         LivingEntity best = null;
@@ -112,9 +133,39 @@ public class MagicBoltEntity extends ThrowableProjectile {
         for (LivingEntity candidate : level().getEntitiesOfClass(LivingEntity.class, new AABB(position(), position()).inflate(HOMING_RADIUS),
                 entity -> AbilityLogic.isEnemy(owner, entity))) {
             double distance = candidate.distanceToSqr(this);
-            if (distance < bestDistance) {
+            if (distance < bestDistance && visible(position(), candidate)) {
                 best = candidate;
                 bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    /** Насколько далеко и под каким углом от прицела ищется враг, на которого смотрит маг. */
+    private static final double AIM_RANGE = 24, AIM_CONE_DEGREES = 30;
+
+    /**
+     * Враг, на которого смотрит маг: видимый (без стен между ними), в конусе вокруг прицела; из таких — ближе всего
+     * к прицелу, при равном угле — ближайший. Null, если в той стороне видимых врагов нет.
+     */
+    @Nullable
+    public static LivingEntity aimedTarget(ServerPlayer player) {
+        Vec3 eye = player.getEyePosition(), look = player.getLookAngle();
+        double cos = Math.cos(Math.toRadians(AIM_CONE_DEGREES));
+        LivingEntity best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (LivingEntity candidate : player.level().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(AIM_RANGE),
+                entity -> AbilityLogic.isEnemy(player, entity))) {
+            Vec3 to = center(candidate).subtract(eye);
+            double distance = to.length();
+            if (distance > AIM_RANGE || distance < 1.0E-3) continue;
+            double dot = to.scale(1 / distance).dot(look);
+            if (dot < cos || !player.hasLineOfSight(candidate)) continue;
+            // Угол от прицела важнее расстояния: 1° ≈ 1 блок.
+            double score = Math.toDegrees(Math.acos(Math.min(1, dot))) + distance;
+            if (score < bestScore) {
+                best = candidate;
+                bestScore = score;
             }
         }
         return best;

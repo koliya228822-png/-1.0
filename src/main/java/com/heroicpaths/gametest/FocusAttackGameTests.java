@@ -152,4 +152,21 @@ public class FocusAttackGameTests {
         shoot(player, 30);
         helper.succeedWhen(() -> helper.assertTrue(cow.getHealth() < health, "the bolt flew through a cow"));
     }
+
+    @GameTest(template = ARENA, timeoutTicks = 100)
+    public static void boltAimsAtTheVisibleEnemyInSight(GameTestHelper helper) {
+        // Маг смотрит вдоль +X. Ближний враг прямо по прицелу, но за стеной; дальний — левее прицела, на виду.
+        ServerPlayer player = mage(helper, ModItems.FIRE_RUNE_STAFF.get());
+        Husk hidden = helper.spawn(EntityType.HUSK, new BlockPos(4, 2, 4));
+        Husk seen = helper.spawn(EntityType.HUSK, new BlockPos(7, 2, 1));
+        hidden.setNoAi(true);
+        seen.setNoAi(true);
+        helper.assertTrue(MagicBoltEntity.aimedTarget(player) == hidden && player.hasLineOfSight(seen), "without a wall the enemy at the crosshair is the target");
+        for (int y = 2; y <= 4; y++)
+            for (int z = 4; z <= 5; z++) helper.setBlock(new BlockPos(3, y, z), net.minecraft.world.level.block.Blocks.STONE);
+        helper.assertTrue(MagicBoltEntity.aimedTarget(player) == seen, "behind a wall the visible enemy must be the target, got " + MagicBoltEntity.aimedTarget(player));
+        shoot(player, 30);
+        helper.assertTrue(bolts(player).stream().allMatch(b -> b.target() == seen), "the bolt must lock on the visible enemy");
+        helper.succeed();
+    }
 }

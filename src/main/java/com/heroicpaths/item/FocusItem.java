@@ -217,6 +217,8 @@ public class FocusItem extends Item {
         Palette palette = boltPalette();
         MagicBoltEntity bolt = new MagicBoltEntity(level, player, boltDamage(player, stack) * charge, palette);
         bolt.shootFromRotation(player, player.getXRot(), player.getYRot(), 0f, MagicBoltEntity.SPEED, 0f);
+        // Стрела летит в видимого врага, на которого смотрел маг (сквозь стены не наводится).
+        bolt.lockOn(MagicBoltEntity.aimedTarget(player));
         level.addFreshEntity(bolt);
         ServerLevel server = player.serverLevel();
         Vec3 tip = player.getEyePosition().add(player.getLookAngle().scale(1.1)).add(0, -0.1, 0);
