@@ -16,6 +16,7 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.ClientHooks;
@@ -84,21 +85,29 @@ public final class ArmorModels {
                 return model;
             }
         }, items.toArray(Item[]::new));
+        // Ванильные нагрудники: их рукава при согнутых руках тоже рисует BentArms, а прямые здесь прячутся.
+        List<Item> vanilla = new ArrayList<>();
+        for (Item item : BuiltInRegistries.ITEM)
+            if (item instanceof ArmorItem armor && !(item instanceof ClassArmorItem) && armor.getEquipmentSlot() == EquipmentSlot.CHEST
+                    && BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("minecraft")) vanilla.add(item);
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public Model getGenericArmorModel(LivingEntity entity, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> original) {
+                if (com.heroicpaths.client.BentArms.active(entity)) {
+                    original.rightArm.visible = false;
+                    original.leftArm.visible = false;
+                }
+                return original;
+            }
+        }, vanilla.toArray(Item[]::new));
     }
 
-    /** Детали брони на руке (прямые потомки кости руки) и высота их середины от плеча — для согнутой руки. */
-    public static List<Map.Entry<ModelPart, Float>> armPieces(ClassArmorItem armor, boolean right) {
-        float[][] data = ArmorShapes.get(armor.setName() + "/chest");
-        HumanoidModel<?> model = model(armor.setName(), EquipmentSlot.CHEST);
-        List<Map.Entry<ModelPart, Float>> out = new ArrayList<>();
-        if (data == null || model == null) return out;
-        ModelPart bone = right ? model.rightArm : model.leftArm;
-        for (int i = 0; i < data.length; i++)
-            if (data[i][1] < 0 && (int) data[i][0] == (right ? 2 : 3)) out.add(Map.entry(bone.getChild("p" + i), data[i][3] + data[i][11] + data[i][14] / 2));
-        return out;
+    /** Модель нагрудника комплекта: её кости рук вместе с деталями рисует согнутыми BentArms. */
+    public static HumanoidModel<?> chestModel(ClassArmorItem armor) {
+        return model(armor.setName(), EquipmentSlot.CHEST);
     }
 
-    private static HumanoidModel<?> model(String set, EquipmentSlot slot) {
+    static HumanoidModel<?> model(String set, EquipmentSlot slot) {
         String key = set + "/" + slotName(slot);
         if (ArmorShapes.get(key) == null) return null;
         return CACHE.computeIfAbsent(key, k -> new HumanoidModel<>(Minecraft.getInstance().getEntityModels().bakeLayer(layer(set, slot))));

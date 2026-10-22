@@ -66,6 +66,8 @@ public class FocusAttackGameTests {
         helper.assertTrue(spell > 0, "the mage has no spell power to test with");
         helper.assertTrue(Math.abs(actual - expected) < 1.0E-4, "bolt damage " + actual + " != " + expected);
         helper.assertTrue(FocusItem.CHARGE_TICKS == 24, "the focus must charge 20% longer than a bow (24 ticks)");
+        helper.assertTrue(FocusItem.chargeTicks(new ItemStack(ModItems.APPRENTICE_STAFF.get())) == 20
+                && FocusItem.chargeTicks(new ItemStack(ModItems.APPRENTICE_WAND.get())) == 24, "a staff charges 20% faster than a wand");
         helper.assertTrue(Math.abs(MagicBoltEntity.SPEED * 20 - 5f) < 1.0E-4, "the bolt must fly 5 blocks per second");
         helper.succeed();
     }
@@ -149,5 +151,22 @@ public class FocusAttackGameTests {
         player.setXRot(15f);
         shoot(player, 30);
         helper.succeedWhen(() -> helper.assertTrue(cow.getHealth() < health, "the bolt flew through a cow"));
+    }
+
+    @GameTest(template = ARENA, timeoutTicks = 100)
+    public static void boltAimsAtTheVisibleEnemyInSight(GameTestHelper helper) {
+        // Маг смотрит вдоль +X. Ближний враг прямо по прицелу, но за стеной; дальний — левее прицела, на виду.
+        ServerPlayer player = mage(helper, ModItems.FIRE_RUNE_STAFF.get());
+        Husk hidden = helper.spawn(EntityType.HUSK, new BlockPos(4, 2, 4));
+        Husk seen = helper.spawn(EntityType.HUSK, new BlockPos(7, 2, 1));
+        hidden.setNoAi(true);
+        seen.setNoAi(true);
+        helper.assertTrue(MagicBoltEntity.aimedTarget(player) == hidden && player.hasLineOfSight(seen), "without a wall the enemy at the crosshair is the target");
+        for (int y = 2; y <= 4; y++)
+            for (int z = 4; z <= 5; z++) helper.setBlock(new BlockPos(3, y, z), net.minecraft.world.level.block.Blocks.STONE);
+        helper.assertTrue(MagicBoltEntity.aimedTarget(player) == seen, "behind a wall the visible enemy must be the target, got " + MagicBoltEntity.aimedTarget(player));
+        shoot(player, 30);
+        helper.assertTrue(bolts(player).stream().allMatch(b -> b.target() == seen), "the bolt must lock on the visible enemy");
+        helper.succeed();
     }
 }

@@ -18,7 +18,8 @@ import java.util.Random;
  * Объёмная классовая броня: детали каждого комплекта (кубоиды на голове, теле, руках и ногах),
  * раскладка их развёрток по текстуре 128×128 и сама текстура: рисуется в 4 раза подробнее и уменьшается
  * до 128×128 усреднением, чтобы мелкий рисунок (стёжка, кольчуга, узоры) не пропадал.
- * Пишет текстуры в textures/models/armor3d/ и данные моделей в client/armor/ArmorShapes.java.
+ * Пишет текстуры в textures/models/armor3d/, данные моделей в client/armor/ArmorShapes.java
+ * и иконки предметов брони (textures/item/) — отрисовку тех же деталей в 3/4.
  *
  * Координаты — как у моделей Minecraft: y вниз, лицо смотрит в −z; детали рук и ног задаются для правой
  * стороны и зеркалятся на левую. Запуск: java tools/ArmorGen.java .
@@ -49,10 +50,20 @@ public class ArmorGen {
             switch (b.cls) {
                 case "warrior" -> warrior(b);
                 case "archer" -> archer(b);
-                default -> mage(b);
+                default -> {
+                    if (set.startsWith("mage")) wanderer(b);
+                    else mage(b);
+                }
             }
             b.pack();
-            ImageIO.write(downscale(b.paint(), R), "png", texDir.resolve(set + ".png").toFile());
+            BufferedImage painted = b.paint(false);
+            ImageIO.write(downscale(painted, R), "png", texDir.resolve(set + ".png").toFile());
+            // Текстура свечения рун (её рисует слой ArmorGlow): всё прозрачное, кроме самих рун.
+            if (b.hasRunes()) ImageIO.write(downscale(b.paint(true), R), "png", texDir.resolve(set + "_glow.png").toFile());
+            String[] items = {"helmet", "chestplate", "leggings", "boots"};
+            for (int i = 0; i < SLOTS.length; i++)
+                ImageIO.write(icon(b, SLOTS[i], painted), "png",
+                        root.resolve("src/main/resources/assets/heroicpaths/textures/item/" + set + "_" + items[i] + ".png").toFile());
             for (String slot : SLOTS) {
                 String name = (set + "_" + slot).toUpperCase(Locale.ROOT);
                 java.append("    private static final float[][] ").append(name).append(" = {\n");
@@ -61,8 +72,6 @@ public class ArmorGen {
                 sw.append("            case \"").append(set).append('/').append(slot).append("\" -> ").append(name).append(";\n");
             }
             System.out.println(set + ": " + b.blocks.size() + " blocks, uv height " + b.usedH);
-            if (b.cls.equals("mage")) ImageIO.write(hatIcon(set, b.grade), "png",
-                    root.resolve("src/main/resources/assets/heroicpaths/textures/item/" + set + "_helmet.png").toFile());
         }
         sw.append("            default -> null;\n        };\n    }\n");
         java.append(sw).append("}\n");
@@ -235,14 +244,20 @@ public class ArmorGen {
                 }
         }
 
-        BufferedImage paint() {
+        boolean hasRunes() {
+            for (Cube c : blocks.values())
+                for (String d : c.deco) if (d.equals("runes") || d.equals("glowall") || d.equals("lantern")) return true;
+            return false;
+        }
+
+        BufferedImage paint(boolean glow) {
             BufferedImage img = new BufferedImage(TW * R, TH * R, BufferedImage.TYPE_INT_ARGB);
             Map<String, Pal> pal = palettes(set);
             for (Cube c : blocks.values()) {
                 int[] uv = null;
                 for (List<Cube> list : slots.values())
                     for (Cube k : list) if (k.key().equals(c.key())) uv = new int[]{k.u, k.v};
-                Painter p = new Painter(img, pal, set, c, uv[0], uv[1]);
+                Painter p = new Painter(img, pal, set, c, uv[0], uv[1], glow);
                 p.all();
             }
             return img;
@@ -348,7 +363,127 @@ public class ArmorGen {
         b.limb("right_leg", -2.6, 12, -3.6, 5.2, 0.75, 6.2, 0, "leather2");
     }
 
-    /** Мантия мага: остроконечный колпак с полями и лентой, накидка, рукава-колокола, пояс, полы и туфли. */
+    /**
+     * Тёмный маг-странник (маг I): широкополая остроконечная шляпа, латный нагрудник и наплечники с гравировкой,
+     * длинный рваный плащ за спиной, пояс с тканевыми набедренниками, латные наколенники, поножи и сапоги.
+     */
+    static void wanderer(Builder b) {
+        b.slot("head");
+        b.box("head", -4.75, -9.25, -4.75, 9.5, 1.75, 9.5, 0, "leather2", b.grade >= 2 ? "trim_b" : "stitch");
+        b.box("head", -0.9, -9.25, -5.15, 1.8, 1.75, 0.5, 0, "trim", "bevel");
+        b.box("head", -6.25, -7.85, -6.25, 12.5, 0.8, 12.5, 0, "leather");
+        // Поля шляпы: четыре пластины по краям чуть свисают вниз.
+        String rim = b.grade >= 2 ? "rim" : "";
+        b.part("head", -1, 0, -7.6, -6.25, 17 * P, 0, 0, -9.5, 0, -3.5, 19, 0.8, 3.5, 0, "leather", rim);
+        b.part("head", -1, 0, -7.6, 6.25, -17 * P, 0, 0, -9.5, 0, 0, 19, 0.8, 3.5, 0, "leather", rim);
+        int br = b.part("head", -1, -6.25, -7.6, 0, 0, 0, -17 * P, -3.5, 0, -6.25, 3.5, 0.8, 12.5, 0, "leather", rim);
+        b.mirror(false, br);
+        // Высокая тулья: много ярусов с шагом в полпикселя (каждый высотой в пиксель и заходит в нижний, чтобы не было щелей), чтобы конус шёл почти гладко и плавно заваливался назад.
+        int steps = 13;
+        double ty = -9.25, tz = 0;
+        for (int i = 0; i < steps; i++) {
+            double k = i / (steps - 1.0), size = 8.6 - 5.0 * k, hgt = 0.5;
+            ty -= hgt;
+            tz = 2.4 * k * k;
+            b.box("head", -size / 2, ty, -size / 2 + tz, size, 1, size, 0, "leather", "smooth");
+        }
+        // Заломленный кончик: цепочка мелких звеньев, каждое чуть уже и чуть сильнее загнуто назад;
+        // звено выше шага и заходит в следующее, чтобы изгиб был плавным и без щелей.
+        int t3 = -1;
+        double tipY = ty, tipZ = tz;
+        for (int i = 0; i < 10; i++) {
+            double s = 3.4 - 2.6 * i / 9.0;
+            t3 = b.part("head", t3, 0, i == 0 ? tipY : -0.9, i == 0 ? tipZ : 0, (i == 0 ? -6 : -11) * P, 0, 0,
+                    -s / 2, -1.4, -s / 2, s, 1.5, s, 0, "leather", "smooth");
+        }
+        boolean gold = b.grade >= 2;
+        if (gold) {
+            // Маг II: золотой наконечник на кончике шляпы и звезда-брошь на ленте сбоку.
+            b.part("head", t3, 0, -1.2, 0, 0, 45 * P, 0, -0.55, -0.9, -0.55, 1.1, 0.9, 1.1, 0, "trim", "bevel");
+            b.part("head", -1, 4.85, -8.4, -1.5, 0, 0, 45 * P, -0.7, -0.7, -0.3, 1.4, 1.4, 0.6, 0, "trim", "bevel");
+        }
+        // Перо за лентой шляпы.
+        b.part("head", -1, 4.9, -8.75, 1.5, -20 * P, 0, 25 * P, -0.25, -5.5, -0.8, 0.5, 5.5, 1.6, 0, "feather");
+
+        b.slot("chest");
+        b.box("body", -4, 0, -2, 8, 12, 4, 0.55, "cloth2", "folds");
+        b.box("body", -4.6, 0, -2.9, 9.2, 7.25, 5.8, 0, "metal", "ridge", "engrave", "bevel", gold ? "trim_t" : "", gold ? "trim_b" : "", b.grade >= 3 ? "runes" : "");
+        if (gold) b.box("body", -0.9, 1.5, -3.3, 1.8, 1.8, 0.5, 0, "gem");
+        b.box("body", -4.4, 7, -2.75, 8.8, 1.75, 5.5, 0, "metal2", "rivets", "bevel");
+        b.box("body", -4.1, -1.25, -3.1, 8.2, 1.75, 6.2, 0, gold ? "trim" : "metal2", "bevel");
+        // Шарф на шее и плащ: полотнище почти до земли, низ изорван.
+        b.box("body", -4.9, -1.5, -3.4, 9.8, 2.25, 6.8, 0, "scarf", "folds");
+        if (gold) {
+            // Золотые застёжки плаща на груди и цепочка между ними.
+            int cl = b.box("body", -3.6, -1.1, -3.85, 1.4, 1.4, 0.5, 0, "trim", "bevel");
+            b.mirror(false, cl);
+            b.box("body", -2.2, -0.6, -3.7, 4.4, 0.4, 0.3, 0, "trim");
+        }
+        b.box("body", -4.9, -1, 2.6, 9.8, 2, 1, 0, gold ? "trim" : "cloth", gold ? "bevel" : "stitch");
+        b.part("body", -1, 0, 0, 3.15, 8 * P, 0, 0, -5.5, 0, 0, 11, 23.5, 0.5, 0, "cloth", "folds", "torn", b.grade >= 3 ? "runes" : "");
+        int[] pd = {
+                b.box("right_arm", -4.5, -3.6, -3.4, 6, 2.5, 6.8, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : ""),
+                b.box("right_arm", -4.75, -1.4, -3.5, 5.5, 1.75, 7, 0, "metal2", "rivets", "bevel"),
+                b.box("right_arm", -4.9, 0.1, -3.6, 5.1, 1.6, 7.2, 0, "metal", "bevel", b.grade >= 2 ? "trim_b" : "")};
+        b.mirror(true, pd);
+        // Ремень через грудь с медальоном.
+        int st = b.part("body", -1, 0, 5.5, -3.2, 0, 0, 38 * P, -0.6, -7.5, -0.25, 1.2, 15, 0.5, 0, "leather2", "stitch");
+        b.part("body", st, 0, -2.5, -0.3, 0, 0, 0, -0.75, -0.75, -0.2, 1.5, 1.5, 0.4, 0, b.grade >= 3 ? "gem" : "trim", "bevel");
+        if (b.grade == 2) {
+            // Маг II: золотые шипы на наплечниках.
+            int s1 = b.part("right_arm", -1, -2.5, -3.6, 0, 0, 0, -25 * P, -0.45, -1.8, -0.45, 0.9, 1.8, 0.9, 0, "trim", "bevel");
+            int s2 = b.part("right_arm", -1, -2.25, -3.6, -2.2, 0, 0, -25 * P, -0.35, -1.3, -0.35, 0.7, 1.3, 0.7, 0, "trim", "bevel");
+            int s3 = b.part("right_arm", -1, -2.25, -3.6, 2.2, 0, 0, -25 * P, -0.35, -1.3, -0.35, 0.7, 1.3, 0.7, 0, "trim", "bevel");
+            b.mirror(true, s1, s2, s3);
+        } else if (b.grade >= 3) {
+            // Маг III: светящиеся кристаллы прорастают из наплечников.
+            int c1 = b.part("right_arm", -1, -2.25, -3.6, 0, 8 * P, 0, -22 * P, -0.55, -3.2, -0.55, 1.1, 3.2, 1.1, 0, "gem", "glowall");
+            int c2 = b.part("right_arm", -1, -2.75, -3.6, -2, -18 * P, 0, -35 * P, -0.45, -2.2, -0.45, 0.9, 2.2, 0.9, 0, "gem", "glowall");
+            int c3 = b.part("right_arm", -1, -1.75, -3.6, 2, 20 * P, 0, -12 * P, -0.4, -1.8, -0.4, 0.8, 1.8, 0.8, 0, "gem", "glowall");
+            b.mirror(true, c1, c2, c3);
+        }
+        b.limb("right_arm", -3, -2, -2, 4, 12, 4, 0.5, "cloth2", "folds");
+        b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_b" : "", b.grade >= 3 ? "runes" : "");
+        b.limb("right_arm", -3.75, 9.75, -2.75, 5.5, 0.75, 5.5, 0, gold ? "trim" : "leather2", gold ? "bevel" : "");
+
+        b.slot("legs");
+        b.box("body", -4.75, 9.5, -2.75, 9.5, 1.75, 5.5, 0, "leather2", "buckle", "stitch");
+        b.box("body", 2.25, 10.5, -3.5, 2, 2.5, 1, 0, "leather2", "stitch");
+        if (!gold) {
+            // Маг I: фонарь на крюке у правого бедра и черепок-оберег под пряжкой.
+            b.box("body", -5.15, 9.6, -0.25, 0.5, 1.2, 0.5, 0, "metal2");
+            b.box("body", -6.05, 10.35, -1.05, 2.1, 0.4, 2.1, 0, "metal2", "bevel");
+            b.box("body", -5.9, 10.75, -0.9, 1.8, 2.0, 1.8, 0, "metal2", "lantern");
+            b.box("body", -6.05, 12.75, -1.05, 2.1, 0.35, 2.1, 0, "metal2", "bevel");
+            b.box("body", -3.9, 11.1, -3.45, 1.5, 1.5, 1.1, 0, "bone", "skull", "bevel");
+        }
+        if (gold) {
+            // Бляхи на поясе, гримуар на цепочке у левого бедра и склянка зелья у правого.
+            int pl = b.box("body", -3.6, 9.65, -2.95, 1.2, 1.45, 0.3, 0, "trim", "bevel");
+            b.mirror(false, pl);
+            b.box("body", 4.85, 10.75, -1.6, 1.25, 3.4, 3.2, 0, "book", "pages");
+            b.box("body", 4.95, 9.9, -0.25, 0.5, 1, 0.5, 0, "trim");
+            b.box("body", -5.75, 10.9, -0.6, 1.1, 1.9, 1.1, 0, "gem");
+            b.box("body", -5.6, 10.3, -0.45, 0.8, 0.6, 0.8, 0, "leather");
+            b.box("body", -5.85, 12.75, -0.7, 1.3, 0.4, 1.3, 0, "trim");
+        }
+        b.box("body", -1.25, 10.25, -3.3, 2.5, 7.5, 0.4, 0, "scarf", "folds", "torn");
+        b.limb("right_leg", -2, 0, -2, 4, 12, 4, 0.45, "cloth2", "folds");
+        // Тканевые набедренники идут вместе с ногой спереди и сбоку.
+        b.limb("right_leg", -2.6, -0.5, -3.05, 5.2, 6.5, 0.5, 0, "leather", "folds", "torn");
+        b.limb("right_leg", -3.1, -0.5, -2.5, 0.5, 5.5, 5, 0, "leather", "folds", "torn");
+        b.limb("right_leg", -2.6, 4.25, -3.25, 5.2, 2.5, 1, 0, "trim", "engrave", "bevel");
+        b.limb("right_leg", -2.2, 4.75, -3.6, 4.4, 1.5, 0.5, 0, "metal2", "bevel");
+
+        b.slot("feet");
+        b.limb("right_leg", -2.4, 6.75, -2.4, 4.8, 5.5, 4.8, 0.3, "metal", "engrave", "bevel", b.grade >= 2 ? "trim_t" : "", b.grade >= 3 ? "runes" : "");
+        b.limb("right_leg", -2.75, 6.5, -2.75, 5.5, 1, 5.5, 0, gold ? "trim" : "leather2", gold ? "bevel" : "");
+        b.limb("right_leg", -2.25, 10.25, -4, 4.5, 2.25, 1.75, 0, "metal2", "bevel");
+        b.limb("right_leg", -1.5, 10.75, -4.75, 3, 1.5, 0.9, 0, "trim", "bevel");
+        b.limb("right_leg", -2.6, 12, -3.6, 5.2, 0.6, 6.2, 0, "leather2");
+    }
+
+    /** Мантия мага:остроконечный колпак с полями и лентой, накидка, рукава-колокола, пояс, полы и туфли. */
     static void mage(Builder b) {
         int g = b.grade;
         b.slot("head");
@@ -406,6 +541,11 @@ public class ArmorGen {
         return new Color(Integer.parseInt(hex, 16));
     }
 
+    /** Знаки рун 3×4 (строки сверху вниз) и цвет их свечения. */
+    static final String[] RUNES = {"010111010010", "100110101100", "111100110100", "101101111001", "110101110101", "011100010001", "101010010010"};
+    static final Color RUNE_GLOW = new Color(0x78E8FF);
+    static final Color LANTERN = new Color(0xFFB040);
+
     static final Pal IRON = Pal.of("24262E", "5A5F6C", "969CA8", "D0D5DE", "F4F6FA");
     static final Pal IRON2 = Pal.of("1C1E24", "464A55", "707684", "A0A6B2", "C8CCD4");
     static final Pal STEEL = Pal.of("161E2C", "3C4A64", "6E86A8", "B2C4DE", "F2F8FF");
@@ -427,6 +567,7 @@ public class ArmorGen {
         p.put("shaft", Pal.of("3A2410", "6A4824", "9A7240", "C49A60", "E0C08A"));
         p.put("gem", Pal.of("2A0E4A", "5A2E9A", "8A4AD8", "C8A4F4", "F4ECFF"));
         p.put("star", Pal.of("5A4A10", "B09020", "F0D040", "FFF080", "FFFFE0"));
+        p.put("bone", Pal.of("4A4436", "8A826A", "C2B898", "E2DAC0", "F6F0DE"));
         switch (set) {
             case "warrior_iron" -> {
                 p.put("metal", IRON); p.put("metal2", IRON2); p.put("trim", BRASS);
@@ -464,20 +605,38 @@ public class ArmorGen {
                 p.put("feather", Pal.of("0A0204", "2A0608", "5A0E14", "8A1C24", "B8404A"));
             }
             case "mage_wool" -> {
-                p.put("cloth", Pal.of("3A342A", "8A8070", "C8C0AE", "E8E2D4", "FFFCF4"));
-                p.put("cloth2", Pal.of("1E0C34", "3E1E6A", "5E34A0", "8A5ACC", "B48CEC"));
-                p.put("leather", Pal.of("1E0C34", "3E1E6A", "5E34A0", "8A5ACC", "B48CEC")); p.put("trim", BRASS);
+                p.put("cloth", Pal.of("0E0A12", "221A2A", "3A2E44", "54465E", "736480"));
+                p.put("cloth2", Pal.of("0E0C10", "1E1A22", "2E2834", "433C4A", "5C5464"));
+                p.put("scarf", Pal.of("061418", "12303A", "1E4C58", "306A78", "4C8E9C"));
+                p.put("feather", Pal.of("08080A", "18181E", "2A2A32", "3E3E48", "56566A"));
+                p.put("leather", Pal.of("1A1008", "3A2614", "5A3E22", "7A5834", "9A764C"));
+                p.put("leather2", LEATHER_DARK);
+                p.put("metal", Pal.of("121418", "30343A", "50565E", "7C828C", "A8AEB6")); p.put("metal2", IRON2);
+                p.put("trim", Pal.of("2E1E08", "5E4418", "94702E", "C29E52", "E6CC88"));
             }
             case "mage" -> {
-                p.put("cloth", Pal.of("1A0A2E", "3A1A64", "5A2E96", "8250C4", "AC80E4"));
-                p.put("cloth2", Pal.of("0C0A28", "1C1A54", "2E2C82", "4A48AE", "7472D4"));
-                p.put("leather", Pal.of("0C0A28", "1C1A54", "2E2C82", "4A48AE", "7472D4")); p.put("trim", GOLD);
+                // Маг II: тот же странник, латы с серебряным отливом и золотые вставки.
+                p.put("cloth", Pal.of("140A22", "2C1848", "44286A", "5E3C8C", "8060B0"));
+                p.put("cloth2", Pal.of("0C0A1C", "1A1838", "2A2852", "3E3C70", "5A5892"));
+                p.put("scarf", Pal.of("0C0A28", "1C1A54", "2E2C82", "4A48AE", "7472D4"));
+                p.put("leather", Pal.of("120C1A", "261C34", "3A2C4C", "524066", "6E5884"));
+                p.put("leather2", LEATHER_BLACK);
+                p.put("metal", Pal.of("1A1E26", "404652", "6C7482", "9EA6B4", "CED4DE")); p.put("metal2", Pal.of("16181E", "343842", "565C68", "7E8694", "A6AEBA"));
+                p.put("trim", GOLD);
+                p.put("book", Pal.of("2A0608", "5A0E14", "8A1C24", "B03440", "D06070"));
                 p.put("gem", Pal.of("5A1004", "A02808", "F0501A", "FFB060", "FFF0C8"));
             }
             default -> {
                 p.put("cloth", Pal.of("060A24", "10184E", "1E2C7E", "3448AE", "5C70D4"));
                 p.put("cloth2", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4"));
-                p.put("leather", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4")); p.put("trim", GOLD);
+                // Маг III: звёздный странник — полуночная ткань со звёздами, тёмно-синие латы, золото и руны.
+                p.put("scarf", Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4"));
+                p.put("feather", Pal.of("0A1E4A", "1E4A90", "3A78D0", "7AB0F0", "C8E4FF"));
+                p.put("leather", Pal.of("080C1E", "141C40", "222E62", "34448A", "4E62B0")); p.put("trim", GOLD);
+                p.put("leather2", LEATHER_BLACK);
+                p.put("metal", Pal.of("10141E", "2A3448", "4A5A78", "7486A8", "A8B8D8"));
+                p.put("metal2", Pal.of("0C0E16", "222838", "3A4458", "5A6680", "8290AC"));
+                p.put("book", Pal.of("06102A", "102454", "1C3A80", "3058AC", "5A80D0"));
                 p.put("gem", Pal.of("0A3A6A", "1A78B0", "3AB8F0", "A8E8FF", "F4FEFF"));
             }
         }
@@ -516,11 +675,12 @@ public class ArmorGen {
         final Map<String, Pal> pal;
         final Cube c;
         final int u, v;
-        final boolean astral, damascus;
+        final boolean astral, damascus, gilded, glow;
         final List<String> deco;
         final Random rnd;
 
-        Painter(BufferedImage img, Map<String, Pal> pal, String set, Cube c, int u, int v) {
+        Painter(BufferedImage img, Map<String, Pal> pal, String set, Cube c, int u, int v, boolean glow) {
+            this.glow = glow;
             this.img = img;
             this.pal = pal;
             this.c = c;
@@ -528,6 +688,7 @@ public class ArmorGen {
             this.v = v;
             this.astral = set.equals("mage_astral");
             this.damascus = set.equals("warrior_damascus");
+            this.gilded = set.equals("mage") || set.equals("mage_astral");
             this.deco = List.of(c.deco);
             this.rnd = new Random(c.key().hashCode());
         }
@@ -570,6 +731,21 @@ public class ArmorGen {
                 double tooth = Math.abs((fx % 1.0) - 0.5) * 2;
                 if (tooth < (fy - (fh - 0.8)) / 0.8) return null;
             }
+            // Изорванный низ: зубцы разной глубины и пара прорех.
+            if (deco.contains("torn") && vertical(f)) {
+                double depth = Math.min(fh * 0.3, 5.5);
+                double cut = (0.3 + 0.7 * hash(Math.floor(fx * 0.6), 0, (int) (fw * 7))) * depth;
+                double edge = Math.abs((fx * 0.6) % 1.0 - 0.5) * 2;
+                if (fy > fh - cut * (0.55 + 0.45 * (1 - edge))) return null;
+                if (fh > 8 && hash(Math.floor(fx / 1.5), Math.floor(fy / 1.5), 21) > 0.9
+                        && Math.abs((fx / 1.5) % 1.0 - 0.5) < 0.3 && Math.abs((fy / 1.5) % 1.0 - 0.5) < 0.22) return null;
+            }
+            // Руны считаются по центру пикселя итоговой текстуры, чтобы каждый пиксель был целиком знаком или фоном.
+            double sx = fx - ((px + 0.5) / R - (Math.floor(px / (double) R) + 0.5)), sy = fy - ((py + 0.5) / R - (Math.floor(py / (double) R) + 0.5));
+            boolean rune = deco.contains("runes") && rune(f, sx, sy, fw, fh);
+            // Окошки фонаря: стекло со свечой внутри.
+            boolean window = deco.contains("lantern") && vertical(f) && fx > 0.4 && fx < fw - 0.4 && fy > 0.35 && fy < fh - 0.35;
+            if (glow) return rune ? RUNE_GLOW : window ? LANTERN : deco.contains("glowall") ? base(m, p, f, fx, fy, fw, fh, px, py) : null;
             Color col = base(m, p, f, fx, fy, fw, fh, px, py);
             // Отделка: полосы, кайма, знаки.
             Pal trim = pal.getOrDefault("trim", GOLD);
@@ -619,13 +795,42 @@ public class ArmorGen {
                 if (fh > 1.6 && fw > 1.6 && Math.abs(fy - ry) < 0.22 && fx > 0.7 && fx < fw - 0.7 && rxs >= -0.22 && Math.abs(rxs) < 0.22)
                     col = fy - ry < 0 ? p.h() : p.d();
             }
+            // Гравировка по латам: рамка вдоль края и ромб с завитками посередине.
+            if (deco.contains("engrave") && vertical(f) && fw > 1.8 && fh > 1.8) {
+                Pal tr = pal.getOrDefault("trim", SILVER);
+                double in = 0.6, t = gilded ? 0.32 : 0.11;
+                boolean frame = (Math.abs(fy - in) < t || Math.abs(fy - (fh - in)) < t) && fx > in - t && fx < fw - in + t
+                        || (Math.abs(fx - in) < t || Math.abs(fx - (fw - in)) < t) && fy > in - t && fy < fh - in + t;
+                double cx = fw / 2, cy = fh / 2, r = Math.min(fw, fh) * 0.28;
+                double dd = Math.abs(fx - cx) + Math.abs(fy - cy);
+                boolean diamond = Math.abs(dd - r) < t * 1.2 || dd < 0.22;
+                boolean curl = Math.abs(Math.sin((fx - cx) * 2.4) * 0.45 + cy - fy) < t
+                        && Math.abs(fx - cx) > r && Math.abs(fx - cx) < fw / 2 - in - 0.3;
+                if (frame || diamond || curl) col = mix(col, tr.l(), 0.7);
+                else if (Math.abs(dd - r - 0.2) < t) col = mix(col, p.o(), 0.3);
+            }
             if (astral && (m.equals("cloth") || m.equals("cloth2"))) col = stars(col, fx, fy);
             // Объём: светлая фаска сверху-слева, тень снизу-справа, тёмный контур граней.
             if (deco.contains("bevel")) {
                 if (fy < 0.55 || fx < 0.45) col = mix(col, p.h(), 0.28);
                 else if (fy > fh - 0.5 || fx > fw - 0.45) col = mix(col, p.d(), 0.3);
             }
-            if (fx < 0.25 || fy < 0.25 || fx > fw - 0.25 || fy > fh - 0.25) col = mix(col, p.o(), 0.5);
+            // Книга: обрез страниц сверху, снизу и спереди, золотые уголки на обложках.
+            if (deco.contains("pages")) {
+                boolean edge = f == Face.TOP || f == Face.BOTTOM || f == Face.FRONT;
+                if (edge && fx > 0.2 && fx < fw - 0.2 && fy > 0.2 && fy < fh - 0.2)
+                    col = shade(new Color(0xE6D8B4), ((int) Math.floor((f == Face.FRONT ? fx : fy) * 4)) % 2 == 0 ? 1.0 : 0.88);
+                boolean cover = f == Face.LEFT || f == Face.RIGHT;
+                if (cover && (fx < 0.8 || fx > fw - 0.8) && (fy < 0.8 || fy > fh - 0.8)) col = mix(trim.l(), trim.m(), 0.4);
+                if (cover && Math.abs(fx - fw / 2) + Math.abs(fy - fh / 2) < 0.6) col = trim.h();
+            }
+            // Тонкие ярусы гладкого конуса: ровный цвет без контура, иначе каждый ярус читается полоской.
+            if (deco.contains("smooth")) col = shade(p.m(), 1 + (hash(px / 2.0, py / 2.0, 17) - 0.5) * 0.12);
+            else if (fx < 0.25 || fy < 0.25 || fx > fw - 0.25 || fy > fh - 0.25) col = mix(col, p.o(), 0.5);
+            if (rune) col = mix(col, RUNE_GLOW, 0.8);
+            if (window) col = mix(LANTERN, Color.WHITE, 0.25);
+            if (deco.contains("skull") && f == Face.FRONT && fy > fh * 0.3 && fy < fh * 0.6 && Math.abs(Math.abs(fx - fw / 2) - fw * 0.22) < fw * 0.13)
+                col = p.o();
             double light = switch (f) {
                 case TOP -> 1.1;
                 case BOTTOM -> 0.75;
@@ -634,6 +839,23 @@ public class ArmorGen {
                 default -> 1.0;
             };
             return shade(col, light);
+        }
+
+        /**
+         * Руны: строки знаков 3×4 пикселя с шагом в пиксель по сетке грани (иначе тонкие штрихи пропадут при
+         * уменьшении текстуры); знаки ставятся по центру грани, на высоких гранях — в несколько строк.
+         */
+        boolean rune(Face f, double fx, double fy, double fw, double fh) {
+            if (f != Face.FRONT && f != Face.BACK && f != Face.LEFT && f != Face.RIGHT) return false;
+            int n = (int) ((fw - 1) / 4), rows = Math.max(1, (int) ((fh - 1) / 6));
+            if (n < 1 || fh < 4.5) return false;
+            double lx = fx - Math.floor((fw - (4 * n - 1)) / 2), ly = fy - Math.floor((fh - (6 * rows - 2)) / 2);
+            int gi = (int) Math.floor(lx / 4), ri = (int) Math.floor(ly / 6);
+            if (lx < 0 || ly < 0 || gi >= n || ri >= rows) return false;
+            int gx = (int) Math.floor(lx - gi * 4), gy = (int) Math.floor(ly - ri * 6);
+            if (gx > 2 || gy > 3) return false;
+            String glyph = RUNES[(int) (hash(gi, ri + f.ordinal() * 7, (int) (fw * 13 + fh * 31)) * RUNES.length) % RUNES.length];
+            return glyph.charAt(gy * 3 + gx) == '1';
         }
 
         Color band(Pal t, double pos, double size) {
@@ -665,14 +887,14 @@ public class ArmorGen {
                     }
                     return shade(col, k);
                 }
-                case "cloth", "cloth2" -> {
+                case "cloth", "cloth2", "scarf" -> {
                     double fold = deco.contains("folds") && vertical(f) ? Math.sin(fx * 2.1 + hash(0, 0, (int) (fw * 10)) * 6) * 0.09 : 0;
                     double foldH = deco.contains("folds_h") ? Math.sin(fy * 3.2) * 0.09 : 0;
                     double weave = (((px + py) & 1) == 0 ? 0.025 : -0.025) + (((px - py) % 6 + 6) % 6 == 0 ? -0.04 : 0);
                     Color col = vertical(f) ? mix(p.m(), p.d(), fy / Math.max(fh, 0.01) * 0.35) : mix(p.m(), p.l(), 0.25);
                     return shade(col, 1 + fold + foldH + weave + n * 0.03);
                 }
-                case "leather", "leather2" -> {
+                case "leather", "leather2", "book" -> {
                     double blot = (hash(px / 3.0, py / 3.0, 5) - 0.5) * 0.14;
                     Color col = vertical(f) ? mix(p.l(), p.m(), Math.min(1, fy / Math.max(fh, 0.01) * 1.4)) : p.m();
                     return shade(col, 1 + blot + n * 0.05);
@@ -708,70 +930,196 @@ public class ArmorGen {
     }
 
     // =====================================================================================
-    // Иконка колпака для инвентаря (32×32, пиксельная)
+    // Иконки предметов: та же объёмная броня, отрисованная в 3/4
     // =====================================================================================
 
-    static BufferedImage hatIcon(String set, int grade) {
-        Map<String, Pal> pal = palettes(set);
-        Pal cloth = pal.get("cloth"), band = pal.get("cloth2"), trim = pal.get("trim"), star = pal.get("star");
-        BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-        java.awt.Graphics2D g = img.createGraphics();
-        // Конус с загнутым назад кончиком: светлая левая сторона, тёмная правая.
-        int[] cx = {8, 23, 22, 21, 22, 24, 27, 28, 26, 22, 19, 16, 14, 11};
-        int[] cy = {21, 21, 15, 11, 8, 5, 2, 3, 4, 6, 8, 11, 14, 18};
-        g.setColor(cloth.m());
-        g.fillPolygon(cx, cy, cx.length);
-        // Загнутый кончик — толстой ломаной, чтобы не рвался на пиксели.
-        g.setStroke(new java.awt.BasicStroke(2.6f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
-        g.drawPolyline(new int[]{20, 22, 25, 28}, new int[]{10, 6, 4, 3}, 4);
-        g.setStroke(new java.awt.BasicStroke(1f));
-        g.setColor(cloth.l());
-        g.fillPolygon(new int[]{8, 13, 15, 17, 16, 14, 11}, new int[]{21, 21, 14, 10, 11, 14, 18}, 7);
-        g.setColor(cloth.d());
-        g.fillPolygon(new int[]{19, 23, 22, 21, 20}, new int[]{21, 21, 15, 11, 12}, 5);
-        // Поля шляпы и лента.
-        g.setColor(cloth.d());
-        g.fillRect(3, 23, 26, 3);
-        g.setColor(cloth.m());
-        g.fillRect(4, 22, 24, 2);
-        g.setColor(trim.l());
-        g.fillRect(3, 25, 26, 1);
-        g.setColor(band.m());
-        g.fillRect(8, 19, 16, 3);
-        g.setColor(band.l());
-        g.fillRect(8, 19, 16, 1);
-        if (grade >= 2) {
-            g.setColor(trim.l());
-            g.fillRect(14, 19, 4, 3);
-            g.setColor(pal.get("gem").l());
-            g.fillRect(15, 20, 2, 1);
-        }
-        if (grade >= 3) {
-            g.setColor(star.l());
-            for (int[] s : new int[][]{{11, 17}, {17, 14}, {14, 10}, {19, 17}}) {
-                g.fillRect(s[0], s[1], 1, 1);
-                g.setColor(star.h());
-                g.fillRect(s[0] - 1, s[1], 1, 1);
-                g.fillRect(s[0] + 1, s[1], 1, 1);
-                g.setColor(star.l());
+    static final int ICON = 64, SS = 4;
+    /** Точки поворота костей, как у модели гуманоида. */
+    static final double[][] BONE_PIVOT = {{0, 0, 0}, {0, 0, 0}, {-5, 2, 0}, {5, 2, 0}, {-1.9, 12, 0}, {1.9, 12, 0}};
+
+    /**
+     * Иконка слота: детали комплекта с его же текстурой (подробной, до уменьшения), повёрнутые на 3/4 и
+     * освещённые сверху слева; рисуется в SS раз крупнее, уменьшается и обводится тёмным контуром.
+     */
+    static BufferedImage icon(Builder b, String slot, BufferedImage tex) {
+        List<Cube> cubes = b.slots.get(slot);
+        double yaw = (slot.equals("head") ? 32 : 24) * P, pitch = (slot.equals("head") ? 22 : 14) * P;
+        // Вид: поворот вокруг вертикали, затем наклон, чтобы смотреть чуть сверху (y модели — вниз).
+        double[][] view = mul(rotX(pitch), rotY(yaw));
+        List<double[][]> quads = new ArrayList<>();
+        for (int i = 0; i < cubes.size(); i++) {
+            double[][] m = mul(view, partMatrix(cubes, i));
+            for (double[][] face : faces(cubes.get(i))) {
+                double[][] q = new double[4][];
+                for (int k = 0; k < 4; k++) q[k] = apply(m, face[k]);
+                quads.add(q);
             }
-            g.setColor(star.h());
-            g.fillRect(26, 2, 2, 2);
         }
-        g.dispose();
-        // Тёмный контур по краю силуэта.
-        BufferedImage out = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
-        for (int y = 0; y < 32; y++)
-            for (int x = 0; x < 32; x++) {
+        double minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+        for (double[][] q : quads)
+            for (double[] p : q) {
+                minX = Math.min(minX, p[0]);
+                maxX = Math.max(maxX, p[0]);
+                minY = Math.min(minY, p[1]);
+                maxY = Math.max(maxY, p[1]);
+            }
+        int size = ICON * SS;
+        double scale = (size - 2 * 3 * SS) / Math.max(maxX - minX, maxY - minY);
+        double ox = size / 2.0 - (minX + maxX) / 2 * scale, oy = size / 2.0 - (minY + maxY) / 2 * scale;
+        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        double[] depth = new double[size * size];
+        Arrays.fill(depth, Double.MAX_VALUE);
+        double[] light = norm(new double[]{-0.45, -0.75, -0.55});
+        for (double[][] q : quads) {
+            double[] n = norm(cross(sub(q[1], q[0]), sub(q[3], q[0])));
+            if (Double.isNaN(n[0])) continue;
+            if (n[2] > 0) n = new double[]{-n[0], -n[1], -n[2]};
+            double shade = 0.62 + 0.48 * Math.max(0, dot(n, light));
+            double[][] s = new double[4][];
+            for (int k = 0; k < 4; k++) s[k] = new double[]{q[k][0] * scale + ox, q[k][1] * scale + oy, q[k][2], q[k][3], q[k][4]};
+            tri(img, depth, tex, s[0], s[1], s[2], shade);
+            tri(img, depth, tex, s[0], s[2], s[3], shade);
+        }
+        return outline(downscale(img, SS));
+    }
+
+    /** Треугольник с z-буфером и текстурой по вершинам (u, v — пиксели развёртки 128×128). */
+    static void tri(BufferedImage img, double[] depth, BufferedImage tex, double[] a, double[] b, double[] c, double shade) {
+        int w = img.getWidth(), k = tex.getWidth() / TW;
+        double area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        if (Math.abs(area) < 1e-9) return;
+        int x0 = Math.max(0, (int) Math.floor(Math.min(a[0], Math.min(b[0], c[0])))), x1 = Math.min(w - 1, (int) Math.ceil(Math.max(a[0], Math.max(b[0], c[0]))));
+        int y0 = Math.max(0, (int) Math.floor(Math.min(a[1], Math.min(b[1], c[1])))), y1 = Math.min(w - 1, (int) Math.ceil(Math.max(a[1], Math.max(b[1], c[1]))));
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++) {
+                double px = x + 0.5, py = y + 0.5;
+                double wa = ((b[0] - px) * (c[1] - py) - (b[1] - py) * (c[0] - px)) / area;
+                double wb = ((c[0] - px) * (a[1] - py) - (c[1] - py) * (a[0] - px)) / area;
+                double wc = 1 - wa - wb;
+                if (wa < -1e-6 || wb < -1e-6 || wc < -1e-6) continue;
+                double z = wa * a[2] + wb * b[2] + wc * c[2];
+                if (z >= depth[y * w + x]) continue;
+                double u = wa * a[3] + wb * b[3] + wc * c[3], v = wa * a[4] + wb * b[4] + wc * c[4];
+                int tx = Math.min(tex.getWidth() - 1, Math.max(0, (int) Math.floor(u * k)));
+                int ty = Math.min(tex.getHeight() - 1, Math.max(0, (int) Math.floor(v * k)));
+                int argb = tex.getRGB(tx, ty);
+                if ((argb >>> 24) < 128) continue;
+                depth[y * w + x] = z;
+                img.setRGB(x, y, 0xFF000000 | cl(((argb >> 16) & 0xFF) * shade) << 16 | cl(((argb >> 8) & 0xFF) * shade) << 8 | cl((argb & 0xFF) * shade));
+            }
+    }
+
+    /** Тёмный контур снаружи силуэта, чтобы иконка читалась на любом фоне. */
+    static BufferedImage outline(BufferedImage img) {
+        int s = img.getWidth();
+        BufferedImage out = new BufferedImage(s, s, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++) {
                 int argb = img.getRGB(x, y);
-                if ((argb >>> 24) == 0) continue;
-                boolean edge = false;
-                for (int[] dd : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-                    int nx = x + dd[0], ny = y + dd[1];
-                    if (nx < 0 || ny < 0 || nx >= 32 || ny >= 32 || (img.getRGB(nx, ny) >>> 24) == 0) edge = true;
+                if ((argb >>> 24) != 0) {
+                    out.setRGB(x, y, argb);
+                    continue;
                 }
-                out.setRGB(x, y, edge ? cloth.o().getRGB() : argb);
+                for (int[] d : new int[][]{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
+                    int nx = x + d[0], ny = y + d[1];
+                    if (nx >= 0 && ny >= 0 && nx < s && ny < s && (img.getRGB(nx, ny) >>> 24) != 0) {
+                        out.setRGB(x, y, 0xD0100C10);
+                        break;
+                    }
+                }
             }
         return out;
+    }
+
+    /** Матрица детали: кость, цепочка родителей, своё смещение и поворот (ZYX, как ModelPart). */
+    static double[][] partMatrix(List<Cube> cubes, int i) {
+        Cube c = cubes.get(i);
+        double[][] local = mul(translate(c.px, c.py, c.pz), mul(rotZ(c.rz), mul(rotY(c.ry), rotX(c.rx))));
+        if (c.parent >= 0) return mul(partMatrix(cubes, c.parent), local);
+        double[] p = BONE_PIVOT[c.bone];
+        // Руки чуть разведены, как у стойки для брони, чтобы не сливались с телом.
+        double spread = c.bone == 2 ? 0.1 : c.bone == 3 ? -0.1 : c.bone == 4 ? 0.05 : c.bone == 5 ? -0.05 : 0;
+        return mul(translate(p[0], p[1], p[2]), mul(rotZ(spread), local));
+    }
+
+    /** Шесть граней кубоида с развёрткой, как в ModelPart.Cube: у вершин x y z и u v в пикселях текстуры. */
+    static double[][][] faces(Cube c) {
+        double x0 = c.x - c.inflate, y0 = c.y - c.inflate, z0 = c.z - c.inflate;
+        double x1 = c.x + c.w + c.inflate, y1 = c.y + c.h + c.inflate, z1 = c.z + c.d + c.inflate;
+        if (c.mirror) {
+            double t = x0;
+            x0 = x1;
+            x1 = t;
+        }
+        double[] v0 = {x0, y0, z0}, v1 = {x1, y0, z0}, v2 = {x1, y1, z0}, v3 = {x0, y1, z0};
+        double[] v4 = {x0, y0, z1}, v5 = {x1, y0, z1}, v6 = {x1, y1, z1}, v7 = {x0, y1, z1};
+        double u = c.u, v = c.v, w = c.w, h = c.h, d = c.d;
+        double f7 = u, f8 = u + d, f9 = u + d + w, f10 = u + d + w + w, f11 = u + d + w + d, f12 = u + d + w + d + w;
+        double f13 = v, f14 = v + d, f15 = v + d + h;
+        return new double[][][]{
+                face(new double[][]{v5, v4, v0, v1}, f8, f13, f9, f14),
+                face(new double[][]{v2, v3, v7, v6}, f9, f14, f10, f13),
+                face(new double[][]{v0, v4, v7, v3}, f7, f14, f8, f15),
+                face(new double[][]{v1, v0, v3, v2}, f8, f14, f9, f15),
+                face(new double[][]{v5, v1, v2, v6}, f9, f14, f11, f15),
+                face(new double[][]{v4, v5, v6, v7}, f11, f14, f12, f15)};
+    }
+
+    static double[][] face(double[][] v, double u1, double v1, double u2, double v2) {
+        double[][] uv = {{u2, v1}, {u1, v1}, {u1, v2}, {u2, v2}};
+        double[][] out = new double[4][];
+        for (int k = 0; k < 4; k++) out[k] = new double[]{v[k][0], v[k][1], v[k][2], uv[k][0], uv[k][1]};
+        return out;
+    }
+
+    static double[][] translate(double x, double y, double z) {
+        return new double[][]{{1, 0, 0, x}, {0, 1, 0, y}, {0, 0, 1, z}, {0, 0, 0, 1}};
+    }
+
+    static double[][] rotX(double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return new double[][]{{1, 0, 0, 0}, {0, c, -s, 0}, {0, s, c, 0}, {0, 0, 0, 1}};
+    }
+
+    static double[][] rotY(double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return new double[][]{{c, 0, s, 0}, {0, 1, 0, 0}, {-s, 0, c, 0}, {0, 0, 0, 1}};
+    }
+
+    static double[][] rotZ(double a) {
+        double c = Math.cos(a), s = Math.sin(a);
+        return new double[][]{{c, -s, 0, 0}, {s, c, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+    }
+
+    static double[][] mul(double[][] a, double[][] b) {
+        double[][] r = new double[4][4];
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                for (int k = 0; k < 4; k++) r[i][j] += a[i][k] * b[k][j];
+        return r;
+    }
+
+    /** Точка (x y z и что угодно после) через матрицу: меняются только x y z. */
+    static double[] apply(double[][] m, double[] p) {
+        double[] r = p.clone();
+        for (int i = 0; i < 3; i++) r[i] = m[i][0] * p[0] + m[i][1] * p[1] + m[i][2] * p[2] + m[i][3];
+        return r;
+    }
+
+    static double[] sub(double[] a, double[] b) {
+        return new double[]{a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+    }
+
+    static double[] cross(double[] a, double[] b) {
+        return new double[]{a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
+    }
+
+    static double dot(double[] a, double[] b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+
+    static double[] norm(double[] a) {
+        double l = Math.sqrt(dot(a, a));
+        return new double[]{a[0] / l, a[1] / l, a[2] / l};
     }
 }
