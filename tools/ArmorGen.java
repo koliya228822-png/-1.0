@@ -50,7 +50,10 @@ public class ArmorGen {
             switch (b.cls) {
                 case "warrior" -> warrior(b);
                 case "archer" -> archer(b);
-                default -> mage(b);
+                default -> {
+                    if (set.equals("mage_wool")) wanderer(b);
+                    else mage(b);
+                }
             }
             b.pack();
             BufferedImage painted = b.paint();
@@ -352,7 +355,70 @@ public class ArmorGen {
         b.limb("right_leg", -2.6, 12, -3.6, 5.2, 0.75, 6.2, 0, "leather2");
     }
 
-    /** Мантия мага: остроконечный колпак с полями и лентой, накидка, рукава-колокола, пояс, полы и туфли. */
+    /**
+     * Тёмный маг-странник (маг I): широкополая остроконечная шляпа, латный нагрудник и наплечники с гравировкой,
+     * длинный рваный плащ за спиной, пояс с тканевыми набедренниками, латные наколенники, поножи и сапоги.
+     */
+    static void wanderer(Builder b) {
+        b.slot("head");
+        b.box("head", -4.75, -9.25, -4.75, 9.5, 1.75, 9.5, 0, "leather2", "stitch");
+        b.box("head", -0.9, -9.25, -5.15, 1.8, 1.75, 0.5, 0, "trim", "bevel");
+        b.box("head", -6.25, -7.85, -6.25, 12.5, 0.8, 12.5, 0, "leather");
+        // Поля шляпы: четыре пластины по краям чуть свисают вниз.
+        b.part("head", -1, 0, -7.6, -6.25, 17 * P, 0, 0, -9.5, 0, -3.5, 19, 0.8, 3.5, 0, "leather");
+        b.part("head", -1, 0, -7.6, 6.25, -17 * P, 0, 0, -9.5, 0, 0, 19, 0.8, 3.5, 0, "leather");
+        int br = b.part("head", -1, -6.25, -7.6, 0, 0, 0, -17 * P, -3.5, 0, -6.25, 3.5, 0.8, 12.5, 0, "leather");
+        b.mirror(false, br);
+        // Высокая тулья: ярусы сужаются и заваливаются назад, кончик заломлен.
+        double[][] tiers = {{8.6, 1.25}, {7.6, 1.25}, {6.5, 1.2}, {5.4, 1.15}, {4.3, 1.1}};
+        double ty = -9.25, tz = 0;
+        for (double[] tr : tiers) {
+            ty -= tr[1];
+            tz += 0.45;
+            b.box("head", -tr[0] / 2, ty, -tr[0] / 2 + tz, tr[0], tr[1], tr[0], 0, "leather", "folds");
+        }
+        int t1 = b.part("head", -1, 0, ty, tz, -30 * P, 0, 0, -1.6, -2.4, -1.6, 3.2, 2.4, 3.2, 0, "leather");
+        int t2 = b.part("head", t1, 0, -2.4, 0, -40 * P, 0, 0, -1.1, -2.2, -1.1, 2.2, 2.2, 2.2, 0, "leather");
+        b.part("head", t2, 0, -2.2, 0, -35 * P, 0, 0, -0.6, -1.8, -0.6, 1.2, 1.8, 1.2, 0, "leather");
+
+        b.slot("chest");
+        b.box("body", -4, 0, -2, 8, 12, 4, 0.55, "cloth2", "folds");
+        b.box("body", -4.6, 0, -2.9, 9.2, 7.25, 5.8, 0, "metal", "ridge", "engrave", "bevel");
+        b.box("body", -4.4, 7, -2.75, 8.8, 1.75, 5.5, 0, "metal2", "rivets", "bevel");
+        b.box("body", -4.1, -1.25, -3.1, 8.2, 1.75, 6.2, 0, "metal2", "bevel");
+        // Шарф на шее и плащ: полотнище почти до земли, низ изорван.
+        b.box("body", -4.9, -1.5, -3.4, 9.8, 2.25, 6.8, 0, "scarf", "folds");
+        b.box("body", -4.9, -1, 2.6, 9.8, 2, 1, 0, "cloth", "stitch");
+        b.part("body", -1, 0, 0, 3.15, 8 * P, 0, 0, -5.5, 0, 0, 11, 23.5, 0.5, 0, "cloth", "folds", "torn");
+        int[] pd = {
+                b.box("right_arm", -4.5, -3.6, -3.4, 6, 2.5, 6.8, 0, "metal", "engrave", "bevel"),
+                b.box("right_arm", -4.75, -1.4, -3.5, 5.5, 1.75, 7, 0, "metal2", "rivets", "bevel"),
+                b.box("right_arm", -4.9, 0.1, -3.6, 5.1, 1.6, 7.2, 0, "metal", "bevel")};
+        b.mirror(true, pd);
+        b.limb("right_arm", -3, -2, -2, 4, 12, 4, 0.5, "cloth2", "folds");
+        b.limb("right_arm", -3.6, 5.75, -2.6, 5.2, 4.5, 5.2, 0, "metal", "engrave", "bevel");
+        b.limb("right_arm", -3.75, 9.75, -2.75, 5.5, 0.75, 5.5, 0, "leather2");
+
+        b.slot("legs");
+        b.box("body", -4.75, 9.5, -2.75, 9.5, 1.75, 5.5, 0, "leather2", "buckle", "stitch");
+        b.box("body", 2.25, 10.5, -3.5, 2, 2.5, 1, 0, "leather2", "stitch");
+        b.box("body", -1.25, 10.25, -3.3, 2.5, 7.5, 0.4, 0, "scarf", "folds", "torn");
+        b.limb("right_leg", -2, 0, -2, 4, 12, 4, 0.45, "cloth2", "folds");
+        // Тканевые набедренники идут вместе с ногой спереди и сбоку.
+        b.limb("right_leg", -2.6, -0.5, -3.05, 5.2, 6.5, 0.5, 0, "leather", "folds", "torn");
+        b.limb("right_leg", -3.1, -0.5, -2.5, 0.5, 5.5, 5, 0, "leather", "folds", "torn");
+        b.limb("right_leg", -2.6, 4.25, -3.25, 5.2, 2.5, 1, 0, "trim", "engrave", "bevel");
+        b.limb("right_leg", -2.2, 4.75, -3.6, 4.4, 1.5, 0.5, 0, "metal2", "bevel");
+
+        b.slot("feet");
+        b.limb("right_leg", -2.4, 6.75, -2.4, 4.8, 5.5, 4.8, 0.3, "metal", "engrave", "bevel");
+        b.limb("right_leg", -2.75, 6.5, -2.75, 5.5, 1, 5.5, 0, "leather2");
+        b.limb("right_leg", -2.25, 10.25, -4, 4.5, 2.25, 1.75, 0, "metal2", "bevel");
+        b.limb("right_leg", -1.5, 10.75, -4.75, 3, 1.5, 0.9, 0, "trim", "bevel");
+        b.limb("right_leg", -2.6, 12, -3.6, 5.2, 0.6, 6.2, 0, "leather2");
+    }
+
+    /** Мантия мага:остроконечный колпак с полями и лентой, накидка, рукава-колокола, пояс, полы и туфли. */
     static void mage(Builder b) {
         int g = b.grade;
         b.slot("head");
@@ -468,9 +534,13 @@ public class ArmorGen {
                 p.put("feather", Pal.of("0A0204", "2A0608", "5A0E14", "8A1C24", "B8404A"));
             }
             case "mage_wool" -> {
-                p.put("cloth", Pal.of("3A342A", "8A8070", "C8C0AE", "E8E2D4", "FFFCF4"));
-                p.put("cloth2", Pal.of("1E0C34", "3E1E6A", "5E34A0", "8A5ACC", "B48CEC"));
-                p.put("leather", Pal.of("1E0C34", "3E1E6A", "5E34A0", "8A5ACC", "B48CEC")); p.put("trim", BRASS);
+                p.put("cloth", Pal.of("0E0A12", "221A2A", "3A2E44", "54465E", "736480"));
+                p.put("cloth2", Pal.of("0E0C10", "1E1A22", "2E2834", "433C4A", "5C5464"));
+                p.put("scarf", Pal.of("061418", "12303A", "1E4C58", "306A78", "4C8E9C"));
+                p.put("leather", Pal.of("1A1008", "3A2614", "5A3E22", "7A5834", "9A764C"));
+                p.put("leather2", LEATHER_DARK);
+                p.put("metal", Pal.of("121418", "30343A", "50565E", "7C828C", "A8AEB6")); p.put("metal2", IRON2);
+                p.put("trim", Pal.of("2E1E08", "5E4418", "94702E", "C29E52", "E6CC88"));
             }
             case "mage" -> {
                 p.put("cloth", Pal.of("1A0A2E", "3A1A64", "5A2E96", "8250C4", "AC80E4"));
@@ -574,6 +644,15 @@ public class ArmorGen {
                 double tooth = Math.abs((fx % 1.0) - 0.5) * 2;
                 if (tooth < (fy - (fh - 0.8)) / 0.8) return null;
             }
+            // Изорванный низ: зубцы разной глубины и пара прорех.
+            if (deco.contains("torn") && vertical(f)) {
+                double depth = Math.min(fh * 0.3, 5.5);
+                double cut = (0.3 + 0.7 * hash(Math.floor(fx * 0.6), 0, (int) (fw * 7))) * depth;
+                double edge = Math.abs((fx * 0.6) % 1.0 - 0.5) * 2;
+                if (fy > fh - cut * (0.55 + 0.45 * (1 - edge))) return null;
+                if (fh > 8 && hash(Math.floor(fx / 1.5), Math.floor(fy / 1.5), 21) > 0.9
+                        && Math.abs((fx / 1.5) % 1.0 - 0.5) < 0.3 && Math.abs((fy / 1.5) % 1.0 - 0.5) < 0.22) return null;
+            }
             Color col = base(m, p, f, fx, fy, fw, fh, px, py);
             // Отделка: полосы, кайма, знаки.
             Pal trim = pal.getOrDefault("trim", GOLD);
@@ -623,6 +702,20 @@ public class ArmorGen {
                 if (fh > 1.6 && fw > 1.6 && Math.abs(fy - ry) < 0.22 && fx > 0.7 && fx < fw - 0.7 && rxs >= -0.22 && Math.abs(rxs) < 0.22)
                     col = fy - ry < 0 ? p.h() : p.d();
             }
+            // Гравировка по латам: рамка вдоль края и ромб с завитками посередине.
+            if (deco.contains("engrave") && vertical(f) && fw > 1.8 && fh > 1.8) {
+                Pal tr = pal.getOrDefault("trim", SILVER);
+                double in = 0.6, t = 0.11;
+                boolean frame = (Math.abs(fy - in) < t || Math.abs(fy - (fh - in)) < t) && fx > in - t && fx < fw - in + t
+                        || (Math.abs(fx - in) < t || Math.abs(fx - (fw - in)) < t) && fy > in - t && fy < fh - in + t;
+                double cx = fw / 2, cy = fh / 2, r = Math.min(fw, fh) * 0.28;
+                double dd = Math.abs(fx - cx) + Math.abs(fy - cy);
+                boolean diamond = Math.abs(dd - r) < t * 1.2 || dd < 0.22;
+                boolean curl = Math.abs(Math.sin((fx - cx) * 2.4) * 0.45 + cy - fy) < t
+                        && Math.abs(fx - cx) > r && Math.abs(fx - cx) < fw / 2 - in - 0.3;
+                if (frame || diamond || curl) col = mix(col, tr.l(), 0.7);
+                else if (Math.abs(dd - r - 0.2) < t) col = mix(col, p.o(), 0.3);
+            }
             if (astral && (m.equals("cloth") || m.equals("cloth2"))) col = stars(col, fx, fy);
             // Объём: светлая фаска сверху-слева, тень снизу-справа, тёмный контур граней.
             if (deco.contains("bevel")) {
@@ -669,7 +762,7 @@ public class ArmorGen {
                     }
                     return shade(col, k);
                 }
-                case "cloth", "cloth2" -> {
+                case "cloth", "cloth2", "scarf" -> {
                     double fold = deco.contains("folds") && vertical(f) ? Math.sin(fx * 2.1 + hash(0, 0, (int) (fw * 10)) * 6) * 0.09 : 0;
                     double foldH = deco.contains("folds_h") ? Math.sin(fy * 3.2) * 0.09 : 0;
                     double weave = (((px + py) & 1) == 0 ? 0.025 : -0.025) + (((px - py) % 6 + 6) % 6 == 0 ? -0.04 : 0);
