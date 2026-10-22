@@ -21,8 +21,12 @@ import java.util.List;
 public final class VillageInjector {
     public static final List<String> BIOMES = List.of("plains", "desert", "savanna", "snowy", "taiga");
     public static final List<String> GUILDS = List.of("swordmaster_guild", "archer_guild", "mage_guild");
-    /** Вес каждой гильдии в пуле домов. Для сравнения: у обычных домов равнин вес 2–3. */
-    private static final int GUILD_WEIGHT = 4;
+    /**
+     * Вес каждой гильдии в пуле домов. Для сравнения: у обычных домов равнин вес 2–3, весь пул — 70–90.
+     * Дома наставников крупные и встают не на каждый участок, поэтому вес заметно выше: на дом гильдии
+     * приходится около трети выборов из пула.
+     */
+    private static final int GUILD_WEIGHT = 12;
 
     private VillageInjector() {}
 
