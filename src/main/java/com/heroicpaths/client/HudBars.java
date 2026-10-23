@@ -1,7 +1,6 @@
 package com.heroicpaths.client;
 
 import com.heroicpaths.combat.Stamina;
-import com.heroicpaths.rpg.RpgManager;
 import net.minecraft.Util;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -14,7 +13,7 @@ import net.minecraft.world.entity.player.Player;
 
 /**
  * Полоски над хотбаром вместо ванильных сердечек: слева — здоровье (с числом, золотым запасом поглощения
- * и светлым «следом» только что потерянного здоровья), справа над едой — стамина бойца.
+ * и светлым «следом» только что потерянного здоровья), справа над едой — стамина бойца (у воина это его выносливость).
  * Обе встают в общий счёт высоты ванильного интерфейса, поэтому броня, воздух и здоровье коня рисуются над ними.
  */
 public final class HudBars {
@@ -90,12 +89,13 @@ public final class HudBars {
         int y = graphics.guiHeight() - gui.rightHeight;
         gui.rightHeight += HEIGHT + 1;
 
-        float stamina = Mth.clamp(RpgManager.get(player).getStamina(), 0f, Stamina.MAX);
+        float max = Math.max(1f, Stamina.max(player));
+        float stamina = Mth.clamp(Stamina.current(player), 0f, max);
         boolean low = stamina < STAMINA_LOW_LEVEL;
         boolean blink = low && (Util.getMillis() / 250) % 2 == 0;
         graphics.fill(x - 1, y - 1, right + 1, y + HEIGHT + 1, BORDER);
         graphics.fill(x, y, right, y + HEIGHT, STAMINA_EMPTY);
-        int end = x + Math.round(WIDTH * stamina / Stamina.MAX);
+        int end = x + Math.round(WIDTH * stamina / max);
         int color = blink ? STAMINA_LOW : STAMINA;
         graphics.fill(x, y, end, y + HEIGHT, color);
         graphics.fill(x, y, end, y + 2, lighter(color));

@@ -361,6 +361,8 @@ public final class RpgManager {
 
         if (healthCost) player.setHealth(player.getHealth() - PlayerStats.healthCost(cost));
         else data.setResource(data.getResource() - cost);
+        // Выносливость после умения, как и после удара, начинает копиться через секунду.
+        if (com.heroicpaths.combat.Stamina.uses(data.getPlayerClass())) data.setStaminaUsedAt(now);
         data.setCooldownEnd(def.id(), now + cooldown(player, def));
         sync(player);
     }
@@ -379,6 +381,8 @@ public final class RpgManager {
         if (healthRegen > 0 && player.tickCount % 100 < 20 && player.getHealth() < player.getMaxHealth()) {
             player.heal(healthRegen);
         }
+        // Выносливость бойцов копится каждый тик в Stamina.
+        if (com.heroicpaths.combat.Stamina.uses(data.getPlayerClass())) return;
         float max = PlayerStats.maxResource(player);
         float current = data.getResource();
         if (current == max) return;

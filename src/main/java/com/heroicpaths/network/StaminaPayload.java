@@ -6,7 +6,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-/** Сервер → клиент: текущая стамина игрока (для полоски на экране). */
+/** Сервер → клиент: текущая выносливость бойца (для полоски на экране). */
 public record StaminaPayload(float stamina) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<StaminaPayload> TYPE = new CustomPacketPayload.Type<>(HeroicPaths.id("stamina"));
     public static final StreamCodec<ByteBuf, StaminaPayload> STREAM_CODEC =
