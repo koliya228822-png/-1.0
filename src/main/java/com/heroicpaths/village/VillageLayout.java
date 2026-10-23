@@ -51,7 +51,7 @@ public final class VillageLayout {
             if (!(piece instanceof PoolElementStructurePiece p)) continue;
             String id = p.getElement().toString();
             if (!id.contains(HeroicPaths.MODID + ":village/" + biome + "/houses/")) continue;
-            (id.contains("_d5") || id.contains("_d4") ? big : other).add(p);
+            (id.contains("_d5") || id.contains("_d4") || (id.contains("/field_") && !id.contains("/field_small")) ? big : other).add(p);
         }
         shuffle(big, random);
         shuffle(other, random);
@@ -71,10 +71,14 @@ public final class VillageLayout {
                     jigsaw.above(), Rotation.NONE, 0, VillageInjector.NO_PROCESSORS));
             placed++;
         }
-        int barracks = lots.size() >= 24 ? 3 : 2;
-        for (int i = 0; i < barracks; i++) {
-            if (build(pieces, lots, context, HeroicPaths.MODID + ":village/" + biome + "/barracks", BARRACKS_DOOR) == null) break;
-        }
+        // Сначала по одной казарме и мельнице, потом — сколько поместится: казарм до трёх, мельниц до двух.
+        String barracks = HeroicPaths.MODID + ":village/" + biome + "/barracks", mill = HeroicPaths.MODID + ":village/" + biome + "/windmill";
+        int lotCount = lots.size();
+        build(pieces, lots, context, barracks, BARRACKS_DOOR);
+        build(pieces, lots, context, mill, BARRACKS_DOOR);
+        build(pieces, lots, context, barracks, BARRACKS_DOOR);
+        if (lotCount >= 24) build(pieces, lots, context, barracks, BARRACKS_DOOR);
+        if (lotCount >= 28) build(pieces, lots, context, mill, BARRACKS_DOOR);
     }
 
     static final int BARRACKS_DOOR = 5;
@@ -118,6 +122,8 @@ public final class VillageLayout {
     static int doorOf(String id) {
         if (id.contains("_d5")) return 5;
         if (id.contains("_d4")) return 4;
+        if (id.contains("/field_small")) return 3;
+        if (id.contains("/field_")) return 5;
         return id.contains("cottage") ? 3 : 4;
     }
 

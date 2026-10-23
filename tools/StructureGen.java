@@ -2066,6 +2066,7 @@ public class StructureGen {
                     }
                     """.formatted(MODID, hallStyle(b).plinth()));
             write(structures.resolve(b.name() + "/barracks.nbt"), barracks(b).toNbt());
+            write(structures.resolve(b.name() + "/windmill.nbt"), windmill(b).toNbt());
             count += 2;
         }
         return count;
@@ -2098,6 +2099,17 @@ public class StructureGen {
         list.add(new VillageHouse("inn_d5", 4, bigHouse(b, s, "inn", 5)));
         list.add(new VillageHouse("big_house_d4", 4, bigHouse(b, s, "manor", 4)));
         list.add(new VillageHouse("library_d4", 3, bigHouse(b, s, "library", 4)));
+        // Поля вместо ванильных грядок — их в деревне много.
+        long seed = b.name().hashCode();
+        list.add(new VillageHouse("field_grain", 10, field(b, s, "grain", 5, seed + 1)));
+        list.add(new VillageHouse("field_roots", 10, field(b, s, "roots", 5, seed + 2)));
+        list.add(new VillageHouse("field_mixed", 8, field(b, s, "mixed", 5, seed + 3)));
+        list.add(new VillageHouse("field_gourds", 6, field(b, s, "gourds", 5, seed + 4)));
+        list.add(new VillageHouse("field_sunflower", 6, field(b, s, "sunflower", 5, seed + 5)));
+        list.add(new VillageHouse("field_bees", 6, field(b, s, "bees", 5, seed + 6)));
+        list.add(new VillageHouse("field_small_wheat", 6, smallField(b, s, 0, seed + 7)));
+        list.add(new VillageHouse("field_small_carrots", 6, smallField(b, s, 1, seed + 8)));
+        list.add(new VillageHouse("field_small_potatoes", 6, smallField(b, s, 2, seed + 9)));
         return list;
     }
 
@@ -2516,6 +2528,279 @@ public class StructureGen {
         // Садик за домом не нужен: участок занят корпусом целиком. Скамья у входа.
         t.set(1, 1, door - 2, st(woodStairs, "east", false));
         return t;
+    }
+
+    // ---------------------------------------------------------------- поля и мельница
+
+    /*
+     * Поля деревни вместо ванильных грядок: огороженные участки с воротцами к улице, по середине — оросительная
+     * канава с мостком, по сторонам — ряды пашни с разными культурами (спелость вперемешку), у ограды — компостер
+     * земледельца, стога сена, чучело и фонари на столбах. Большое поле 12x13 (вход как у домов, z = 5 или 4),
+     * малое 8x7; с тыквами и арбузами, с подсолнухами по краю, с ульями у ограды.
+     */
+    static final String[][] CROPS = {
+            {"minecraft:wheat", "age", "7"}, {"minecraft:carrots", "age", "7"}, {"minecraft:potatoes", "age", "7"},
+            {"minecraft:beetroots", "age", "3"}};
+
+    static String crop(String[] c, Random r) {
+        int max = Integer.parseInt(c[2]);
+        int age = Math.max(1, max - r.nextInt(max == 3 ? 2 : 4));
+        return c[0] + "[" + c[1] + "=" + age + "]";
+    }
+
+    static void fieldFence(Template t, HallStyle s, int x1, int x2, int z1, int z2, int gateZ, String flowers) {
+        String fence = "minecraft:" + s.wood() + "_fence", post = log(s.timber().replace("stripped_", ""), 'y');
+        for (int x = x1; x <= x2; x++) {
+            for (int z = z1; z <= z2; z++) {
+                boolean edgeX = x == x1 || x == x2, edgeZ = z == z1 || z == z2;
+                if (!edgeX && !edgeZ) continue;
+                t.set(x, 0, z, s.path());
+                if (edgeX && edgeZ) {
+                    t.set(x, 1, z, post);
+                    t.set(x, 2, z, fence + "[east=false,north=false,south=false,waterlogged=false,west=false]");
+                    t.set(x, 3, z, "minecraft:lantern[hanging=false,waterlogged=false]");
+                } else if (x == x1 && z == gateZ) {
+                    t.set(x, 1, z, "minecraft:" + s.wood() + "_fence_gate[facing=east,in_wall=false,open=false,powered=false]");
+                } else {
+                    boolean alongZ = edgeX;
+                    t.set(x, 1, z, fence + (alongZ ? "[east=false,north=true,south=true,waterlogged=false,west=false]"
+                            : "[east=true,north=false,south=false,waterlogged=false,west=true]"));
+                }
+            }
+        }
+    }
+
+    /**
+     * Большое поле 12x13: ограда x = 1..11, z = 0..12, воротца на {@code door}; канава вдоль x на z = 6 с мостком,
+     * по обе стороны — пашня. {@code kind}: grain (пшеница и свёкла), roots (морковь и картофель),
+     * mixed (четыре культуры квадратами), gourds (тыквы и арбузы), sunflower (пшеница, подсолнухи вдоль ограды),
+     * bees (морковь и картофель, ульи с цветами).
+     */
+    static Template field(Biome b, HallStyle s, String kind, int door, long seed) {
+        Template t = new Template(12, 8, 13);
+        Random r = new Random(seed);
+        for (int x = 0; x < 12; x++) for (int z = 0; z < 13; z++) for (int y = x == 0 ? 4 : 1; y < 8; y++) t.set(x, y, z, AIR);
+        fieldFence(t, s, 1, 11, 0, 12, door, null);
+        entrance(t, b, s, 1, door);
+        // Дорожка от воротец через поле.
+        for (int x = 2; x <= 10; x++) t.set(x, 0, door, s.path());
+        int canal = door == 6 ? 7 : 6;
+        for (int x = 2; x <= 10; x++) {
+            for (int z = 1; z <= 11; z++) {
+                if (z == door) continue;
+                if (z == canal) {
+                    t.set(x, 0, z, "minecraft:water[level=0]");
+                    if (x == 6) t.set(x, 0, z, "minecraft:" + s.wood() + "_planks");
+                    continue;
+                }
+                String[] c = cropFor(kind, x, z, canal);
+                if (c == null) continue;
+                if (c[0].equals("pumpkin") || c[0].equals("melon")) {
+                    // Тыквенные и арбузные гряды: стебель через клетку, плоды рядом.
+                    boolean stem = (x % 2 == 0);
+                    t.set(x, 0, z, stem ? "minecraft:farmland[moisture=7]" : "minecraft:" + (r.nextBoolean() ? "coarse_dirt" : "dirt"));
+                    if (stem) t.set(x, 1, z, x < 10 ? "minecraft:attached_" + c[0] + "_stem[facing=east]" : "minecraft:" + c[0] + "_stem[age=7]");
+                    else if (r.nextInt(3) > 0) t.set(x, 1, z, "minecraft:" + c[0]);
+                    continue;
+                }
+                t.set(x, 0, z, "minecraft:farmland[moisture=7]");
+                t.set(x, 1, z, crop(c, r));
+            }
+        }
+        // Мосток через канаву на дорожке и столбик с фонарём у него.
+        t.set(6, 0, canal, "minecraft:" + s.wood() + "_planks");
+        // Хозяйство у ограды: компостер земледельца, стог, бочка, чучело.
+        t.set(2, 1, 1, "minecraft:composter[level=" + r.nextInt(8) + "]");
+        t.set(3, 1, 1, "minecraft:hay_block[axis=x]");
+        t.set(3, 2, 1, "minecraft:hay_block[axis=z]");
+        t.set(4, 1, 1, "minecraft:barrel[facing=up,open=false]");
+        t.set(2, 0, 1, s.path());
+        t.set(3, 0, 1, s.path());
+        t.set(4, 0, 1, s.path());
+        scarecrow(t, s, 9, door < canal ? 10 : 2);
+        switch (kind) {
+            case "sunflower" -> {
+                for (int x = 2; x <= 10; x += 2) {
+                    t.set(x, 0, 11, "minecraft:grass_block[snowy=false]");
+                    t.set(x, 1, 11, "minecraft:sunflower[half=lower]");
+                    t.set(x, 2, 11, "minecraft:sunflower[half=upper]");
+                }
+            }
+            case "bees" -> {
+                t.set(10, 0, 11, "minecraft:grass_block[snowy=false]");
+                t.set(10, 1, 11, "minecraft:beehive[facing=north,honey_level=" + r.nextInt(5) + "]");
+                t.set(8, 0, 11, "minecraft:grass_block[snowy=false]");
+                t.set(8, 1, 11, "minecraft:beehive[facing=north,honey_level=" + r.nextInt(5) + "]");
+                for (int x = 2; x <= 7; x++) {
+                    t.set(x, 0, 11, "minecraft:grass_block[snowy=false]");
+                    t.set(x, 1, 11, "minecraft:" + (x % 3 == 0 ? "cornflower" : x % 3 == 1 ? "oxeye_daisy" : "poppy"));
+                }
+            }
+            default -> {}
+        }
+        villagerJigsaw(t, b, s.path(), 3, door);
+        return t;
+    }
+
+    static String[] cropFor(String kind, int x, int z, int canal) {
+        boolean north = z < canal;
+        return switch (kind) {
+            case "grain" -> north ? CROPS[0] : (x < 5 ? CROPS[3] : CROPS[0]);
+            case "roots" -> north ? CROPS[1] : CROPS[2];
+            case "mixed" -> CROPS[(north ? 0 : 2) + (x <= 6 ? 0 : 1)];
+            case "gourds" -> north ? new String[]{"pumpkin"} : new String[]{"melon"};
+            case "sunflower" -> z == 11 ? null : CROPS[0];
+            case "bees" -> z == 11 ? null : (north ? CROPS[1] : CROPS[2]);
+            default -> CROPS[0];
+        };
+    }
+
+    /** Чучело: столб, тюк сена, тыква-голова и «руки» из калиток. */
+    static void scarecrow(Template t, HallStyle s, int x, int z) {
+        t.set(x, 0, z, "minecraft:coarse_dirt");
+        t.set(x, 1, z, "minecraft:" + s.wood() + "_fence[east=false,north=false,south=false,waterlogged=false,west=false]");
+        t.set(x, 2, z, "minecraft:hay_block[axis=y]");
+        t.set(x, 3, z, "minecraft:carved_pumpkin[facing=west]");
+        t.set(x, 2, z - 1, "minecraft:" + s.wood() + "_trapdoor[facing=north,half=top,open=true,powered=false,waterlogged=false]");
+        t.set(x, 2, z + 1, "minecraft:" + s.wood() + "_trapdoor[facing=south,half=top,open=true,powered=false,waterlogged=false]");
+    }
+
+    /** Малое поле 8x7: ограда x = 1..7, z = 0..6, канава на z = 3 вдоль x, одна культура. */
+    static Template smallField(Biome b, HallStyle s, int cropIndex, long seed) {
+        Template t = new Template(8, 6, 7);
+        Random r = new Random(seed);
+        for (int x = 0; x < 8; x++) for (int z = 0; z < 7; z++) for (int y = x == 0 ? 4 : 1; y < 6; y++) t.set(x, y, z, AIR);
+        int door = 3;
+        fieldFence(t, s, 1, 7, 0, 6, door, null);
+        entrance(t, b, s, 1, door);
+        for (int x = 2; x <= 6; x++) {
+            for (int z = 1; z <= 5; z++) {
+                if (z == door) {
+                    t.set(x, 0, z, x == 2 ? s.path() : "minecraft:water[level=0]");
+                    continue;
+                }
+                t.set(x, 0, z, "minecraft:farmland[moisture=7]");
+                t.set(x, 1, z, crop(CROPS[cropIndex], r));
+            }
+        }
+        t.set(2, 0, door, s.path());
+        t.set(2, 1, door, "minecraft:composter[level=" + r.nextInt(8) + "]");
+        return t;
+    }
+
+    /**
+     * Ветряная мельница 12x13 (дверь z = 5, как у большого дома — ставится раскладкой на его участок):
+     * круглое каменное основание, фахверковая башня поуже, шатровая крыша; на фасаде к улице — вал и четыре
+     * крыла из реек с полотном. Внутри — жернова (точило), мешки (тюки), лари и компостер мельника-земледельца.
+     */
+    static Template windmill(Biome b) {
+        HallStyle s = hallStyle(b);
+        Template t = new Template(12, 18, 13);
+        int cx = 6, cz = 6, door = 5;
+        String planks = "minecraft:" + s.wood() + "_planks", beam = s.timber().replace("stripped_", "");
+        clearLot(t, 1);
+        // Двор: мощение и дорожка.
+        for (int x = 1; x < 12; x++) for (int z = 0; z < 13; z++) t.set(x, 0, z, (x + z) % 4 == 0 ? s.plinth() : s.path());
+        // Основание (y 1..5) радиусом 4, башня (y 6..11) радиусом 3, крыша (y 12..16).
+        for (int x = 1; x < 12; x++) {
+            for (int z = 0; z < 13; z++) {
+                double d = Math.hypot(x - cx, z - cz);
+                if (d <= 4.4) t.set(x, 0, z, planks);
+                for (int y = 1; y <= 11; y++) {
+                    double r = y <= 5 ? 4.4 : 3.4;
+                    if (d > r) continue;
+                    boolean ring = d > r - 1.1;
+                    if (!ring) {
+                        t.set(x, y, z, y == 6 ? planks : AIR);
+                        continue;
+                    }
+                    String block;
+                    if (y <= 5) block = y == 1 || y == 5 ? s.plinth() : s.stone();
+                    else block = y == 6 || y == 11 ? log(s.timber(), 'y') : ((x == cx || z == cz || Math.abs(x - cx) == Math.abs(z - cz)) ? log(s.timber(), 'y') : s.plaster());
+                    t.set(x, y, z, block);
+                }
+            }
+        }
+        // Окна основания и башни.
+        for (int[] w : new int[][]{{cx, 2}, {cx, 10}, {10, cz}}) {
+            for (int y = 2; y <= 3; y++) t.set(w[0], y, w[1], pane("glass_pane", w[0] == cx));
+        }
+        for (int[] w : new int[][]{{cx, 3}, {cx, 9}, {9, cz}}) {
+            for (int y = 8; y <= 9; y++) t.set(w[0], y, w[1], pane("glass_pane", w[0] == cx));
+        }
+        // Дверь в основании со стороны улицы и дорожка к ней.
+        int dx = (int) Math.round(cx - Math.sqrt(4.4 * 4.4 - 1)) ;
+        for (int x = 1; x <= dx; x++) t.set(x, 0, door, s.path());
+        door(t, dx, 1, door, s.door(), "east", "right");
+        t.set(dx, 3, door, s.accent());
+        entrance(t, b, s, 1, door);
+        // Конусная крыша над башней.
+        for (int level = 0; level < 6; level++) {
+            double rr = 4.3 - level * 0.75;
+            for (int x = 1; x < 12; x++) {
+                for (int z = 0; z < 13; z++) {
+                    double d = Math.hypot(x - cx, z - cz);
+                    if (d > rr || d <= rr - 1.2) continue;
+                    int ddx = x - cx, ddz = z - cz;
+                    String facing = Math.abs(ddx) >= Math.abs(ddz) ? (ddx < 0 ? "east" : "west") : (ddz < 0 ? "south" : "north");
+                    t.set(x, 12 + level, z, d < 0.5 ? s.roofBlock() : st(s.roofStairs(), facing, false));
+                }
+            }
+        }
+        for (int y = 12; y <= 16; y++) t.set(cx, y, cz, s.roofBlock());
+        t.set(cx, 17, cz, "minecraft:lightning_rod[facing=up,powered=false,waterlogged=false]");
+        // Вал крыльев: из стены башни к улице на высоте 10.
+        int hubY = 10, hubZ = cz;
+        t.set(2, hubY, hubZ, log(beam, 'x'));
+        t.set(1, hubY, hubZ, log(beam, 'x'));
+        t.set(0, hubY, hubZ, planks);
+        // Четыре крыла в плоскости x = 0: рейки-заборы и полотно из белой шерсти по одну сторону.
+        String rail = "minecraft:" + s.wood() + "_fence";
+        for (int k = 1; k <= 6; k++) {
+            // вверх: полотно справа (z+1), вниз: слева (z-1), к северу: снизу (y-1), к югу: сверху (y+1).
+            for (int w = 1; w <= (k >= 2 ? 2 : 0); w++) {
+                sail(t, rail, 0, hubY + k, hubZ, true, hubZ + w, hubY + k);
+                sail(t, rail, 0, hubY - k, hubZ, true, hubZ - w, hubY - k);
+                sail(t, rail, 0, hubY, hubZ - k, false, hubZ - k, hubY + w);
+                sail(t, rail, 0, hubY, hubZ + k, false, hubZ + k, hubY - w);
+            }
+            if (k < 2) {
+                sail(t, rail, 0, hubY + k, hubZ, true, -1, 0);
+                sail(t, rail, 0, hubY - k, hubZ, true, -1, 0);
+                sail(t, rail, 0, hubY, hubZ - k, false, 0, -1);
+                sail(t, rail, 0, hubY, hubZ + k, false, 0, -1);
+            }
+        }
+        // Внутри: жернова, мешки муки, лари, компостер и лестница в башню.
+        t.set(cx, 1, cz, "minecraft:grindstone[face=floor,facing=north]");
+        t.set(cx + 1, 1, cz, "minecraft:stonecutter[facing=north]");
+        t.set(cx - 2, 1, cz + 2, "minecraft:barrel[facing=up,open=false]");
+        t.set(cx - 2, 2, cz + 2, "minecraft:barrel[facing=up,open=false]");
+        t.set(cx - 1, 1, cz + 3, "minecraft:white_wool");
+        t.set(cx, 1, cz + 3, "minecraft:hay_block[axis=x]");
+        t.set(cx + 2, 1, cz - 2, "minecraft:composter[level=4]");
+        t.set(cx + 2, 1, cz + 2, "minecraft:chest[facing=west,type=single,waterlogged=false]",
+                map("id", "minecraft:chest", "LootTable", "minecraft:chests/village/village_" + b.name() + "_house"));
+        for (int y = 1; y <= 5; y++) t.set(cx + 3, y, cz, "minecraft:ladder[facing=west,waterlogged=false]");
+        t.set(cx, 4, cz, "minecraft:chain[axis=y,waterlogged=false]");
+        t.set(cx, 3, cz, "minecraft:lantern[hanging=true,waterlogged=false]");
+        t.set(cx, 5, cz, "minecraft:chain[axis=y,waterlogged=false]");
+        // Мешки и телега во дворе.
+        t.set(10, 1, 1, "minecraft:hay_block[axis=y]");
+        t.set(10, 2, 1, "minecraft:hay_block[axis=x]");
+        t.set(9, 1, 1, "minecraft:hay_block[axis=z]");
+        t.set(10, 1, 11, "minecraft:barrel[facing=up,open=false]");
+        t.set(2, 1, 11, "minecraft:lantern[hanging=false,waterlogged=false]");
+        villagerJigsaw(t, b, planks, cx - 1, cz - 1);
+        return t;
+    }
+
+    /** Клетка крыла: рейка на оси и полотно рядом ({@code clothZ} или {@code clothY} < 0 — без полотна). */
+    static void sail(Template t, String rail, int x, int y, int z, boolean vertical, int clothZ, int clothY) {
+        t.set(x, y, z, rail + (vertical ? "[east=false,north=false,south=false,waterlogged=false,west=false]"
+                : "[east=false,north=true,south=true,waterlogged=false,west=false]"));
+        if (vertical && clothZ >= 0) t.set(x, y, clothZ, "minecraft:white_wool");
+        if (!vertical && clothY >= 0) t.set(x, clothY, z, "minecraft:white_wool");
     }
 
     // ---------------------------------------------------------------- казарма

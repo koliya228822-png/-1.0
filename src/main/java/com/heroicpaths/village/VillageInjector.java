@@ -83,7 +83,7 @@ public final class VillageInjector {
 
     /**
      * Ванильные дома уступают место домам в стиле зала гильдии (пул heroicpaths:village/<биом>/houses).
-     * Поля, загоны, колодцы и пустые места остаются. Дома наставников и казармы в пул не входят: их ставит
+     * Загоны, колодцы и пустые места остаются, ванильные грядки — нет: вместо них свои поля. Дома наставников и казармы в пул не входят: их ставит
      * {@link VillageLayout} на места больших домов.
      */
     public static void injectHouses(RegistryAccess registryAccess) {
@@ -103,11 +103,11 @@ public final class VillageInjector {
         }
     }
 
-    /** Остаются из ванили: пустой элемент, поля, загоны, колодцы-места встреч и прочие не-дома. */
+    /** Остаются из ванили: пустой элемент, загоны, колодцы-места встреч и прочие не-дома. */
     static boolean keepsVanilla(StructurePoolElement element) {
         String id = element.toString();
         if (!id.contains("village/")) return true;
-        return id.contains("farm") || id.contains("animal_pen") || id.contains("accessory") || id.contains("meeting_point")
+        return id.contains("animal_pen") || id.contains("accessory") || id.contains("meeting_point")
                 || id.contains("pen_") || id.contains("_pen");
     }
 }

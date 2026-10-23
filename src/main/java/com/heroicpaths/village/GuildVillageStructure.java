@@ -91,6 +91,8 @@ public class GuildVillageStructure extends Structure {
         if (pieces.isEmpty()) return Optional.empty();
         // Заброшенная (зомби-) деревня остаётся как есть: без наставников, стражи и стен.
         if (isAbandoned(pieces)) return Optional.of(pieces);
+        // Деревня должна быть большой: если улицы вышли короткими и домов мало, здесь её не будет.
+        if (buildings(pieces) < MIN_BUILDINGS) return Optional.empty();
         ChunkPos chunk = context.chunkPos();
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(context.seed() ^ chunk.toLong() * 0x9E3779B97F4A7C15L));
         String biome = biome();
@@ -98,6 +100,14 @@ public class GuildVillageStructure extends Structure {
         VillageLayout.arrange(pieces, context, biome, random);
         pieces.add(VillageWallPiece.around(pieces, chunk, biome, random, context));
         return Optional.of(pieces);
+    }
+
+    /** Меньше стольких домов и полей — деревня не ставится: на ней не уместятся наставники, казармы и мельница. */
+    public static final int MIN_BUILDINGS = 20;
+
+    static long buildings(List<StructurePiece> pieces) {
+        return pieces.stream().filter(p -> p instanceof net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece e
+                && e.getElement().toString().contains(com.heroicpaths.HeroicPaths.MODID + ":village/") && e.getElement().toString().contains("/houses/")).count();
     }
 
     public static boolean isAbandoned(List<StructurePiece> pieces) {

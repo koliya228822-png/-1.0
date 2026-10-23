@@ -189,6 +189,87 @@
     "processors": "heroicpaths:foundation_plains",
     "projection": "rigid"
   }
+},
+{
+  "weight": 10,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_grain",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 10,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_roots",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 8,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_mixed",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 6,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_gourds",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 6,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_sunflower",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 6,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_bees",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 6,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_small_wheat",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 6,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_small_carrots",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 6,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/plains/houses/field_small_potatoes",
+    "processors": "heroicpaths:foundation_plains",
+    "projection": "rigid"
+  }
 }
   ]
 }
