@@ -90,6 +90,10 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.FROST_LICH, 0x2A3A6A, 0x8AE8FF, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> ICE_GOLEM_SPAWN_EGG = ITEMS.register("ice_golem_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ICE_GOLEM, 0x92CCEC, 0x3E76AC, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> GUARD_SWORDSMAN_SPAWN_EGG = ITEMS.register("guard_swordsman_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.GUARD_SWORDSMAN, 0x2F4F9A, 0xD8B23A, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> GUARD_ARCHER_SPAWN_EGG = ITEMS.register("guard_archer_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.GUARD_ARCHER, 0x3F6B2E, 0x8A5A32, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> FROZEN_ARCHER_SPAWN_EGG = ITEMS.register("frozen_archer_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.FROZEN_ARCHER, 0xC4CCD4, 0x6EDCFF, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> SNOW_BRUTE_SPAWN_EGG = ITEMS.register("snow_brute_spawn_egg",

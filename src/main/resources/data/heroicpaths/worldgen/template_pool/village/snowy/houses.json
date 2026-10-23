@@ -1,0 +1,194 @@
+{
+  "fallback": "minecraft:empty",
+  "elements": [
+{
+  "weight": 4,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/cottage_1",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 4,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/cottage_2",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 3,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/cottage_3",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/fisher_cottage",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/shepherd_cottage",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/fletcher_cottage",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 1,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/cartographer_cottage",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/tannery_cottage",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/mason_cottage",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 3,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/house_1",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 3,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/house_2",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/armorer_house",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/weaponsmith_house",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/toolsmith_house",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/butcher_house",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/cleric_house",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 2,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/librarian_house",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 5,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/big_house_d5",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 4,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/inn_d5",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 4,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/big_house_d4",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+},
+{
+  "weight": 3,
+  "element": {
+    "element_type": "minecraft:single_pool_element",
+    "location": "heroicpaths:village/snowy/houses/library_d4",
+    "processors": "heroicpaths:foundation_snowy",
+    "projection": "rigid"
+  }
+}
+  ]
+}

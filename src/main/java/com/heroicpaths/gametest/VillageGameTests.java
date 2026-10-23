@@ -95,17 +95,82 @@ public class VillageGameTests {
         helper.succeed();
     }
 
+    /** В пулах домов — только дома в стиле зала гильдии, поля и загоны; дома наставников ставит раскладка, не пул. */
     @GameTest(template = ARENA)
-    public static void villagePoolsContainGuilds(GameTestHelper helper) {
+    public static void villagePoolsUseGuildStyleHouses(GameTestHelper helper) {
         for (String biome : VillageInjector.BIOMES) {
             StructureTemplatePool houses = pools(helper.getLevel()).get(VillageInjector.housesPool(biome));
             helper.assertTrue(houses != null, "missing pool " + VillageInjector.housesPool(biome));
-            for (String guild : VillageInjector.GUILDS) {
-                String location = VillageInjector.guildTemplate(biome, guild).toString();
-                boolean present = houses.templates.stream().anyMatch(e -> e.toString().contains(location));
-                helper.assertTrue(present, location + " is not in " + VillageInjector.housesPool(biome));
+            for (StructurePoolElement element : houses.templates) {
+                String id = element.toString();
+                boolean ours = id.contains(HeroicPaths.MODID + ":village/" + biome + "/houses/");
+                helper.assertTrue(ours || id.contains("farm") || id.contains("pen") || id.contains("accessory")
+                        || id.contains("meeting_point") || !id.contains("village/"), "vanilla house left in " + biome + ": " + id);
+                for (String guild : VillageInjector.GUILDS) {
+                    helper.assertFalse(id.contains(VillageInjector.guildTemplate(biome, guild).toString()), guild + " is still drawn from the pool");
+                }
+            }
+            for (String house : List.of("cottage_1", "house_1", "armorer_house", "big_house_d5", "library_d4")) {
+                String id = HeroicPaths.MODID + ":village/" + biome + "/houses/" + house;
+                helper.assertTrue(houses.templates.stream().anyMatch(e -> e.toString().contains(id)), id + " is not in the pool");
+            }
+            helper.assertTrue(helper.getLevel().getStructureManager().get(HeroicPaths.id("village/" + biome + "/barracks")).isPresent(),
+                    "missing barracks of " + biome);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Настоящая раскладка деревни каждого биома (на плоском тестовом мире): ровно два или три наставника
+     * разных классов, не меньше двух казарм, стена с воротами, которая обходит все дома.
+     */
+    @GameTest(template = ARENA, batch = "village_layout", timeoutTicks = 400)
+    public static void villagesGetMentorsBarracksAndWalls(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        int thirds = 0, villages = 0;
+        for (String biome : VillageInjector.BIOMES) {
+            Structure structure = level.registryAccess().registryOrThrow(Registries.STRUCTURE)
+                    .get(ResourceLocation.withDefaultNamespace("village_" + biome));
+            helper.assertTrue(structure instanceof com.heroicpaths.village.GuildVillageStructure, "village_" + biome + " is " + structure);
+            com.heroicpaths.village.GuildVillageStructure village = (com.heroicpaths.village.GuildVillageStructure) structure;
+            for (int attempt = 0; attempt < 6; attempt++) {
+                ChunkPos chunk = new ChunkPos(4000 + attempt * 40, 4000 + VillageInjector.BIOMES.indexOf(biome) * 40);
+                Structure.GenerationContext context = new Structure.GenerationContext(level.registryAccess(), generator,
+                        generator.getBiomeSource(), level.getChunkSource().randomState(), level.getStructureManager(),
+                        level.getSeed() + attempt, chunk, level, b -> true);
+                List<StructurePiece> pieces = village.layout(context).orElse(List.of());
+                helper.assertFalse(pieces.isEmpty(), "no " + biome + " village layout");
+                if (com.heroicpaths.village.GuildVillageStructure.isAbandoned(pieces)) continue;
+                villages++;
+                List<String> mentors = new ArrayList<>();
+                int barracks = 0;
+                for (StructurePiece piece : pieces) {
+                    String id = piece.toString();
+                    for (String guild : VillageInjector.GUILDS) if (id.contains("/" + guild + "]")) mentors.add(guild);
+                    if (id.contains("/barracks]")) barracks++;
+                }
+                helper.assertTrue(mentors.size() == 2 || mentors.size() == 3, biome + " village has mentors " + mentors);
+                helper.assertTrue(mentors.stream().distinct().count() == mentors.size(), biome + " village repeats a mentor: " + mentors);
+                if (mentors.size() == 3) thirds++;
+                long mentorVillagers = pieces.stream().filter(p -> p.toString().contains("_mentor]")).count();
+                helper.assertTrue(mentorVillagers == mentors.size(), biome + ": " + mentorVillagers + " mentor villagers for " + mentors);
+                helper.assertTrue(barracks >= 2, biome + " village has " + barracks + " barracks");
+                com.heroicpaths.village.VillageWallPiece wall = pieces.stream()
+                        .filter(p -> p instanceof com.heroicpaths.village.VillageWallPiece)
+                        .map(p -> (com.heroicpaths.village.VillageWallPiece) p).findFirst().orElse(null);
+                helper.assertTrue(wall != null, biome + " village has no wall");
+                helper.assertFalse(wall.gates().isEmpty(), biome + " wall has no gates");
+                for (StructurePiece piece : pieces) {
+                    if (piece == wall || com.heroicpaths.village.VillageWallPiece.isStreet(piece)) continue;
+                    BoundingBox b = piece.getBoundingBox();
+                    for (int[] corner : new int[][]{{b.minX(), b.minZ()}, {b.maxX(), b.maxZ()}, {b.minX(), b.maxZ()}, {b.maxX(), b.minZ()}}) {
+                        helper.assertTrue(wall.outside(corner[0] + 0.5, corner[1] + 0.5) < -1, biome + ": wall cuts through " + piece);
+                    }
+                }
             }
         }
+        HeroicPaths.LOGGER.info("Village layout test: {} of {} villages got all three mentors", thirds, villages);
         helper.succeed();
     }
 

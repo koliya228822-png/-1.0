@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class VillageSpawn {
     /** Как далеко искать деревню, в чанках. */
-    private static final int SEARCH_CHUNKS = 64;
+    private static final int SEARCH_CHUNKS = 100;
 
     private VillageSpawn() {}
 

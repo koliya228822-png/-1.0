@@ -1,0 +1,8 @@
+{
+  "processors": [
+    {
+      "processor_type": "heroicpaths:foundation",
+      "block": { "Name": "minecraft:mossy_cobblestone" }
+    }
+  ]
+}

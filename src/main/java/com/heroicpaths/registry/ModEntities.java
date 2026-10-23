@@ -254,7 +254,19 @@ public final class ModEntities {
                 .sized(1.4f, 1.4f).clientTrackingRange(10).build(name));
     }
 
+    // Стража деревень: мечник со щитом и лучник. MISC — не занимают лимит мирных животных.
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.VillageGuard>> GUARD_SWORDSMAN = guard("guard_swordsman");
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.VillageGuard>> GUARD_ARCHER = guard("guard_archer");
+
+    private static DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.VillageGuard>> guard(String name) {
+        return ENTITY_TYPES.register(name, () -> EntityType.Builder
+                .<com.heroicpaths.entity.VillageGuard>of(com.heroicpaths.entity.VillageGuard::new, MobCategory.MISC)
+                .sized(0.6f, 1.95f).eyeHeight(1.62f).clientTrackingRange(10).build(name));
+    }
+
     public static void registerAttributes(EntityAttributeCreationEvent event) {
+        event.put(GUARD_SWORDSMAN.get(), com.heroicpaths.entity.VillageGuard.createAttributes().build());
+        event.put(GUARD_ARCHER.get(), com.heroicpaths.entity.VillageGuard.createAttributes().build());
         event.put(CRYPT_KING.get(), CryptKing.createAttributes().build());
         event.put(FLAME_TYRANT.get(), FlameTyrant.createAttributes().build());
         event.put(FROST_LORD.get(), FrostLord.createAttributes().build());

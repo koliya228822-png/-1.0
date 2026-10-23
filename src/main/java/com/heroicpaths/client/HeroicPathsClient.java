@@ -60,6 +60,8 @@ public class HeroicPathsClient {
         modBus.addListener(com.heroicpaths.client.clay.ClayRenderers::registerRenderers);
         modBus.addListener(com.heroicpaths.client.spider.SpiderRenderers::registerLayers);
         modBus.addListener(com.heroicpaths.client.spider.SpiderRenderers::registerRenderers);
+        modBus.addListener(GuardRenderer::registerLayers);
+        modBus.addListener(GuardRenderer::registerRenderers);
         modBus.addListener(com.heroicpaths.client.armor.ArmorModels::registerExtensions);
         // Двуручное оружие: поза обеих рук, руки на рукояти от первого лица, закрытый слот второй руки.
         modBus.addListener(WeaponPoses::registerExtensions);

@@ -46,6 +46,9 @@ public class HeroicPaths {
         ModItems.ITEMS.register(modBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modBus);
         ModEntities.ENTITY_TYPES.register(modBus);
+        com.heroicpaths.registry.ModWorldgen.STRUCTURE_TYPES.register(modBus);
+        com.heroicpaths.registry.ModWorldgen.PROCESSORS.register(modBus);
+        com.heroicpaths.registry.ModWorldgen.PIECES.register(modBus);
         com.heroicpaths.registry.ModParticles.PARTICLES.register(modBus);
         ModAttachments.ATTACHMENT_TYPES.register(modBus);
         ModVillagers.POI_TYPES.register(modBus);
@@ -63,6 +66,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(RpgEvents.class);
         NeoForge.EVENT_BUS.register(MentorEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MentorHomes.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.village.GuardPosts.class);
         NeoForge.EVENT_BUS.register(ItemRarity.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.CraftEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.SoulStones.class);
