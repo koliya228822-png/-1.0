@@ -34,6 +34,8 @@
 
   "block.heroicpaths.weapon_rack": "Оружейная стойка",
   "block.heroicpaths.archery_target": "Стрелковая мишень",
+  "block.heroicpaths.bank_counter": "Конторка банкира",
+  "block.heroicpaths.arms_display": "Оружейный стенд",
   "block.heroicpaths.arcane_lectern": "Магический аналой",
   "entity.minecraft.villager.heroicpaths.swordmaster": "Наставник мечников",
   "entity.minecraft.villager.heroicpaths.master_archer": "Наставник лучников",
@@ -890,6 +892,8 @@
   "block.heroicpaths.order_board": "Доска заказов",
   "block.heroicpaths.bounty_board": "Доска наказов",
   "entity.minecraft.villager.heroicpaths.bounty_herald": "Глашатай гильдии",
+  "entity.minecraft.villager.heroicpaths.banker": "Банкир",
+  "entity.minecraft.villager.heroicpaths.arms_dealer": "Мастер-оружейник",
   "entity.heroicpaths.bounty_herald": "Глашатай гильдии",
   "order_type.heroicpaths.boss": "Наказ",
   "order_type.heroicpaths.boss.desc": "Убейте босса в его логове: наказ засчитывается всем игрокам рядом с боссом и их группам. Сдать можно глашатаю или на любой доске заказов.",

@@ -2,6 +2,8 @@
   "replace": false,
   "values": [
     "heroicpaths:weapon_rack",
+    "heroicpaths:bank_counter",
+    "heroicpaths:arms_display",
     "heroicpaths:quest_board",
     "heroicpaths:tanning_vat",
     "heroicpaths:weaving_loom",

@@ -31,6 +31,10 @@ public final class ModVillagers {
 
     public static final DeferredHolder<PoiType, PoiType> BOUNTY_HERALD_POI =
             POI_TYPES.register("bounty_herald", () -> workstation(ModBlocks.BOUNTY_BOARD.get()));
+    public static final DeferredHolder<PoiType, PoiType> BANKER_POI =
+            POI_TYPES.register("banker", () -> workstation(ModBlocks.BANK_COUNTER.get()));
+    public static final DeferredHolder<PoiType, PoiType> ARMS_DEALER_POI =
+            POI_TYPES.register("arms_dealer", () -> workstation(ModBlocks.ARMS_DISPLAY.get()));
 
     public static final DeferredHolder<VillagerProfession, VillagerProfession> SWORDMASTER =
             PROFESSIONS.register("swordmaster", () -> profession("swordmaster", SWORDMASTER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
@@ -44,6 +48,12 @@ public final class ModVillagers {
     /** Глашатай гильдии: выдаёт наказы на боссов данжей. */
     public static final DeferredHolder<VillagerProfession, VillagerProfession> BOUNTY_HERALD =
             PROFESSIONS.register("bounty_herald", () -> profession("bounty_herald", BOUNTY_HERALD_POI.getKey(), SoundEvents.VILLAGER_WORK_ARMORER));
+    /** Банкир: скупает добычу из данжей за изумруды и меняет изумруды на блоки. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> BANKER =
+            PROFESSIONS.register("banker", () -> profession("banker", BANKER_POI.getKey(), SoundEvents.VILLAGER_WORK_CARTOGRAPHER));
+    /** Мастер-оружейник: каждый день выставляет десять мечей и луков, бывают и редкие. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> ARMS_DEALER =
+            PROFESSIONS.register("arms_dealer", () -> profession("arms_dealer", ARMS_DEALER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
 
     private ModVillagers() {}
 

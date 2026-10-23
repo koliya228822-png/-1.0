@@ -46,7 +46,7 @@ import java.util.Set;
  * той же профессии: он появляется у того же рабочего места, когда там загружен мир.
  */
 public final class MentorHomes {
-    private static final String HOME = HeroicPaths.MODID + ".home";
+    static final String HOME = HeroicPaths.MODID + ".home";
     private static final String AWAY = HeroicPaths.MODID + ".away";
     /** Радиус, в котором наставник свободно бродит вокруг рабочего места. */
     public static final int LEASH = 8;
@@ -64,7 +64,7 @@ public final class MentorHomes {
     public static boolean isKeeper(Villager villager) {
         VillagerProfession p = villager.getVillagerData().getProfession();
         return Set.of(ModVillagers.SWORDMASTER.get(), ModVillagers.MASTER_ARCHER.get(), ModVillagers.ARCHMAGE.get(),
-                ModVillagers.GUILDMASTER.get(), ModVillagers.BOUNTY_HERALD.get()).contains(p);
+                ModVillagers.GUILDMASTER.get(), ModVillagers.BOUNTY_HERALD.get(), ModVillagers.BANKER.get(), ModVillagers.ARMS_DEALER.get()).contains(p);
     }
 
     @Nullable
@@ -81,6 +81,12 @@ public final class MentorHomes {
     @SubscribeEvent
     public static void onVillagerTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
+        // Банкир и оружейник стоят на посту строже наставников (см. MerchantPosts).
+        if (!villager.isBaby() && MerchantPosts.isPost(villager)) {
+            if (villager.tickCount % MerchantPosts.CHECK_TICKS == 0) MerchantPosts.keepPost(level, villager);
+            if (villager.tickCount % CHECK_TICKS == 0) MerchantPosts.stock(level, villager);
+            return;
+        }
         if (villager.tickCount % CHECK_TICKS != 0 || villager.isBaby() || !isKeeper(villager)) return;
         keepHome(level, villager);
     }
@@ -132,7 +138,7 @@ public final class MentorHomes {
     }
 
     /** Отпускает точку из памяти, если она дальше {@code range} от дома (range < 0 — всегда). */
-    private static void releaseIf(Villager villager, MemoryModuleType<GlobalPos> memory, ServerLevel level, BlockPos home, int range) {
+    static void releaseIf(Villager villager, MemoryModuleType<GlobalPos> memory, ServerLevel level, BlockPos home, int range) {
         Optional<GlobalPos> pos = villager.getBrain().getMemory(memory);
         if (pos.isEmpty()) return;
         if (range >= 0 && pos.get().dimension() == level.dimension() && pos.get().pos().closerThan(home, range)) return;
@@ -223,10 +229,12 @@ public final class MentorHomes {
 
     @Nullable
     private static Villager spawn(ServerLevel level, Grave grave, VillagerProfession profession) {
-        BlockPos spot = standingSpot(level, grave.home());
-        if (spot == null) spot = grave.home().above();
         Villager villager = EntityType.VILLAGER.create(level);
         if (villager == null) return null;
+        boolean post = profession == ModVillagers.BANKER.get() || profession == ModVillagers.ARMS_DEALER.get();
+        // Банкир и оружейник встают ровно на пост за прилавком, наставники — рядом с рабочим местом.
+        BlockPos spot = post ? grave.home() : standingSpot(level, grave.home());
+        if (spot == null) spot = grave.home().above();
         VillagerType type = BuiltInRegistries.VILLAGER_TYPE.getOptional(grave.type()).orElse(VillagerType.PLAINS);
         villager.moveTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, level.random.nextFloat() * 360f, 0f);
         villager.finalizeSpawn(level, level.getCurrentDifficultyAt(spot), MobSpawnType.STRUCTURE, null);

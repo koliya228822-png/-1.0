@@ -109,7 +109,7 @@ public class GuildVillageStructure extends Structure {
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(context.seed() ^ chunk.toLong() * 0x9E3779B97F4A7C15L));
         String biome = biome();
         if (!VillageLayout.dropHousesOverWater(pieces, context)) return Optional.empty();
-        VillageLayout.arrange(pieces, context, biome, random);
+        if (!VillageLayout.arrange(pieces, context, biome, random)) return Optional.empty();
         VillageWallPiece wall = VillageWallPiece.around(pieces, chunk, biome, random, context);
         pieces.add(wall);
         pieces.add(VillageFarmPiece.around(wall, chunk, biome, context, random));

@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Раскладка особых зданий деревни. Дома наставников и казармы не выпадают из пула случайно: после того как
+ * Раскладка особых зданий деревни. Оружейная, банк, дома наставников и казармы не выпадают из пула случайно: после того как
  * jigsaw разложил улицы и дома, часть больших домов (12x13, тот же вход, что у этих зданий) заменяется ими.
  * В каждой деревне ровно два наставника разных классов, в {@link #THIRD_MENTOR_CHANCE} деревень — все три,
- * и две-три казармы стражи.
+ * и две-три казармы стражи. Оружейная и банк есть в каждой деревне: без участка для них деревня не ставится.
  */
 public final class VillageLayout {
     public static final float THIRD_MENTOR_CHANCE = 0.15f;
@@ -44,7 +44,8 @@ public final class VillageLayout {
 
     private VillageLayout() {}
 
-    public static void arrange(List<StructurePiece> pieces, Structure.GenerationContext context, String biome, RandomSource random) {
+    /** @return false, если для банка или оружейной не нашлось участка — тогда деревня здесь не ставится. */
+    public static boolean arrange(List<StructurePiece> pieces, Structure.GenerationContext context, String biome, RandomSource random) {
         // Участки — все дома деревни в нашем стиле; большие (той же формы, что дома наставников) — в первую очередь.
         List<PoolElementStructurePiece> big = new ArrayList<>(), other = new ArrayList<>();
         for (StructurePiece piece : pieces) {
@@ -57,6 +58,11 @@ public final class VillageLayout {
         shuffle(other, random);
         List<PoolElementStructurePiece> lots = new ArrayList<>(big);
         lots.addAll(other);
+
+        // Оружейная и банк есть в каждой деревне: они встают первыми, на лучшие участки.
+        String prefix = HeroicPaths.MODID + ":village/" + biome + "/";
+        if (build(pieces, lots, context, prefix + "armory", BARRACKS_DOOR) == null) return false;
+        if (build(pieces, lots, context, prefix + "bank", BARRACKS_DOOR) == null) return false;
 
         List<Mentor> order = new ArrayList<>(MENTORS);
         shuffle(order, random);
@@ -79,6 +85,7 @@ public final class VillageLayout {
         build(pieces, lots, context, barracks, BARRACKS_DOOR);
         if (lotCount >= 24) build(pieces, lots, context, barracks, BARRACKS_DOOR);
         if (lotCount >= 28) build(pieces, lots, context, mill, BARRACKS_DOOR);
+        return true;
     }
 
     static final int BARRACKS_DOOR = 5;

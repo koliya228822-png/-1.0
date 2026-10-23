@@ -26,6 +26,12 @@ public final class ModBlocks {
             BlockBehaviour.Properties.ofFullCopy(Blocks.HAY_BLOCK));
     public static final DeferredBlock<Block> ARCANE_LECTERN = BLOCKS.registerSimpleBlock("arcane_lectern",
             BlockBehaviour.Properties.ofFullCopy(Blocks.POLISHED_DEEPSLATE).lightLevel(state -> 7));
+    /** Конторка банкира — его рабочее место в банке деревни. */
+    public static final DeferredBlock<Block> BANK_COUNTER = BLOCKS.registerSimpleBlock("bank_counter",
+            BlockBehaviour.Properties.ofFullCopy(Blocks.DARK_OAK_PLANKS).strength(2.5f));
+    /** Оружейный стенд — рабочее место мастера-оружейника. */
+    public static final DeferredBlock<Block> ARMS_DISPLAY = BLOCKS.registerSimpleBlock("arms_display",
+            BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS).strength(2.5f));
 
     /** Алтарь врат на площади деревни: открывает портал в данж Камнем врат. */
     public static final DeferredBlock<GateAltarBlock> GATE_ALTAR = BLOCKS.register("gate_altar",

@@ -34,6 +34,8 @@
 
   "block.heroicpaths.weapon_rack": "Weapon Rack",
   "block.heroicpaths.archery_target": "Archery Target",
+  "block.heroicpaths.bank_counter": "Banker's Counter",
+  "block.heroicpaths.arms_display": "Arms Display",
   "block.heroicpaths.arcane_lectern": "Arcane Lectern",
   "entity.minecraft.villager.heroicpaths.swordmaster": "Swordmaster",
   "entity.minecraft.villager.heroicpaths.master_archer": "Master Archer",
@@ -890,6 +892,8 @@
   "block.heroicpaths.order_board": "Order Board",
   "block.heroicpaths.bounty_board": "Bounty Board",
   "entity.minecraft.villager.heroicpaths.bounty_herald": "Guild Herald",
+  "entity.minecraft.villager.heroicpaths.banker": "Banker",
+  "entity.minecraft.villager.heroicpaths.arms_dealer": "Master Armsmith",
   "entity.heroicpaths.bounty_herald": "Guild Herald",
   "order_type.heroicpaths.boss": "Bounty",
   "order_type.heroicpaths.boss.desc": "Slay the boss in its lair: counts for every player near the boss and their parties. Turn it in to the herald or at any order board.",

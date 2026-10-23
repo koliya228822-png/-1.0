@@ -132,6 +132,10 @@ public class VillageGameTests {
             }
             helper.assertTrue(helper.getLevel().getStructureManager().get(HeroicPaths.id("village/" + biome + "/barracks")).isPresent(),
                     "missing barracks of " + biome);
+            for (String shop : List.of("bank", "armory")) {
+                helper.assertTrue(helper.getLevel().getStructureManager().get(HeroicPaths.id("village/" + biome + "/" + shop)).isPresent(),
+                        "missing " + shop + " of " + biome);
+            }
         }
         helper.succeed();
     }
@@ -164,11 +168,14 @@ public class VillageGameTests {
                 List<String> mentors = new ArrayList<>();
                 int barracks = 0;
                 int mills = 0;
+                int armories = 0, banks = 0;
                 for (StructurePiece piece : pieces) {
                     String id = piece.toString();
                     for (String guild : VillageInjector.GUILDS) if (id.contains("/" + guild + "]")) mentors.add(guild);
                     if (id.contains("/barracks]")) barracks++;
                     if (id.contains("/windmill]")) mills++;
+                    if (id.contains("/armory]")) armories++;
+                    if (id.contains("/bank]")) banks++;
                 }
                 helper.assertTrue(mentors.size() == 2 || mentors.size() == 3, biome + " village has mentors " + mentors);
                 helper.assertTrue(mentors.stream().distinct().count() == mentors.size(), biome + " village repeats a mentor: " + mentors);
@@ -178,6 +185,7 @@ public class VillageGameTests {
                 helper.assertTrue(barracks >= 1, biome + " village has " + barracks + " barracks, " + mills + " mills, mentors " + mentors + ", pieces " + pieces.size()
                         + ", ours " + pieces.stream().filter(p -> p.toString().contains("heroicpaths:village/" + biome + "/houses/")).count());
                 helper.assertTrue(mills >= 1, biome + " village has no windmill");
+                helper.assertTrue(armories == 1 && banks == 1, biome + " village has " + armories + " armories and " + banks + " banks");
                 com.heroicpaths.village.VillageWallPiece wall = pieces.stream()
                         .filter(p -> p instanceof com.heroicpaths.village.VillageWallPiece)
                         .map(p -> (com.heroicpaths.village.VillageWallPiece) p).findFirst().orElse(null);
