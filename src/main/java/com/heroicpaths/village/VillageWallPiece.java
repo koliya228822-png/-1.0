@@ -66,6 +66,12 @@ public class VillageWallPiece extends StructurePiece {
     private final List<int[]> roads = new ArrayList<>();
     private final String biome;
     private final Map<Long, Integer> heights = new HashMap<>();
+    /**
+     * Высота основания стены по кольцу, по градусу: земля или гладь воды на осевой линии, где провалы засыпаны
+     * (стена идёт ровно над оврагом или обрывом), а уклон — не круче блока на градус. Ниже основания — насыпь.
+     */
+    private int[] levels = new int[0];
+    static final int LEVEL_STEPS = 360;
 
     VillageWallPiece(int cx, int cz, int baseY, float[] radius, List<Gate> gates, List<int[]> towers, String biome, BoundingBox box) {
         super(ModWorldgen.VILLAGE_WALL.get(), 0, box);
@@ -95,6 +101,7 @@ public class VillageWallPiece extends StructurePiece {
         for (Tag t : tag.getList("towers", Tag.TAG_INT_ARRAY)) towers.add(((IntArrayTag) t).getAsIntArray());
         for (Tag t : tag.getList("roads", Tag.TAG_INT_ARRAY)) roads.add(((IntArrayTag) t).getAsIntArray());
         biome = tag.getString("biome");
+        levels = tag.getIntArray("levels");
     }
 
     @Override
@@ -115,6 +122,7 @@ public class VillageWallPiece extends StructurePiece {
         for (int[] road : roads) rd.add(new IntArrayTag(road));
         tag.put("roads", rd);
         tag.putString("biome", biome);
+        tag.putIntArray("levels", levels);
     }
 
     public int centerX() {
@@ -302,6 +310,7 @@ public class VillageWallPiece extends StructurePiece {
         BoundingBox box = new BoundingBox(minX - pad, baseY - 24, minZ - pad, maxX + pad, baseY + 40, maxZ + pad);
         VillageWallPiece wall = new VillageWallPiece(cx, cz, baseY, r, gates, towers, biome, box);
         wall.roads.addAll(roads);
+        wall.levels = levels(probe, context);
         return wall;
     }
 
@@ -404,26 +413,83 @@ public class VillageWallPiece extends StructurePiece {
         double v = d - r;
         int arcPos = (int) Math.round(angle * r);
         if (v >= -2 && v < 2) {
-            int centerY = groundAt(generator, rs, level, (int) Math.round(cx + Math.cos(angle) * r), (int) Math.round(cz + Math.sin(angle) * r));
+            int centerY = levelAt(angle);
             wallColumn(level, st, box, x, z, (int) Math.floor(v + 2), centerY, ground, arcPos);
         } else if (v >= 2 && v < 3 && Math.floorMod(arcPos, 12) < 2) {
-            int centerY = groundAt(generator, rs, level, (int) Math.round(cx + Math.cos(angle) * r), (int) Math.round(cz + Math.sin(angle) * r));
-            int bottom = Math.min(ground, centerY) - 2;
+            int centerY = levelAt(angle);
+            embankment(level, st, box, x, z, ground, centerY);
+            int bottom = Math.min(ground, centerY) - 1;
             for (int y = bottom; y <= centerY + HEIGHT - 3; y++) set(level, box, x, y, z, y <= centerY + 1 ? st.plinth() : st.stone());
             set(level, box, x, centerY + HEIGHT - 2, z, st.stoneSlab().defaultBlockState());
             clear(level, box, x, z, centerY + HEIGHT - 1, centerY + HEIGHT + 4);
         }
     }
 
-    /** Земля (верхний твёрдый блок) на осевой линии: по шуму генератора, одинаково для всех чанков. */
+    /** Земля или гладь воды (верхний не-воздух): по шуму генератора, одинаково для всех чанков. */
     private int groundAt(ChunkGenerator generator, RandomState rs, WorldGenLevel level, int x, int z) {
         return heights.computeIfAbsent(BlockPos.asLong(x, 0, z),
-                k -> generator.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, level, rs) - 1);
+                k -> generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, level, rs) - 1);
+    }
+
+    /** Профиль основания стены: поверхность (с водой) на осевой линии, провалы засыпаны, уклон ограничен. */
+    static int[] levels(VillageWallPiece ring, net.minecraft.world.level.levelgen.structure.Structure.GenerationContext context) {
+        int[] raw = new int[LEVEL_STEPS];
+        for (int i = 0; i < LEVEL_STEPS; i++) {
+            double a = i * 2 * Math.PI / LEVEL_STEPS;
+            double rr = ring.radiusAt(a);
+            int x = (int) Math.round(ring.cx + Math.cos(a) * rr), z = (int) Math.round(ring.cz + Math.sin(a) * rr);
+            raw[i] = context.chunkGenerator().getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState()) - 1;
+        }
+        return smooth(raw);
+    }
+
+    /** Засыпает провалы в профиле стены и ограничивает уклон (см. {@link #levels}). */
+    public static int[] smooth(int[] raw) {
+        int n = raw.length;
+        // Засыпка провалов: точка поднимается до меньшего из максимумов слева и справа (овраг шириной до ~2 x 12°).
+        int window = 12;
+        int[] closed = new int[n];
+        for (int i = 0; i < n; i++) {
+            int left = Integer.MIN_VALUE, right = Integer.MIN_VALUE;
+            for (int j = 1; j <= window; j++) {
+                left = Math.max(left, raw[Math.floorMod(i - j, n)]);
+                right = Math.max(right, raw[Math.floorMod(i + j, n)]);
+            }
+            closed[i] = Math.max(raw[i], Math.min(left, right));
+        }
+        // Уклон не круче блока на градус (~1,5–2 блока кольца): у обрыва стена держит уровень, а под ней насыпь.
+        for (int pass = 0; pass < 3; pass++) {
+            for (int i = 0; i < n * 2; i++) {
+                int k = i % n, prev = Math.floorMod(k - 1, n);
+                closed[k] = Math.max(closed[k], closed[prev] - 1);
+            }
+            for (int i = n * 2; i > 0; i--) {
+                int k = i % n, next = (k + 1) % n;
+                closed[k] = Math.max(closed[k], closed[next] - 1);
+            }
+        }
+        return closed;
+    }
+
+    /** Основание стены в направлении угла. */
+    int levelAt(double angle) {
+        if (levels.length == 0) return baseY;
+        double s = (angle / (2 * Math.PI) * LEVEL_STEPS) % LEVEL_STEPS;
+        if (s < 0) s += LEVEL_STEPS;
+        int i = (int) s;
+        double f = s - i;
+        return (int) Math.round(levels[i] * (1 - f) + levels[(i + 1) % LEVEL_STEPS] * f);
+    }
+
+    /** Насыпь из земли (или песчаника в пустыне) от грунта до основания стены, сквозь воду. */
+    private void embankment(WorldGenLevel level, VillageStyle st, BoundingBox box, int x, int z, int ground, int base) {
+        for (int y = ground - 1; y < base; y++) set(level, box, x, y, z, st.fill().defaultBlockState());
     }
 
     private void wallColumn(WorldGenLevel level, VillageStyle st, BoundingBox box, int x, int z, int layer, int centerY, int ground, int arcPos) {
         int top = centerY + HEIGHT;
-        int bottom = Math.min(ground, centerY) - 2;
+        embankment(level, st, box, x, z, ground, centerY);
+        int bottom = Math.min(ground, centerY) - 1;
         for (int y = bottom; y <= top; y++) {
             BlockState state;
             if (y <= centerY + 1) state = st.plinth().defaultBlockState();
@@ -444,10 +510,11 @@ public class VillageWallPiece extends StructurePiece {
 
     private void towerColumn(WorldGenLevel level, ChunkGenerator generator, RandomState rs, VillageStyle st, BoundingBox box,
                              int[] t, double td, int x, int z, int ground) {
-        int base = groundAt(generator, rs, level, t[0], t[1]);
+        int base = levelAt(Math.atan2(t[1] + 0.5 - cz, t[0] + 0.5 - cx));
         int top = base + HEIGHT + 5;
         if (td <= TOWER_R) {
-            int bottom = Math.min(ground, base) - 2;
+            embankment(level, st, box, x, z, ground, base);
+            int bottom = Math.min(ground, base) - 1;
             for (int y = bottom; y <= top; y++) {
                 BlockState state;
                 if (y <= base + 1 || y == top) state = st.plinth().defaultBlockState();

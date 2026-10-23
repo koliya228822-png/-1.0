@@ -95,6 +95,22 @@ public class VillageGameTests {
         helper.succeed();
     }
 
+    /** Профиль стены: овраг засыпан до уровня соседних участков, у обрыва в 20 блоков уклон не круче блока на шаг. */
+    @GameTest(template = ARENA)
+    public static void wallLevelFillsDipsAndCliffs(GameTestHelper helper) {
+        int[] raw = new int[360];
+        for (int i = 0; i < 360; i++) raw[i] = i < 180 ? 80 : 60;
+        for (int i = 40; i < 50; i++) raw[i] = 55;
+        int[] level = com.heroicpaths.village.VillageWallPiece.smooth(raw);
+        for (int i = 40; i < 50; i++) helper.assertTrue(level[i] == 80, "dip at " + i + " is " + level[i] + ", not filled to 80");
+        for (int i = 0; i < 360; i++) {
+            helper.assertTrue(level[i] >= raw[i], "wall below ground at " + i);
+            helper.assertTrue(Math.abs(level[i] - level[(i + 1) % 360]) <= 1, "wall steps " + level[i] + " -> " + level[(i + 1) % 360] + " at " + i);
+        }
+        helper.assertTrue(level[180] >= 79, "wall dropped off the cliff at once: " + level[180]);
+        helper.succeed();
+    }
+
     /** В пулах домов — только дома в стиле зала гильдии, поля и загоны; дома наставников ставит раскладка, не пул. */
     @GameTest(template = ARENA)
     public static void villagePoolsUseGuildStyleHouses(GameTestHelper helper) {

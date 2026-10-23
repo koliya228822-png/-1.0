@@ -94,6 +94,7 @@ public class GuildVillageStructure extends Structure {
         ChunkPos chunk = context.chunkPos();
         WorldgenRandom random = new WorldgenRandom(new LegacyRandomSource(context.seed() ^ chunk.toLong() * 0x9E3779B97F4A7C15L));
         String biome = biome();
+        if (!VillageLayout.dropHousesOverWater(pieces, context)) return Optional.empty();
         VillageLayout.arrange(pieces, context, biome, random);
         pieces.add(VillageWallPiece.around(pieces, chunk, biome, random, context));
         return Optional.of(pieces);
@@ -126,7 +127,7 @@ public class GuildVillageStructure extends Structure {
                 if (max - min > maxHeightDifference) return false;
             }
         }
-        return wet * 8 <= samples;
+        return wet * 12 <= samples;
     }
 
     @Override
