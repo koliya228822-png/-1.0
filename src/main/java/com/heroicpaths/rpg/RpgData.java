@@ -35,6 +35,8 @@ public class RpgData implements INBTSerializable<CompoundTag> {
     /** Опыт с 1-го на 2-й уровень; каждый следующий уровень дороже предыдущего в XP_GROWTH раз. */
     public static final int XP_FIRST_LEVEL = 40;
     public static final double XP_GROWTH = 1.5;
+    /** С этого уровня опыт на каждый следующий уровень больше не растёт. */
+    public static final int XP_FLAT_FROM = 11;
     public static final int ABILITY_SLOTS = 4;
     /** Очки умений на старте. */
     public static final int STARTING_ABILITY_POINTS = 2;
@@ -96,9 +98,12 @@ public class RpgData implements INBTSerializable<CompoundTag> {
         Arrays.fill(coreStats, CoreStat.BASE);
     }
 
-    /** Опыт до следующего уровня: 40 на первом, каждый следующий уровень требует в 1,5 раза больше предыдущего. */
+    /**
+     * Опыт до следующего уровня: 40 на первом, каждый следующий уровень требует в 1,5 раза больше предыдущего,
+     * а с 11-го цена застывает (2307 опыта за каждый уровень).
+     */
     public static int xpToNextLevel(int level) {
-        double xp = XP_FIRST_LEVEL * Math.pow(XP_GROWTH, Math.max(0, level - 1));
+        double xp = XP_FIRST_LEVEL * Math.pow(XP_GROWTH, Math.max(0, Math.min(level, XP_FLAT_FROM) - 1));
         return xp >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) Math.round(xp);
     }
 

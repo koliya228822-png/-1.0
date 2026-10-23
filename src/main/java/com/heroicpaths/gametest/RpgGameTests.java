@@ -155,6 +155,8 @@ public class RpgGameTests {
         helper.assertTrue(data.abilityPoints() == 3, "level 3 must give the third ability point, got " + data.abilityPoints());
         helper.assertTrue(data.getXp() == 5, "expected 5 leftover xp, got " + data.getXp());
         helper.assertTrue(RpgData.xpToNextLevel(2) == 60 && RpgData.xpToNextLevel(3) == 90, "each level must cost 1.5x the previous one");
+        helper.assertTrue(RpgData.xpToNextLevel(11) == 2307 && RpgData.xpToNextLevel(12) == 2307 && RpgData.xpToNextLevel(60) == 2307,
+                "from level 11 the cost stays flat, got " + RpgData.xpToNextLevel(12));
         data.setLevel(RpgData.MAX_LEVEL - 1);
         RpgManager.addXp(player, Integer.MAX_VALUE);
         helper.assertTrue(data.getLevel() == RpgData.MAX_LEVEL, "level must cap at " + RpgData.MAX_LEVEL);
