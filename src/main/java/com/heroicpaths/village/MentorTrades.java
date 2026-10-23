@@ -125,21 +125,34 @@ public final class MentorTrades {
         }
     }
 
-    /** Книга случайного умения этих классов, которое можно выучить до maxLevel. Цена зависит от уровня умения. */
+    /** Книга случайного умения этих классов (не стартового), которое можно выучить до maxLevel. Цена зависит от уровня умения. */
     private static ItemListing book(List<PlayerClass> classes, int maxLevel, int villagerXp) {
         return (trader, random) -> {
-            List<AbilityDef> pool = new ArrayList<>();
-            for (AbilityDef def : AbilityRegistry.bookAbilities(maxLevel)) {
-                for (Subclass subclass : AbilityRegistry.learners(def)) {
-                    if (classes.contains(subclass.playerClass()) && !pool.contains(def)) pool.add(def);
-                }
-            }
+            List<AbilityDef> pool = bookPool(classes, maxLevel);
             if (pool.isEmpty()) return null;
             AbilityDef def = pool.get(random.nextInt(pool.size()));
             int price = Math.min(64, 6 + def.unlockLevel() / 2);
             return new MerchantOffer(new ItemCost(Items.EMERALD, price),
                     AbilityBookItem.create(ModItems.ABILITY_BOOK.get(), def), 3, villagerXp, 0.05f);
         };
+    }
+
+    /** Умения, книги которых наставник этих классов может продавать (до уровня maxLevel). */
+    public static List<AbilityDef> bookPool(List<PlayerClass> classes, int maxLevel) {
+        List<AbilityDef> pool = new ArrayList<>();
+        for (AbilityDef def : AbilityRegistry.bookAbilities(maxLevel)) {
+            // Стартовые умения какого-либо класса книгой не продаются: их и так знают с начала игры.
+            if (isStartingAnywhere(def)) continue;
+            for (Subclass subclass : AbilityRegistry.learners(def)) {
+                if (classes.contains(subclass.playerClass()) && !pool.contains(def)) pool.add(def);
+            }
+        }
+        return pool;
+    }
+
+    static boolean isStartingAnywhere(AbilityDef def) {
+        for (Subclass subclass : Subclass.values()) if (subclass.startingAbilities().contains(def.id())) return true;
+        return false;
     }
 
     private static void add(Int2ObjectMap<List<ItemListing>> trades, int level, ItemListing... listings) {

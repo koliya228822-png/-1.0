@@ -75,7 +75,11 @@ public class MerchantGameTests {
             for (MerchantOffer offer : today) {
                 ItemStack item = offer.getResult();
                 helper.assertTrue(offer.getBaseCostA().is(Items.EMERALD), "price is not in emeralds: " + offer.getBaseCostA());
-                helper.assertTrue(MerchantPosts.emeralds(offer) >= 15, item + " is too cheap: " + MerchantPosts.emeralds(offer));
+                helper.assertTrue(MerchantPosts.emeralds(offer) >= 5, item + " is too cheap: " + MerchantPosts.emeralds(offer));
+                // Новичок: только железо (и простой лук) не выше качественной редкости.
+                helper.assertTrue(com.heroicpaths.item.Grades.of(item) <= 1, "a novice dealer sells " + item);
+                helper.assertTrue(ItemRarity.get(item).ordinal() <= ItemRarity.Tier.FINE.ordinal(), "a novice dealer sells " + ItemRarity.get(item) + " " + item);
+                helper.assertTrue(offer.getXp() > 0, "buying " + item + " gives the dealer no experience");
                 helper.assertTrue(ItemRarity.get(item) != null, item + " has no rarity");
                 helper.assertTrue(offer.getMaxUses() == 1, "an item can be bought " + offer.getMaxUses() + " times");
                 if (BuiltInRegistries.ITEM.getKey(item.getItem()).getPath().contains("bow")) bows++;
@@ -105,6 +109,38 @@ public class MerchantGameTests {
                     "216 emeralds became " + rich.getBaseCostA() + " + " + rich.getCostB());
         } finally {
             level.getServer().overworld().setDayTime(dayTime);
+        }
+        helper.succeed();
+    }
+
+    /** С уровнем оружейник продаёт лучше: у мастера за десять дней — дамаск и вещи выше качественной редкости, у новичка — никогда. */
+    @GameTest(template = ARENA)
+    public static void armsDealerAssortmentGrowsWithLevel(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        boolean damascus = false, rare = false;
+        for (long day = 0; day < 10; day++) {
+            for (MerchantOffer offer : MerchantPosts.armsOffers(level, 42L, day, 5)) {
+                if (com.heroicpaths.item.Grades.of(offer.getResult()) == 3) damascus = true;
+                if (ItemRarity.get(offer.getResult()).ordinal() > ItemRarity.Tier.FINE.ordinal()) rare = true;
+            }
+            for (MerchantOffer offer : MerchantPosts.armsOffers(level, 42L, day, 1)) {
+                helper.assertTrue(com.heroicpaths.item.Grades.of(offer.getResult()) <= 1, "novice sells " + offer.getResult());
+                helper.assertTrue(ItemRarity.get(offer.getResult()).ordinal() <= ItemRarity.Tier.FINE.ordinal(), "novice sells " + ItemRarity.get(offer.getResult()));
+            }
+        }
+        helper.assertTrue(damascus && rare, "a master dealer never offered damascus (" + damascus + ") or rare gear (" + rare + ")");
+        helper.succeed();
+    }
+
+    /** Наставники не продают книги умений, которые какой-то класс знает с начала игры. */
+    @GameTest(template = ARENA)
+    public static void mentorsDoNotSellStartingAbilityBooks(GameTestHelper helper) {
+        for (com.heroicpaths.rpg.PlayerClass playerClass : com.heroicpaths.rpg.PlayerClass.playable()) {
+            for (var def : com.heroicpaths.village.MentorTrades.bookPool(List.of(playerClass), 100)) {
+                for (com.heroicpaths.rpg.Subclass subclass : com.heroicpaths.rpg.Subclass.values()) {
+                    helper.assertFalse(subclass.startingAbilities().contains(def.id()), playerClass + " mentor sells the starting ability " + def.id());
+                }
+            }
         }
         helper.succeed();
     }
