@@ -25,11 +25,10 @@ import java.util.List;
 /**
  * Раскладка особых зданий деревни. Оружейная, банк, дома наставников и казармы не выпадают из пула случайно: после того как
  * jigsaw разложил улицы и дома, часть больших домов (12x13, тот же вход, что у этих зданий) заменяется ими.
- * В каждой деревне ровно два наставника разных классов, в {@link #THIRD_MENTOR_CHANCE} деревень — все три,
+ * В каждой деревне все три наставника — мечник, лучник и маг,
  * и две-три казармы стражи. Оружейная и банк есть в каждой деревне: без участка для них деревня не ставится.
  */
 public final class VillageLayout {
-    public static final float THIRD_MENTOR_CHANCE = 0.15f;
 
     /** Гильдия, профессия наставника и положение двери её дома (z), под которое подбирается большой дом. */
     record Mentor(String guild, String profession, int door) {}
@@ -66,7 +65,7 @@ public final class VillageLayout {
 
         List<Mentor> order = new ArrayList<>(MENTORS);
         shuffle(order, random);
-        int wanted = random.nextFloat() < THIRD_MENTOR_CHANCE ? 3 : 2;
+        int wanted = MENTORS.size();
         int placed = 0;
         for (Mentor mentor : order) {
             if (placed >= wanted) break;
@@ -77,6 +76,8 @@ public final class VillageLayout {
                     jigsaw.above(), Rotation.NONE, 0, VillageInjector.NO_PROCESSORS));
             placed++;
         }
+        // Все три наставника обязательны: если кому-то не нашлось участка, деревня здесь не ставится.
+        if (placed < wanted) return false;
         // Сначала по одной казарме и мельнице, потом — сколько поместится: казарм до трёх, мельниц до двух.
         String barracks = HeroicPaths.MODID + ":village/" + biome + "/barracks", mill = HeroicPaths.MODID + ":village/" + biome + "/windmill";
         int lotCount = lots.size();

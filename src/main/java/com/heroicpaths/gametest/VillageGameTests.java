@@ -177,7 +177,7 @@ public class VillageGameTests {
                     if (id.contains("/armory]")) armories++;
                     if (id.contains("/bank]")) banks++;
                 }
-                helper.assertTrue(mentors.size() == 2 || mentors.size() == 3, biome + " village has mentors " + mentors);
+                helper.assertTrue(mentors.size() == 3, biome + " village has mentors " + mentors);
                 helper.assertTrue(mentors.stream().distinct().count() == mentors.size(), biome + " village repeats a mentor: " + mentors);
                 if (mentors.size() == 3) thirds++;
                 long mentorVillagers = pieces.stream().filter(p -> p.toString().contains("_mentor]")).count();
