@@ -59,12 +59,15 @@ public class RpgHudLayer implements LayeredDraw.Layer {
         }
 
         boolean hasContract = !data.getContractDungeon().isEmpty();
-        graphics.fill(x - 3, y - 3, x + WIDTH + 3, y + 30 + RpgData.ABILITY_SLOTS * 10 + (hasContract ? 10 : 0), 0x80000000);
+        // Выносливость бойцов показана полоской над хотбаром, здесь второй не нужно; ману мага рисуем здесь.
+        boolean resourceBar = !com.heroicpaths.combat.Stamina.uses(playerClass);
+        int top = 18 + (resourceBar ? 12 : 0);
+        graphics.fill(x - 3, y - 3, x + WIDTH + 3, y + top + RpgData.ABILITY_SLOTS * 10 + (hasContract ? 10 : 0), 0x80000000);
         if (hasContract) {
             com.heroicpaths.dungeon.DungeonType type = com.heroicpaths.dungeon.DungeonType.byId(data.getContractDungeon());
             Component contract = Component.translatable("hud.heroicpaths.contract",
                     type == null ? Component.literal("?") : type.displayName(), data.getContractParty());
-            graphics.drawString(font, contract, x, y + 30 + RpgData.ABILITY_SLOTS * 10, 0xD0A0FF, true);
+            graphics.drawString(font, contract, x, y + top + RpgData.ABILITY_SLOTS * 10, 0xD0A0FF, true);
         }
 
         MutableComponent header = Component.empty()
@@ -83,12 +86,14 @@ public class RpgHudLayer implements LayeredDraw.Layer {
         boolean blood = data.getSubclass() != null && data.getSubclass().usesHealth();
         float max = blood ? player.getMaxHealth() : PlayerStats.maxResource(player);
         float current = blood ? player.getHealth() : Math.min(data.getResource(), max);
-        graphics.fill(x, y, x + WIDTH, y + 10, 0xFF1A1A1A);
-        graphics.fill(x, y, x + Math.round(WIDTH * current / max), y + 10, blood ? 0xFFB01020 : 0xFF000000 | playerClass.resourceColor());
-        Component resourceName = blood ? Component.translatable("resource.heroicpaths.blood") : playerClass.resourceName();
-        String resourceText = resourceName.getString() + " " + (int) current + "/" + (int) max;
-        graphics.drawCenteredString(font, resourceText, x + WIDTH / 2, y + 1, 0xFFFFFF);
-        y += 12;
+        if (resourceBar) {
+            graphics.fill(x, y, x + WIDTH, y + 10, 0xFF1A1A1A);
+            graphics.fill(x, y, x + Math.round(WIDTH * current / max), y + 10, blood ? 0xFFB01020 : 0xFF000000 | playerClass.resourceColor());
+            Component resourceName = blood ? Component.translatable("resource.heroicpaths.blood") : playerClass.resourceName();
+            String resourceText = resourceName.getString() + " " + (int) current + "/" + (int) max;
+            graphics.drawCenteredString(font, resourceText, x + WIDTH / 2, y + 1, 0xFFFFFF);
+            y += 12;
+        }
 
         float progress = data.getLevel() >= RpgData.MAX_LEVEL
                 ? 1f

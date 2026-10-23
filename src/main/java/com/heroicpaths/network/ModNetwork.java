@@ -66,7 +66,7 @@ public final class ModNetwork {
             }
         });
         registrar.playToClient(StaminaPayload.TYPE, StaminaPayload.STREAM_CODEC, (payload, context) ->
-                RpgManager.get(context.player()).setStamina(payload.stamina()));
+                com.heroicpaths.combat.Stamina.set(context.player(), payload.stamina()));
         registrar.playToClient(CastBarPayload.TYPE, CastBarPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.CastBarLayer.set(payload.ability(), payload.ticks()));
         registrar.playToClient(MobLevelPayload.TYPE, MobLevelPayload.STREAM_CODEC, (payload, context) -> {

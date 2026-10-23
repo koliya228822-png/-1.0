@@ -4,9 +4,11 @@ import com.heroicpaths.HeroicPaths;
 import com.heroicpaths.item.MusketItem;
 import com.heroicpaths.network.StaminaPayload;
 import com.heroicpaths.rpg.PlayerClass;
+import com.heroicpaths.rpg.PlayerStats;
 import com.heroicpaths.rpg.RpgData;
 import com.heroicpaths.rpg.RpgManager;
 import com.heroicpaths.rpg.ability.AbilityLogic;
+import com.heroicpaths.rpg.stat.Stat;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -29,15 +31,16 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Стамина бойцов: воина, лучника, разбойника и охотника (у мага её нет). Тратится на удары оружием ближнего боя
- * и на выстрелы из лука, арбалета и мушкета; умения её не тратят — они платят ресурсом класса.
+ * Выносливость (стамина) бойцов: воина, лучника, разбойника и охотника (у мага вместо неё мана). Это их единственный
+ * ресурс: на неё работают и умения, и удары оружием ближнего боя, и выстрелы из лука, арбалета и мушкета.
  * <ul>
- *     <li>запас — 100, восстанавливается 30 в секунду, если секунду ничего не тратить;</li>
+ *     <li>запас — 100, восстанавливается 30 в секунду, если секунду ничего не тратить (ни ударами, ни умениями);</li>
  *     <li>удар стоит 14 / скорость атаки оружия (кинжал ≈6, меч ≈9, топор и двуручник ≈14–18), слабый удар — меньше;</li>
  *     <li>выстрел из лука — до 12 (по силе натяжения), арбалет — 12, мушкет — 15;</li>
  *     <li>если стамины не хватает, удар или выстрел всё равно происходит, но наносит лишь 40% урона.</li>
  * </ul>
- * Стамина не сохраняется: после входа в игру она полная. Клиент получает её отдельным маленьким пакетом.
+ * Максимум и прибавки восстановления из дерева — те же, что у ресурса класса. Клиент получает выносливость маленьким
+ * пакетом, не дожидаясь полной синхронизации.
  */
 public final class Stamina {
     public static final float MAX = 100f;
@@ -55,9 +58,22 @@ public final class Stamina {
 
     private Stamina() {}
 
-    /** Есть ли у класса стамина: у всех, кроме мага (и игрока без класса). */
+    /** Есть ли у класса выносливость: у всех, кроме мага (и игрока без класса). */
     public static boolean uses(PlayerClass playerClass) {
         return playerClass != PlayerClass.NONE && playerClass != PlayerClass.MAGE;
+    }
+
+    /** Сколько выносливости сейчас: это ресурс класса. */
+    public static float current(Player player) {
+        return RpgManager.get(player).getResource();
+    }
+
+    public static float max(Player player) {
+        return PlayerStats.maxResource(player);
+    }
+
+    public static void set(Player player, float value) {
+        RpgManager.get(player).setResource(value);
     }
 
     public static boolean uses(Player player) {
@@ -89,8 +105,9 @@ public final class Stamina {
     public static boolean spend(ServerPlayer player, float cost) {
         if (!uses(player) || cost <= 0) return true;
         RpgData data = RpgManager.get(player);
-        boolean enough = data.getStamina() >= cost;
-        data.setStamina(enough ? data.getStamina() - cost : 0f);
+        float stamina = current(player);
+        boolean enough = stamina >= cost;
+        set(player, enough ? stamina - cost : 0f);
         data.setStaminaUsedAt(player.level().getGameTime());
         if (!enough) data.setTiredAt(player.level().getGameTime());
         send(player);
@@ -109,16 +126,27 @@ public final class Stamina {
         if (event.getEntity() instanceof ServerPlayer player) tick(player);
     }
 
-    /** Восстановление: через секунду после последней траты, 1.5 за тик. */
+    /**
+     * Восстановление: через секунду после последней траты, 1.5 за тик (полный запас за 3–4 секунды).
+     * Чем больше максимум, тем быстрее; прибавка восстановления ресурса из дерева добавляется сверху.
+     */
     public static void tick(ServerPlayer player) {
         RpgData data = RpgManager.get(player);
         if (!uses(data.getPlayerClass())) return;
-        float stamina = data.getStamina();
-        if (stamina < MAX && player.level().getGameTime() - data.getStaminaUsedAt() >= REGEN_DELAY) {
-            data.setStamina(Math.min(MAX, stamina + REGEN_PER_TICK));
+        float stamina = current(player), max = max(player);
+        if (stamina > max) {
+            set(player, max);
+            send(player);
+        } else if (stamina < max && player.level().getGameTime() - data.getStaminaUsedAt() >= REGEN_DELAY) {
+            float regen = regenPerTick(player);
+            set(player, Math.min(max, stamina + regen));
             // Пока стамина копится, клиенту хватает обновления раз в 2 тика.
-            if (data.getStamina() >= MAX || player.tickCount % 2 == 0) send(player);
+            if (current(player) >= max || player.tickCount % 2 == 0) send(player);
         }
+    }
+
+    public static float regenPerTick(Player player) {
+        return REGEN_PER_TICK * max(player) / MAX + PlayerStats.get(player).get(Stat.RESOURCE_REGEN) / 20f;
     }
 
     /** Удар по существу оружием ближнего боя. Голые руки стамину не тратят. */
@@ -176,6 +204,6 @@ public final class Stamina {
 
     public static void send(ServerPlayer player) {
         if (player.connection == null || !player.connection.hasChannel(StaminaPayload.TYPE)) return;
-        PacketDistributor.sendToPlayer(player, new StaminaPayload(RpgManager.get(player).getStamina()));
+        PacketDistributor.sendToPlayer(player, new StaminaPayload(current(player)));
     }
 }
