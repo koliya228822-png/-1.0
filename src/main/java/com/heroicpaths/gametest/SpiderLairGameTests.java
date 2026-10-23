@@ -53,6 +53,8 @@ public class SpiderLairGameTests {
         helper.assertTrue(tank.getMaxHealth() >= spider.getMaxHealth() * 3, "the bloater must be at least three times tougher");
         helper.assertTrue(tank.getAttributeValue(Attributes.MOVEMENT_SPEED) < spider.getAttributeValue(Attributes.MOVEMENT_SPEED), "the bloater must be slow");
         helper.assertTrue(!spider.canBeAffected(new MobEffectInstance(MobEffects.POISON, 40)), "spiders must ignore poison");
+        helper.assertTrue(!(spider.getNavigation() instanceof net.minecraft.world.entity.ai.navigation.WallClimberNavigation)
+                && !(spitter.getNavigation() instanceof net.minecraft.world.entity.ai.navigation.WallClimberNavigation), "dungeon spiders must not climb walls");
         float before = tank.getHealth();
         tank.hurt(tank.damageSources().magic(), 8f);
         helper.assertTrue(Math.abs(before - tank.getHealth() - 6f) < 0.5f, "the bloater must absorb a quarter of the damage, took " + (before - tank.getHealth()));

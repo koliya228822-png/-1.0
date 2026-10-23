@@ -146,7 +146,11 @@ public class StructureGen {
             Map.entry("minecraft:crying_obsidian", "minecraft:moss_block"),
             Map.entry("minecraft:polished_deepslate", "minecraft:rooted_dirt"),
             Map.entry("minecraft:bookshelf", "minecraft:cobweb"),
-            Map.entry("minecraft:zombie", "minecraft:spider"),
+            // Только пауки Матери выводка: ни скелетов, ни обычных пауков.
+            Map.entry("minecraft:zombie", MODID + ":brood_spider"),
+            Map.entry("minecraft:skeleton", MODID + ":brood_spider"),
+            Map.entry("minecraft:cave_spider", MODID + ":brood_spider"),
+            Map.entry("minecraft:spider", MODID + ":brood_spider"),
             Map.entry(MODID + ":crypt_king", MODID + ":spider_queen"),
             Map.entry(MODID + ":chests/crypt", MODID + ":chests/spider_lair"),
             Map.entry(MODID + ":chests/crypt_treasure", MODID + ":chests/spider_lair_treasure")));

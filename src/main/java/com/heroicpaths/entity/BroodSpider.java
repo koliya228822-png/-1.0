@@ -1,9 +1,6 @@
 package com.heroicpaths.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
@@ -22,8 +19,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.ai.navigation.PathNavigation;
-import net.minecraft.world.entity.ai.navigation.WallClimberNavigation;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -33,10 +28,9 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Паук выводка — обычный паук Паучьего логова: мохнатый, с бежевыми пучками на суставах и зелёными рожками.
- * Лазает по стенам, прыгает на врага, укус может отравить. Основа для плевальщика и толстобрюха.
+ * По стенам не лазает (так проще драться в узких норах), прыгает на врага, укус может отравить. Основа для плевальщика и толстобрюха.
  */
 public class BroodSpider extends Monster {
-    private static final EntityDataAccessor<Boolean> CLIMBING = SynchedEntityData.defineId(BroodSpider.class, EntityDataSerializers.BOOLEAN);
 
     public BroodSpider(EntityType<? extends BroodSpider> type, Level level) {
         super(type, level);
@@ -49,12 +43,6 @@ public class BroodSpider extends Monster {
                 .add(Attributes.ATTACK_DAMAGE, 3.5)
                 .add(Attributes.MOVEMENT_SPEED, 0.3)
                 .add(Attributes.FOLLOW_RANGE, 24.0);
-    }
-
-    @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        super.defineSynchedData(builder);
-        builder.define(CLIMBING, false);
     }
 
     @Override
@@ -73,30 +61,9 @@ public class BroodSpider extends Monster {
         goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.1, true));
     }
 
-    /** Может ли лазать по стенам (толстобрюх слишком тяжёл). */
-    protected boolean canClimb() {
-        return true;
-    }
-
     /** Шанс отравить укусом. */
     protected float poisonChance() {
         return 0.35f;
-    }
-
-    @Override
-    protected PathNavigation createNavigation(Level level) {
-        return canClimb() ? new WallClimberNavigation(this, level) : super.createNavigation(level);
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
-        if (!level().isClientSide) entityData.set(CLIMBING, canClimb() && horizontalCollision);
-    }
-
-    @Override
-    public boolean onClimbable() {
-        return entityData.get(CLIMBING);
     }
 
     @Override

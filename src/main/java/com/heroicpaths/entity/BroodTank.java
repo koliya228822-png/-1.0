@@ -14,7 +14,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 
 /**
- * Паук-толстобрюх: огромное брюшко в пластинах панциря. Медленный, по стенам не лазает, втрое крепче паука
+ * Паук-толстобрюх: огромное брюшко в пластинах панциря. Медленный, втрое крепче паука
  * выводка и гасит четверть любого урона; тяжёлый укус замедляет.
  */
 public class BroodTank extends BroodSpider {
@@ -40,11 +40,6 @@ public class BroodTank extends BroodSpider {
     @Override
     protected void registerAttackGoals() {
         goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0, true));
-    }
-
-    @Override
-    protected boolean canClimb() {
-        return false;
     }
 
     @Override
