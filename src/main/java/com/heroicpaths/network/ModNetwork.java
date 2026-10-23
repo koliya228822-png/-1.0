@@ -16,7 +16,7 @@ public final class ModNetwork {
     private ModNetwork() {}
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("9");
+        PayloadRegistrar registrar = event.registrar("10");
 
         // Клиент хранит копию данных прямо в attachment своего игрока: HUD и меню читают её оттуда.
         registrar.playToClient(SyncRpgDataPayload.TYPE, SyncRpgDataPayload.STREAM_CODEC, (payload, context) ->
@@ -65,6 +65,8 @@ public final class ModNetwork {
                 default -> { }
             }
         });
+        registrar.playToClient(StaminaPayload.TYPE, StaminaPayload.STREAM_CODEC, (payload, context) ->
+                RpgManager.get(context.player()).setStamina(payload.stamina()));
         registrar.playToClient(CastBarPayload.TYPE, CastBarPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.CastBarLayer.set(payload.ability(), payload.ticks()));
         registrar.playToClient(MobLevelPayload.TYPE, MobLevelPayload.STREAM_CODEC, (payload, context) -> {

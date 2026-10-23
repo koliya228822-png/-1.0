@@ -78,6 +78,12 @@ public class RpgData implements INBTSerializable<CompoundTag> {
     private UUID companion;
     /** До какого игрового времени погибший зверь не может вернуться. */
     private long companionDownUntil;
+    /** Стамина бойца (см. Stamina): не сохраняется, после входа в игру — полная. */
+    private float stamina = com.heroicpaths.combat.Stamina.MAX;
+    /** Когда стамина тратилась в последний раз: восстановление начинается через секунду. */
+    private long staminaUsedAt;
+    /** Тик последнего удара или выстрела, на который не хватило стамины. */
+    private long tiredAt = -1;
     /** Растёт при каждой синхронизации, чтобы открытое меню знало, что пора обновиться. */
     private int syncVersion;
     /** Дерево сброшено при загрузке старого сохранения: игроку нужно об этом сказать (не сохраняется). */
@@ -139,6 +145,30 @@ public class RpgData implements INBTSerializable<CompoundTag> {
 
     public void setResource(float resource) {
         this.resource = resource;
+    }
+
+    public float getStamina() {
+        return stamina;
+    }
+
+    public void setStamina(float stamina) {
+        this.stamina = stamina;
+    }
+
+    public long getStaminaUsedAt() {
+        return staminaUsedAt;
+    }
+
+    public void setStaminaUsedAt(long gameTime) {
+        this.staminaUsedAt = gameTime;
+    }
+
+    public long getTiredAt() {
+        return tiredAt;
+    }
+
+    public void setTiredAt(long gameTime) {
+        this.tiredAt = gameTime;
     }
 
     public int getSyncVersion() {

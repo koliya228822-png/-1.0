@@ -68,6 +68,11 @@ public class MusketItem extends Item {
         return InteractionResultHolder.consume(musket);
     }
 
+    /** Есть ли чем зарядить мушкет. */
+    public static boolean hasAmmo(Player player) {
+        return !findAmmo(player).isEmpty();
+    }
+
     private static ItemStack findAmmo(Player player) {
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
             ItemStack stack = player.getInventory().getItem(slot);

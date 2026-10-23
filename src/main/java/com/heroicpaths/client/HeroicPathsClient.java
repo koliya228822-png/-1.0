@@ -154,6 +154,9 @@ public class HeroicPathsClient {
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        // Свои полоски здоровья и стамины вместо ванильных сердечек.
+        event.replaceLayer(net.neoforged.neoforge.client.gui.VanillaGuiLayers.PLAYER_HEALTH, HudBars::renderHealth);
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.FOOD_LEVEL, HeroicPaths.id("stamina_bar"), HudBars::renderStamina);
         event.registerAboveAll(HeroicPaths.id("rpg_hud"), new RpgHudLayer());
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("cast_bar"), new CastBarLayer());
     }
