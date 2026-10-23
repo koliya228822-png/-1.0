@@ -42,7 +42,7 @@ public final class MerchantPosts {
     private static final String STOCK = HeroicPaths.MODID + ".stock";
     private static final String SOLD = HeroicPaths.MODID + ".sold";
     /** Версия списка банкира: при изменении цен старые банкиры получают новый список. */
-    private static final long BANK_STOCK = 1;
+    private static final long BANK_STOCK = 2;
     /** Насколько далеко от своей клетки торговец может отойти. */
     public static final int POST_LEASH = 2;
     private static final double MAX_AWAY = 2.5;
@@ -185,6 +185,31 @@ public final class MerchantPosts {
         buy(list, () -> Items.GOLD_BLOCK, 1, 3);
         buy(list, () -> Items.GOLD_INGOT, 3, 1);
         buy(list, () -> Items.NAME_TAG, 1, 2);
+        buy(list, () -> Items.WITHER_SKELETON_SKULL, 1, 8);
+        buy(list, () -> Items.TRIDENT, 1, 8);
+        buy(list, () -> Items.NAUTILUS_SHELL, 1, 2);
+        buy(list, () -> Items.BOW, 1, 1);
+        buy(list, () -> Items.DECORATED_POT, 1, 1);
+        // Всякая мелочь из данжей — оптом: глина и кирпич копей, кости, паутина, слизь, лёд.
+        buy(list, () -> Items.PHANTOM_MEMBRANE, 2, 1);
+        buy(list, () -> Items.BLAZE_ROD, 2, 1);
+        buy(list, () -> Items.MAGMA_CREAM, 4, 1);
+        buy(list, () -> Items.FERMENTED_SPIDER_EYE, 4, 1);
+        buy(list, () -> Items.COBWEB, 4, 1);
+        buy(list, () -> Items.BOOK, 4, 1);
+        buy(list, () -> Items.IRON_INGOT, 4, 1);
+        buy(list, () -> Items.PRISMARINE_CRYSTALS, 6, 1);
+        buy(list, () -> Items.PRISMARINE_SHARD, 8, 1);
+        buy(list, () -> Items.SPIDER_EYE, 8, 1);
+        buy(list, () -> Items.PACKED_ICE, 8, 1);
+        buy(list, () -> Items.BRICK, 12, 1);
+        buy(list, () -> Items.BONE, 12, 1);
+        buy(list, () -> Items.STRING, 12, 1);
+        buy(list, () -> Items.CLAY_BALL, 16, 1);
+        buy(list, () -> Items.SNOWBALL, 16, 1);
+        buy(list, () -> Items.ARROW, 16, 1);
+        buy(list, () -> Items.SOUL_SAND, 16, 1);
+        buy(list, () -> Items.ROTTEN_FLESH, 24, 1);
         return list;
     }
 

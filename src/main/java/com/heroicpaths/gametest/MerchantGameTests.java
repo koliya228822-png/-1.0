@@ -47,11 +47,11 @@ public class MerchantGameTests {
 
         MerchantPosts.stock(level, banker);
         List<MerchantOffer> offers = banker.getOffers();
-        helper.assertTrue(offers.size() >= 20, "banker has only " + offers.size() + " offers");
+        helper.assertTrue(offers.size() >= 50, "banker has only " + offers.size() + " offers");
         for (MerchantOffer offer : offers) {
             helper.assertTrue(offer.getResult().is(Items.EMERALD), "banker pays with " + offer.getResult());
         }
-        for (var loot : List.of(ModItems.LICH_PHYLACTERY.get(), ModItems.RELIC_SPARK.get(), ModItems.ABILITY_BOOK.get(), ModItems.ANCIENT_SOUL_STONE.get())) {
+        for (var loot : List.of(ModItems.LICH_PHYLACTERY.get(), ModItems.RELIC_SPARK.get(), ModItems.ABILITY_BOOK.get(), ModItems.ANCIENT_SOUL_STONE.get(), Items.CLAY_BALL, Items.BONE)) {
             helper.assertTrue(offers.stream().anyMatch(o -> o.getBaseCostA().is(loot)), "banker does not buy " + loot);
         }
         // Отвели (оттолкнули, увели) — сразу обратно на пост.
