@@ -184,7 +184,7 @@ public class VillageGameTests {
                 helper.assertTrue(wall != null, biome + " village has no wall");
                 helper.assertFalse(wall.gates().isEmpty(), biome + " wall has no gates");
                 for (StructurePiece piece : pieces) {
-                    if (piece == wall || com.heroicpaths.village.VillageWallPiece.isStreet(piece)) continue;
+                    if (piece == wall || piece instanceof com.heroicpaths.village.VillageFarmPiece || com.heroicpaths.village.VillageWallPiece.isStreet(piece)) continue;
                     BoundingBox b = piece.getBoundingBox();
                     for (int[] corner : new int[][]{{b.minX(), b.minZ()}, {b.maxX(), b.maxZ()}, {b.minX(), b.maxZ()}, {b.maxX(), b.minZ()}}) {
                         helper.assertTrue(wall.outside(corner[0] + 0.5, corner[1] + 0.5) < -1, biome + ": wall cuts through " + piece);

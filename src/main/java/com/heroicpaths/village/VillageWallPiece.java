@@ -133,6 +133,10 @@ public class VillageWallPiece extends StructurePiece {
         return cz;
     }
 
+    public float[] radii() {
+        return radius.clone();
+    }
+
     public List<Gate> gates() {
         return gates;
     }
@@ -316,8 +320,8 @@ public class VillageWallPiece extends StructurePiece {
 
     /** Снаружи у ворот вода — ворота в озеро не ставим. */
     private static boolean wet(net.minecraft.world.level.levelgen.structure.Structure.GenerationContext context, int x, int z) {
-        int surface = context.chunkGenerator().getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState());
-        int floor = context.chunkGenerator().getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, context.heightAccessor(), context.randomState());
+        int surface = TerrainSampler.of(context).surface(x, z);
+        int floor = TerrainSampler.of(context).floor(x, z);
         return surface > floor;
     }
 
@@ -438,7 +442,7 @@ public class VillageWallPiece extends StructurePiece {
             double a = i * 2 * Math.PI / LEVEL_STEPS;
             double rr = ring.radiusAt(a);
             int x = (int) Math.round(ring.cx + Math.cos(a) * rr), z = (int) Math.round(ring.cz + Math.sin(a) * rr);
-            raw[i] = context.chunkGenerator().getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState()) - 1;
+            raw[i] = TerrainSampler.of(context).surface(x, z) - 1;
         }
         return smooth(raw);
     }

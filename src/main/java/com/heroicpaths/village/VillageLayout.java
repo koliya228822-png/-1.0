@@ -85,7 +85,7 @@ public final class VillageLayout {
 
     /**
      * Дома над водой или высоко над дном (озеро, река, обрыв) выкидываются вместе с их жителями; если таких
-     * больше десятой части или над водой оказался сам зал гильдии — деревня здесь не встаёт вовсе.
+     * больше четверти или над водой оказался сам зал гильдии — деревня здесь не встаёт вовсе.
      */
     public static boolean dropHousesOverWater(List<StructurePiece> pieces, Structure.GenerationContext context) {
         List<StructurePiece> bad = new ArrayList<>();
@@ -100,17 +100,15 @@ public final class VillageLayout {
             boolean over = false;
             for (int[] c : new int[][]{{b.minX() + 1, b.minZ() + 1}, {b.maxX() - 1, b.maxZ() - 1}, {b.minX() + 1, b.maxZ() - 1},
                     {b.maxX() - 1, b.minZ() + 1}, {(b.minX() + b.maxX()) / 2, (b.minZ() + b.maxZ()) / 2}}) {
-                int surface = context.chunkGenerator().getBaseHeight(c[0], c[1], net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG,
-                        context.heightAccessor(), context.randomState());
-                int floor = context.chunkGenerator().getBaseHeight(c[0], c[1], net.minecraft.world.level.levelgen.Heightmap.Types.OCEAN_FLOOR_WG,
-                        context.heightAccessor(), context.randomState());
+                int surface = TerrainSampler.of(context).surface(c[0], c[1]);
+                int floor = TerrainSampler.of(context).floor(c[0], c[1]);
                 if (surface > floor || b.minY() - floor > 8) over = true;
             }
             if (!over) continue;
             if (i == 0) return false;
             bad.add(piece);
         }
-        if (bad.size() * 10 > buildings) return false;
+        if (bad.size() * 4 > buildings) return false;
         for (StructurePiece piece : bad) {
             BoundingBox box = piece.getBoundingBox();
             pieces.removeIf(p -> p == piece || isVillagerIn(p, box));

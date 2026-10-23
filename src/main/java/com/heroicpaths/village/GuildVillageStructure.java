@@ -72,18 +72,30 @@ public class GuildVillageStructure extends Structure {
 
     @Override
     protected Optional<GenerationStub> findGenerationPoint(GenerationContext context) {
-        if (!isFlatLand(context)) return Optional.empty();
-        Optional<GenerationStub> stub = jigsaw.findGenerationPoint(context);
-        if (stub.isEmpty()) return stub;
-        Optional<List<StructurePiece>> layout = layout(context, stub.get());
-        if (layout.isEmpty()) return Optional.empty();
-        List<StructurePiece> pieces = layout.get();
-        return Optional.of(new GenerationStub(stub.get().position(), builder -> pieces.forEach(builder::addPiece)));
+        if (!biomeFits(context)) return Optional.empty();
+        return TerrainSampler.with(context, () -> {
+            if (!isFlatLand(context)) return Optional.<GenerationStub>empty();
+            Optional<GenerationStub> stub = jigsaw.findGenerationPoint(context);
+            if (stub.isEmpty()) return stub;
+            Optional<List<StructurePiece>> layout = layout(context, stub.get());
+            if (layout.isEmpty()) return Optional.<GenerationStub>empty();
+            List<StructurePiece> pieces = layout.get();
+            return Optional.of(new GenerationStub(stub.get().position(), builder -> pieces.forEach(builder::addPiece)));
+        });
+    }
+
+    /** Биом в центре подходит этой деревне (проверяем до дорогой раскладки; ваниль смотрит биом уже после). */
+    private static boolean biomeFits(GenerationContext context) {
+        ChunkPos c = context.chunkPos();
+        int x = c.getMiddleBlockX(), z = c.getMiddleBlockZ();
+        int y = context.chunkGenerator().getFirstOccupiedHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState());
+        return context.validBiome().test(context.biomeSource().getNoiseBiome(net.minecraft.core.QuartPos.fromBlock(x),
+                net.minecraft.core.QuartPos.fromBlock(y), net.minecraft.core.QuartPos.fromBlock(z), context.randomState().sampler()));
     }
 
     /** Раскладка деревни без проверки рельефа (для тестов) — улицы и дома jigsaw, особые здания, стена. */
     public Optional<List<StructurePiece>> layout(GenerationContext context) {
-        return jigsaw.findGenerationPoint(context).flatMap(stub -> layout(context, stub));
+        return TerrainSampler.with(context, () -> jigsaw.findGenerationPoint(context).flatMap(stub -> layout(context, stub)));
     }
 
     private Optional<List<StructurePiece>> layout(GenerationContext context, GenerationStub stub) {
@@ -98,12 +110,14 @@ public class GuildVillageStructure extends Structure {
         String biome = biome();
         if (!VillageLayout.dropHousesOverWater(pieces, context)) return Optional.empty();
         VillageLayout.arrange(pieces, context, biome, random);
-        pieces.add(VillageWallPiece.around(pieces, chunk, biome, random, context));
+        VillageWallPiece wall = VillageWallPiece.around(pieces, chunk, biome, random, context);
+        pieces.add(wall);
+        pieces.add(VillageFarmPiece.around(wall, chunk, biome, context, random));
         return Optional.of(pieces);
     }
 
     /** Меньше стольких домов и полей — деревня не ставится: на ней не уместятся наставники, казармы и мельница. */
-    public static final int MIN_BUILDINGS = 20;
+    public static final int MIN_BUILDINGS = 14;
 
     static long buildings(List<StructurePiece> pieces) {
         return pieces.stream().filter(p -> p instanceof net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece e
@@ -128,8 +142,8 @@ public class GuildVillageStructure extends Structure {
             for (int dz = -flatRadius; dz <= flatRadius; dz += step) {
                 if (dx * dx + dz * dz > flatRadius * flatRadius) continue;
                 int x = cx + dx, z = cz + dz;
-                int surface = context.chunkGenerator().getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, context.heightAccessor(), context.randomState());
-                int floor = context.chunkGenerator().getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, context.heightAccessor(), context.randomState());
+                int surface = TerrainSampler.of(context).surface(x, z);
+                int floor = TerrainSampler.of(context).floor(x, z);
                 if (surface - floor > 0) wet++;
                 min = Math.min(min, floor);
                 max = Math.max(max, floor);
@@ -137,7 +151,7 @@ public class GuildVillageStructure extends Structure {
                 if (max - min > maxHeightDifference) return false;
             }
         }
-        return wet * 12 <= samples;
+        return wet * 8 <= samples;
     }
 
     @Override

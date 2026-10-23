@@ -26,6 +26,8 @@ public final class ModWorldgen {
             PROCESSORS.register("foundation", () -> () -> FoundationProcessor.CODEC);
     public static final DeferredHolder<StructurePieceType, StructurePieceType> VILLAGE_WALL =
             PIECES.register("village_wall", () -> (StructurePieceType.ContextlessType) VillageWallPiece::new);
+    public static final DeferredHolder<StructurePieceType, StructurePieceType> VILLAGE_FARMS =
+            PIECES.register("village_farms", () -> (StructurePieceType.ContextlessType) com.heroicpaths.village.VillageFarmPiece::new);
 
     private ModWorldgen() {}
 }
