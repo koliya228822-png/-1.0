@@ -162,6 +162,7 @@ public final class AbilityLogic {
         if (def.kind() == DamageKind.SPELL && RpgManager.get(player).getPlayerClass() == com.heroicpaths.rpg.PlayerClass.MAGE) {
             factor *= com.heroicpaths.item.FocusItem.elementFactor(player, def.element());
             factor *= com.heroicpaths.rpg.ClassTraits.spellFactor(player, def);
+            if (PlayerStats.has(player, com.heroicpaths.rpg.stat.Keystone.OVERCHANNEL)) factor *= RpgManager.OVERCHANNEL_DAMAGE;
         }
         return factor;
     }

@@ -26,13 +26,22 @@ import static com.heroicpaths.rpg.stat.Stat.*;
  * Пассивные деревья пяти классов в духе Path of Exile. У каждого класса своё дерево: изучать можно только его узлы.
  * Деревья лежат на одной карте пятью секторами по 72° (воин → разбойник → лучник → охотник → маг), но не связаны:
  * в центре у каждого класса три своих узла основы (кольцо разрезано между классами). В секторе старт и веер
- * из 6 ветвей (4 малых узла → значимый узел); у трёх внутренних ветвей есть продолжение — путь к ключевому камню
- * класса или второй значимый узел. От первой ветви отходит отросток со вторым ключевым камнем класса
- * (раньше это были мосты между классами; номера узлов сохранены, связи с чужими деревьями убраны).
+ * из 6 ветвей (8 малых узлов → значимый узел); у большинства ветвей есть продолжение — путь к ключевому камню
+ * класса или второй значимый узел. От первой ветви отходит отросток со вторым ключевым камнем класса.
+ * Дерево разбито на кольца, которые открываются на 5, 10, 15, 20, 25 и 30 уровнях; значимые узлы и ключевые
+ * камни требуют ещё и вложенных в дерево очков, чтобы к вершинам нельзя было пройти кратчайшим путём.
  */
 public final class PassiveTree {
     /** Версия раскладки. При смене раскладки сохранённые узлы сбрасываются (см. RpgData). */
-    public static final int LAYOUT_VERSION = 2;
+    public static final int LAYOUT_VERSION = 3;
+
+    /** Уровни, на которых открываются кольца дерева, и внешние радиусы колец. */
+    public static final int[] SEGMENT_LEVELS = {1, 5, 10, 15, 20, 25, 30};
+    public static final float[] SEGMENT_RADII = {265, 325, 385, 465, 555, 640, Float.MAX_VALUE};
+    /** Сколько очков нужно вложить в дерево, чтобы взять значимый узел, второй значимый узел и ключевой камень. */
+    public static final int NOTABLE_POINTS = 8, DEEP_NOTABLE_POINTS = 15, KEYSTONE_POINTS = 25;
+    /** Ключевые камни открываются только с этого уровня. */
+    public static final int KEYSTONE_LEVEL = 30;
 
     private static final List<PassiveNode> NODES = new ArrayList<>();
     private static final List<int[]> EDGES = new ArrayList<>();
@@ -51,15 +60,16 @@ public final class PassiveTree {
 
     private record CenterNode(String id, StatBlock stats) {}
 
+    /** Узлы основы. Узлов здоровья в дереве нет: здоровье растёт с уровнем персонажа. */
     private static final CenterNode[] CENTER = {
-            new CenterNode("center_vitality", StatBlock.of(MAX_HEALTH, 6)),
+            new CenterNode("center_vitality", StatBlock.of(DAMAGE_REDUCTION, 1)),
             new CenterNode("center_power", StatBlock.of(ABILITY_DAMAGE, 4)),
             new CenterNode("center_spirit", StatBlock.of(MAX_RESOURCE, 6)),
             new CenterNode("center_swiftness", StatBlock.of(MOVE_SPEED, 2)),
             new CenterNode("center_focus", StatBlock.of(RESOURCE_REGEN, 0.5f)),
     };
 
-    private static final StatBlock BRIDGE = StatBlock.of(MAX_HEALTH, 6, ABILITY_DAMAGE, 3);
+    private static final StatBlock BRIDGE = StatBlock.of(ABILITY_DAMAGE, 3, DAMAGE_REDUCTION, 1);
 
     private static Branch branch(String id, StatBlock small, String notableId, StatBlock notable) {
         return new Branch(id, small, notableId, notable, null);
@@ -69,18 +79,22 @@ public final class PassiveTree {
         return new Branch(id, small, notableId, notable, extension);
     }
 
-    /** Ветви идут по часовой стрелке; у крайних (первой и последней) продолжений нет — рядом проходят мосты. */
+    /**
+     * Ветви идут по часовой стрелке. В дереве нет здоровья, вампиризма и брони: вместо брони — процент снижения урона,
+     * сила которого зависит от класса (PlayerClass.reductionFactor).
+     */
     private static final Sector[] SECTORS = {
-            new Sector(PlayerClass.WARRIOR, -90, StatBlock.of(MAX_HEALTH, 10),
-                    branch("warrior_armor", StatBlock.of(ARMOR, 2), "steel_skin", StatBlock.of(ARMOR, 6, DAMAGE_REDUCTION, 4)),
-                    branch("warrior_life", StatBlock.of(MAX_HEALTH, 8), "unbreakable", StatBlock.of(MAX_HEALTH_PCT, 10, ARMOR, 4),
-                            new SecondNotable(StatBlock.of(MAX_HEALTH, 8), "colossus", StatBlock.of(MAX_HEALTH_PCT, 15, DAMAGE_REDUCTION, 5))),
+            new Sector(PlayerClass.WARRIOR, -90, StatBlock.of(MELEE_DAMAGE, 4, DAMAGE_REDUCTION, 2),
+                    branch("warrior_armor", StatBlock.of(DAMAGE_REDUCTION, 1), "steel_skin", StatBlock.of(DAMAGE_REDUCTION, 4, THORNS, 1)),
+                    branch("warrior_life", StatBlock.of(HEALTH_REGEN, 0.2f), "unbreakable", StatBlock.of(HEALTH_REGEN, 0.6f, DAMAGE_REDUCTION, 2),
+                            new SecondNotable(StatBlock.of(HEALTH_REGEN, 0.2f), "colossus", StatBlock.of(DAMAGE_REDUCTION, 4, THORNS, 2))),
                     branch("warrior_sword", StatBlock.of(SWORD_DAMAGE, 4), "blade_master", StatBlock.of(SWORD_DAMAGE, 12, BLEED_CHANCE, 8),
                             new KeystonePath(StatBlock.of(SWORD_DAMAGE, 4), StatBlock.of(MELEE_DAMAGE, 4), Keystone.BLOOD_RAGE)),
                     branch("warrior_crush", StatBlock.of(STUN_CHANCE, 2), "skullcrusher", StatBlock.of(STUN_CHANCE, 6, MELEE_DAMAGE, 8)),
-                    branch("warrior_leech", StatBlock.of(LIFE_STEAL, 1), "bloodthirst", StatBlock.of(LIFE_STEAL, 3, MELEE_DAMAGE, 5),
-                            new SecondNotable(StatBlock.of(LIFE_STEAL, 1), "insatiable", StatBlock.of(LIFE_STEAL, 4, MAX_HEALTH, 10))),
-                    branch("warrior_axe", StatBlock.of(AXE_DAMAGE, 4), "headsman", StatBlock.of(AXE_DAMAGE, 12, CRIT_DAMAGE, 15))),
+                    branch("warrior_leech", StatBlock.of(MAX_RESOURCE, 4), "bloodthirst", StatBlock.of(RESOURCE_REGEN, 1, MELEE_DAMAGE, 5),
+                            new SecondNotable(StatBlock.of(RESOURCE_REGEN, 0.3f), "insatiable", StatBlock.of(RESOURCE_REGEN, 1, ATTACK_SPEED, 5))),
+                    branch("warrior_axe", StatBlock.of(AXE_DAMAGE, 4), "headsman", StatBlock.of(AXE_DAMAGE, 12, CRIT_DAMAGE, 15),
+                            new KeystonePath(StatBlock.of(AXE_DAMAGE, 4), StatBlock.of(DAMAGE_REDUCTION, 1), Keystone.SECOND_WIND))),
             new Sector(PlayerClass.ROGUE, -18, StatBlock.of(CRIT_CHANCE, 2, MOVE_SPEED, 2),
                     branch("rogue_pierce", StatBlock.of(ARMOR_PIERCE, 3), "needle", StatBlock.of(ARMOR_PIERCE, 10, CRIT_DAMAGE, 15)),
                     branch("rogue_blades", StatBlock.of(CRIT_CHANCE, 1.5f, MELEE_DAMAGE, 2), "shadow_dancer",
@@ -91,7 +105,8 @@ public final class PassiveTree {
                             new SecondNotable(StatBlock.of(DODGE_CHANCE, 1), "untouchable", StatBlock.of(DODGE_CHANCE, 5, DAMAGE_REDUCTION, 4))),
                     branch("rogue_bolts", StatBlock.of(BOW_DAMAGE, 3), "deadeye", StatBlock.of(BOW_DAMAGE, 10, CRIT_DAMAGE, 15),
                             new SecondNotable(StatBlock.of(BOW_DAMAGE, 3), "bolt_thrower", StatBlock.of(BOW_DAMAGE, 12, ARMOR_PIERCE, 8))),
-                    branch("rogue_poison", StatBlock.of(POISON_DAMAGE, 5), "venomancer", StatBlock.of(POISON_DAMAGE, 15, ABILITY_DAMAGE, 5))),
+                    branch("rogue_poison", StatBlock.of(POISON_DAMAGE, 5), "venomancer", StatBlock.of(POISON_DAMAGE, 15, ABILITY_DAMAGE, 5),
+                            new KeystonePath(StatBlock.of(POISON_DAMAGE, 5), StatBlock.of(CRIT_CHANCE, 1.5f), Keystone.OPPORTUNIST))),
             new Sector(PlayerClass.ARCHER, 54, StatBlock.of(MOVE_SPEED, 3),
                     branch("archer_energy", StatBlock.of(MAX_RESOURCE, 6), "tireless", StatBlock.of(RESOURCE_REGEN, 2, MAX_RESOURCE, 10)),
                     branch("archer_agility", StatBlock.of(MOVE_SPEED, 2), "tailwind", StatBlock.of(MOVE_SPEED, 5, BOW_DAMAGE, 5),
@@ -99,21 +114,23 @@ public final class PassiveTree {
                     branch("archer_precision", StatBlock.of(CRIT_CHANCE, 2), "assassin", StatBlock.of(CRIT_CHANCE, 5, CRIT_DAMAGE, 20),
                             new KeystonePath(StatBlock.of(CRIT_CHANCE, 2), StatBlock.of(BOW_DAMAGE, 4), Keystone.COLD_PRECISION)),
                     branch("archer_aim", StatBlock.of(BOW_DAMAGE, 4), "sniper_eye", StatBlock.of(BOW_DAMAGE, 12, ARMOR_PIERCE, 8)),
-                    branch("archer_survival", StatBlock.of(MAX_HEALTH, 8), "pathfinder", StatBlock.of(MAX_HEALTH, 10, ARMOR, 2, MOVE_SPEED, 3),
-                            new SecondNotable(StatBlock.of(MAX_HEALTH, 8), "monster_hunter", StatBlock.of(BOW_DAMAGE, 8, LIFE_STEAL, 2))),
-                    branch("archer_tactics", StatBlock.of(ABILITY_DAMAGE, 4), "tactician", StatBlock.of(ABILITY_DAMAGE, 10, COOLDOWN_REDUCTION, 5))),
+                    branch("archer_survival", StatBlock.of(HEALTH_REGEN, 0.2f), "pathfinder", StatBlock.of(HEALTH_REGEN, 0.6f, DAMAGE_REDUCTION, 2, MOVE_SPEED, 3),
+                            new SecondNotable(StatBlock.of(HEALTH_REGEN, 0.2f), "monster_hunter", StatBlock.of(BOW_DAMAGE, 8, CRIT_CHANCE, 3))),
+                    branch("archer_tactics", StatBlock.of(ABILITY_DAMAGE, 4), "tactician", StatBlock.of(ABILITY_DAMAGE, 10, COOLDOWN_REDUCTION, 5),
+                            new KeystonePath(StatBlock.of(BOW_DAMAGE, 4), StatBlock.of(ABILITY_DAMAGE, 4), Keystone.STEADY_HANDS))),
             new Sector(PlayerClass.HUNTER, 126, StatBlock.of(MINION_DAMAGE, 5, MINION_HEALTH, 5),
                     branch("hunter_trapper", StatBlock.of(POISON_DAMAGE, 5), "trapper", StatBlock.of(POISON_DAMAGE, 12, ABILITY_DAMAGE, 8)),
-                    branch("hunter_hide", StatBlock.of(MINION_HEALTH, 5), "thick_hide", StatBlock.of(MINION_HEALTH, 15, ARMOR, 3),
+                    branch("hunter_hide", StatBlock.of(MINION_HEALTH, 5), "thick_hide", StatBlock.of(MINION_HEALTH, 15, DAMAGE_REDUCTION, 2),
                             new SecondNotable(StatBlock.of(MINION_HEALTH, 5), "iron_hide", StatBlock.of(MINION_HEALTH, 20, DAMAGE_REDUCTION, 4))),
                     branch("hunter_beasts", StatBlock.of(MINION_DAMAGE, 5), "alpha", StatBlock.of(MINION_DAMAGE, 15, MINION_HEALTH, 15),
                             new KeystonePath(StatBlock.of(MINION_DAMAGE, 5), StatBlock.of(MINION_HEALTH, 5), Keystone.PACK_BOND)),
                     branch("hunter_bow", StatBlock.of(BOW_DAMAGE, 3), "bowyer", StatBlock.of(BOW_DAMAGE, 10, CRIT_CHANCE, 4),
                             new SecondNotable(StatBlock.of(BOW_DAMAGE, 3), "beast_slayer", StatBlock.of(BOW_DAMAGE, 8, MINION_DAMAGE, 8))),
-                    branch("hunter_tracking", StatBlock.of(MOVE_SPEED, 2), "pack_leader", StatBlock.of(MINION_HEALTH, 15, MAX_HEALTH, 10, MOVE_SPEED, 3)),
-                    branch("hunter_survival", StatBlock.of(HEALTH_REGEN, 0.2f), "survivalist", StatBlock.of(HEALTH_REGEN, 0.8f, MAX_HEALTH, 12))),
+                    branch("hunter_tracking", StatBlock.of(MOVE_SPEED, 2), "pack_leader", StatBlock.of(MINION_HEALTH, 15, HEALTH_REGEN, 0.4f, MOVE_SPEED, 3)),
+                    branch("hunter_survival", StatBlock.of(HEALTH_REGEN, 0.2f), "survivalist", StatBlock.of(HEALTH_REGEN, 0.8f, DAMAGE_REDUCTION, 2),
+                            new KeystonePath(StatBlock.of(MINION_DAMAGE, 5), StatBlock.of(HEALTH_REGEN, 0.2f), Keystone.APEX_PREDATOR))),
             new Sector(PlayerClass.MAGE, 198, StatBlock.of(MAX_RESOURCE, 10),
-                    branch("mage_earth", StatBlock.of(EARTH_DAMAGE, 5), "stone_heart", StatBlock.of(EARTH_DAMAGE, 15, ARMOR, 4)),
+                    branch("mage_earth", StatBlock.of(EARTH_DAMAGE, 5), "stone_heart", StatBlock.of(EARTH_DAMAGE, 15, DAMAGE_REDUCTION, 2)),
                     branch("mage_fire", StatBlock.of(FIRE_DAMAGE, 5), "pyromaniac", StatBlock.of(FIRE_DAMAGE, 15, SPELL_DAMAGE, 4),
                             new SecondNotable(StatBlock.of(FIRE_DAMAGE, 5), "heart_of_flame", StatBlock.of(FIRE_DAMAGE, 20, CRIT_CHANCE, 3))),
                     branch("mage_power", StatBlock.of(SPELL_DAMAGE, 4), "archmage", StatBlock.of(SPELL_DAMAGE, 12, COOLDOWN_REDUCTION, 5),
@@ -121,7 +138,8 @@ public final class PassiveTree {
                     branch("mage_water", StatBlock.of(WATER_DAMAGE, 5), "tidecaller", StatBlock.of(WATER_DAMAGE, 15, HEALING, 10)),
                     branch("mage_meditation", StatBlock.of(RESOURCE_REGEN, 0.5f), "enlightenment", StatBlock.of(RESOURCE_REGEN, 2, COST_REDUCTION, 5),
                             new SecondNotable(StatBlock.of(RESOURCE_REGEN, 0.5f), "mana_flow", StatBlock.of(COST_REDUCTION, 10, MAX_RESOURCE, 15))),
-                    branch("mage_air", StatBlock.of(AIR_DAMAGE, 5), "storm_mind", StatBlock.of(AIR_DAMAGE, 15, COOLDOWN_REDUCTION, 5))),
+                    branch("mage_air", StatBlock.of(AIR_DAMAGE, 5), "storm_mind", StatBlock.of(AIR_DAMAGE, 15, COOLDOWN_REDUCTION, 5),
+                            new KeystonePath(StatBlock.of(AIR_DAMAGE, 5), StatBlock.of(SPELL_DAMAGE, 4), Keystone.OVERCHANNEL))),
     };
 
     /** Ключевые камни бывших мостов: отросток i принадлежит классу сектора i + 1. */
@@ -135,8 +153,9 @@ public final class PassiveTree {
 
     /**
      * Числа вместо процентов: каждый процентный бонус узла превращается в числовую прибавку (FLAT_*),
-     * величина которой зависит от глубины узла: малые узлы ветви 0.3, 0.5, 0.7, 0.85, значимый узел и всё дальше — 1,
-     * старт 0.5, узлы основы у старта 0.3. Числовые бонусы (здоровье, броня, ресурс, восстановление) не меняются.
+     * величина которой зависит от глубины узла: восемь малых узлов ветви 0.15–0.5, значимый узел и всё дальше — 1,
+     * старт 0.5, узлы основы 0.3. Исключение — снижение урона: оно остаётся процентом и умножается на силу класса.
+     * Числовые бонусы (восстановление, ресурс, шипы) у малых узлов вдвое слабее записанных.
      */
     private static final Map<com.heroicpaths.rpg.stat.Stat, com.heroicpaths.rpg.stat.Stat> NUMERIC = Map.ofEntries(
             Map.entry(MELEE_DAMAGE, FLAT_MELEE_DAMAGE), Map.entry(SWORD_DAMAGE, FLAT_SWORD_DAMAGE), Map.entry(AXE_DAMAGE, FLAT_AXE_DAMAGE),
@@ -144,23 +163,35 @@ public final class PassiveTree {
             Map.entry(FIRE_DAMAGE, FLAT_FIRE_DAMAGE), Map.entry(WATER_DAMAGE, FLAT_WATER_DAMAGE), Map.entry(EARTH_DAMAGE, FLAT_EARTH_DAMAGE),
             Map.entry(AIR_DAMAGE, FLAT_AIR_DAMAGE), Map.entry(POISON_DAMAGE, FLAT_POISON_DAMAGE), Map.entry(MINION_DAMAGE, FLAT_MINION_DAMAGE),
             Map.entry(MINION_HEALTH, FLAT_MINION_HEALTH), Map.entry(DUAL_WIELD_DAMAGE, FLAT_DUAL_WIELD_DAMAGE), Map.entry(CRIT_DAMAGE, FLAT_CRIT_DAMAGE),
-            Map.entry(LIFE_STEAL, FLAT_LIFE_STEAL), Map.entry(DAMAGE_REDUCTION, FLAT_DAMAGE_REDUCTION), Map.entry(HEALING, FLAT_HEALING),
-            Map.entry(COST_REDUCTION, FLAT_COST_REDUCTION), Map.entry(ARMOR_PIERCE, FLAT_ARMOR_PIERCE), Map.entry(MAX_HEALTH_PCT, MAX_HEALTH),
+            Map.entry(HEALING, FLAT_HEALING),
+            Map.entry(COST_REDUCTION, FLAT_COST_REDUCTION), Map.entry(ARMOR_PIERCE, FLAT_ARMOR_PIERCE),
             Map.entry(CRIT_CHANCE, FLAT_CRIT_CHANCE), Map.entry(DODGE_CHANCE, FLAT_DODGE_CHANCE), Map.entry(BLEED_CHANCE, FLAT_BLEED_CHANCE),
             Map.entry(STUN_CHANCE, FLAT_STUN_CHANCE), Map.entry(ATTACK_SPEED, FLAT_ATTACK_SPEED), Map.entry(MOVE_SPEED, FLAT_MOVE_SPEED),
             Map.entry(COOLDOWN_REDUCTION, FLAT_COOLDOWN_REDUCTION));
+    /** Малых узлов в каждой ветви до значимого. */
+    public static final int SMALL_PER_BRANCH = 8;
     /** Сила малых узлов ветви по порядку от старта. */
-    private static final float[] SMALL_DEPTH = {0.3f, 0.5f, 0.7f, 0.85f};
+    private static final float[] SMALL_DEPTH = {0.15f, 0.2f, 0.25f, 0.3f, 0.35f, 0.4f, 0.45f, 0.5f};
+    /** Множитель числовых бонусов и снижения урона: у малых узлов и узлов основы вдвое меньше. */
+    private static final float SMALL_SCALE = 0.5f;
 
-    /** Процентные бонусы блока — числом depth (0.3–1), числовые — как есть. */
-    static StatBlock numeric(StatBlock block, float depth) {
+    /** Процентные бонусы блока — числом depth, снижение урона — процентом с силой класса, числовые — как есть × scale. */
+    static StatBlock numeric(StatBlock block, float depth, float scale, PlayerClass owner) {
         StatBlock result = new StatBlock();
         for (Map.Entry<com.heroicpaths.rpg.stat.Stat, Float> entry : block.asMap().entrySet()) {
-            com.heroicpaths.rpg.stat.Stat flat = entry.getKey().isPercent() ? NUMERIC.get(entry.getKey()) : null;
+            com.heroicpaths.rpg.stat.Stat stat = entry.getKey();
+            com.heroicpaths.rpg.stat.Stat flat = stat.isPercent() ? NUMERIC.get(stat) : null;
             if (flat != null) result.add(flat, depth);
-            else result.add(entry.getKey(), entry.getValue());
+            else if (stat == DAMAGE_REDUCTION) result.add(stat, Math.round(entry.getValue() * scale * owner.reductionFactor() * 100f) / 100f);
+            else result.add(stat, Math.round(entry.getValue() * scale * 100f) / 100f);
         }
         return result;
+    }
+
+    /** Уровень, с которого открывается кольцо дерева на таком расстоянии от центра. */
+    public static int levelForRadius(double radius) {
+        for (int i = 0; i < SEGMENT_RADII.length; i++) if (radius <= SEGMENT_RADII[i]) return SEGMENT_LEVELS[i];
+        return SEGMENT_LEVELS[SEGMENT_LEVELS.length - 1];
     }
 
     private static final double SECTOR_WIDTH = 72;
@@ -198,7 +229,7 @@ public final class PassiveTree {
         return id == startNode(playerClass) || allocated.contains(id);
     }
 
-    /** Узел можно изучить, если он из дерева своего класса и соседствует с уже изученным (или со стартом). */
+    /** Узел из дерева своего класса соседствует с уже изученным (или со стартом) — без учёта уровня и вложенных очков. */
     public static boolean canAllocate(IntSet allocated, PlayerClass playerClass, int id) {
         PassiveNode node = node(id);
         if (playerClass == PlayerClass.NONE || node == null || node.region() != playerClass || isAllocated(allocated, playerClass, id)) return false;
@@ -208,11 +239,35 @@ public final class PassiveTree {
         return false;
     }
 
-    /** Узел можно забыть, если остальные изученные узлы останутся связаны со стартом. */
+    /** Узел можно изучить: он соседний, его кольцо уже открыто уровнем и в дерево вложено достаточно очков. */
+    public static boolean canAllocate(IntSet allocated, PlayerClass playerClass, int level, int id) {
+        return canAllocate(allocated, playerClass, id) && lockReason(allocated, level, id) == null;
+    }
+
+    /** Почему узел закрыт уровнем или вложенными очками: ключ перевода с числом, или null. */
+    @Nullable
+    public static Lock lockReason(IntSet allocated, int level, int id) {
+        PassiveNode node = node(id);
+        if (node == null) return null;
+        if (level < node.requiredLevel()) return new Lock("screen.heroicpaths.node_needs_level", node.requiredLevel());
+        if (allocated.size() < node.requiredPoints()) return new Lock("screen.heroicpaths.node_needs_points", node.requiredPoints());
+        return null;
+    }
+
+    public record Lock(String key, int value) {}
+
+    /**
+     * Узел можно забыть, если остальные изученные узлы останутся связаны со стартом и каждому из них
+     * по-прежнему хватит вложенных очков.
+     */
     public static boolean canRefund(IntSet allocated, PlayerClass playerClass, int id) {
         if (!allocated.contains(id)) return false;
         IntSet remaining = new IntOpenHashSet(allocated);
         remaining.remove(id);
+        for (int other : remaining) {
+            PassiveNode node = node(other);
+            if (node != null && remaining.size() - 1 < node.requiredPoints()) return false;
+        }
         IntSet reached = new IntOpenHashSet();
         ArrayDeque<Integer> queue = new ArrayDeque<>();
         int start = startNode(playerClass);
@@ -282,7 +337,7 @@ public final class PassiveTree {
         for (int i = 0; i < CENTER_NODES; i++) {
             CenterNode center = CENTER[i % CENTER.length];
             PlayerClass owner = ringOwner[i] == null ? PlayerClass.NONE : ringOwner[i];
-            ring[i] = add(NodeType.SMALL, owner, "tree.heroicpaths." + center.id, numeric(center.stats, 0.3f), null, 85, -90 + i * ringStep);
+            ring[i] = add(NodeType.SMALL, owner, "tree.heroicpaths." + center.id, numeric(center.stats, 0.3f, SMALL_SCALE, owner), null, 85, -90 + i * ringStep);
         }
         // Кольцо разрезано между классами: связаны только соседние узлы основы одного класса.
         for (int i = 0; i < CENTER_NODES; i++) {
@@ -294,7 +349,7 @@ public final class PassiveTree {
         for (int s = 0; s < SECTORS.length; s++) {
             Sector sector = SECTORS[s];
             PlayerClass playerClass = sector.playerClass;
-            int start = add(NodeType.START, playerClass, "tree.heroicpaths.start." + playerClass.id(), numeric(sector.startStats, 0.5f), null, 150, sector.angle);
+            int start = add(NodeType.START, playerClass, "tree.heroicpaths.start." + playerClass.id(), numeric(sector.startStats, 0.5f, 1f, playerClass), null, 150, sector.angle);
             STARTS.put(playerClass, start);
             int ringIndex = Math.floorMod((int) Math.round((sector.angle + 90) / ringStep), CENTER_NODES);
             link(start, ring[ringIndex]);
@@ -302,40 +357,49 @@ public final class PassiveTree {
             link(start, ring[(ringIndex + CENTER_NODES - 1) % CENTER_NODES]);
 
             int count = sector.branches.length;
-            int[][] chains = new int[count][4];
+            int[][] chains = new int[count][SMALL_PER_BRANCH];
             int[] notables = new int[count];
             for (int b = 0; b < count; b++) {
                 Branch branch = sector.branches[b];
                 double angle = sector.angle + (b - (count - 1) / 2.0) * BRANCH_SPACING;
                 String smallName = "tree.heroicpaths." + branch.id;
                 int previous = start;
-                for (int i = 0; i < 4; i++) {
-                    int id = add(NodeType.SMALL, playerClass, smallName, numeric(branch.small, SMALL_DEPTH[i]), null, 205 + 45 * i, angle);
+                for (int i = 0; i < SMALL_PER_BRANCH; i++) {
+                    int id = add(NodeType.SMALL, playerClass, smallName, numeric(branch.small, SMALL_DEPTH[i], SMALL_SCALE, playerClass), null, 200 + 30 * i, angle);
                     chains[b][i] = id;
                     link(previous, id);
                     previous = id;
                 }
-                int notable = add(NodeType.NOTABLE, playerClass, "tree.heroicpaths.notable." + branch.notableId, numeric(branch.notable, 1f), null, 395, angle);
+                int notable = add(NodeType.NOTABLE, playerClass, "tree.heroicpaths.notable." + branch.notableId, numeric(branch.notable, 1f, 1f, playerClass), null, 455, angle);
                 notables[b] = notable;
                 link(previous, notable);
 
                 if (branch.extension instanceof KeystonePath path) {
-                    int first = add(NodeType.SMALL, playerClass, smallName, numeric(path.first, 1f), null, 450, angle);
-                    int second = add(NodeType.SMALL, playerClass, smallName, numeric(path.second, 1f), null, 495, angle);
-                    int keystone = add(NodeType.KEYSTONE, playerClass, "", StatBlock.EMPTY, path.keystone, 555, angle);
-                    link(notable, first);
-                    link(first, second);
-                    link(second, keystone);
+                    // Путь к ключевому камню: четыре малых узла (два первых и два вторых бонуса) и камень.
+                    int previousStep = notable;
+                    for (int i = 0; i < 4; i++) {
+                        StatBlock stats = numeric(i < 2 ? path.first : path.second, 0.5f, SMALL_SCALE, playerClass);
+                        int step = add(NodeType.SMALL, playerClass, smallName, stats, null, 505 + 40 * i, angle);
+                        link(previousStep, step);
+                        previousStep = step;
+                    }
+                    int keystone = add(NodeType.KEYSTONE, playerClass, "", StatBlock.EMPTY, path.keystone, 690, angle);
+                    link(previousStep, keystone);
                 } else if (branch.extension instanceof SecondNotable second) {
-                    int small = add(NodeType.SMALL, playerClass, smallName, numeric(second.small, 1f), null, 450, angle);
-                    int notable2 = add(NodeType.NOTABLE, playerClass, "tree.heroicpaths.notable." + second.notableId, numeric(second.stats, 1f), null, 505, angle);
-                    link(notable, small);
-                    link(small, notable2);
+                    int previousStep = notable;
+                    for (int i = 0; i < 3; i++) {
+                        int step = add(NodeType.SMALL, playerClass, smallName, numeric(second.small, 0.5f, SMALL_SCALE, playerClass), null, 505 + 40 * i, angle);
+                        link(previousStep, step);
+                        previousStep = step;
+                    }
+                    int notable2 = add(NodeType.NOTABLE, playerClass, "tree.heroicpaths.notable." + second.notableId,
+                            numeric(second.stats, 1f, 1f, playerClass), null, 635, angle);
+                    link(previousStep, notable2);
                 }
             }
             // Поперечные связи превращают веер в паутину.
-            for (int b = 0; b < count - 1; b++) link(chains[b][1], chains[b + 1][1]);
-            for (int b = 0; b < count - 1; b += 2) link(chains[b][3], chains[b + 1][3]);
+            for (int b = 0; b < count - 1; b++) link(chains[b][2], chains[b + 1][2]);
+            for (int b = 0; b < count - 1; b += 2) link(chains[b][5], chains[b + 1][5]);
             edgeNotables[s] = new int[]{notables[0], notables[count - 1]};
         }
 
@@ -350,11 +414,11 @@ public final class PassiveTree {
      * три узла и ключевой камень снаружи. С деревом предыдущего класса он не связан.
      */
     private static void bridge(PlayerClass owner, int to, double middleAngle, Keystone keystone) {
-        StatBlock stats = numeric(BRIDGE, 1f);
-        int first = add(NodeType.SMALL, owner, "tree.heroicpaths.bridge", stats, null, 440, middleAngle - 7);
-        int middle = add(NodeType.SMALL, owner, "tree.heroicpaths.bridge", stats, null, 445, middleAngle);
-        int last = add(NodeType.SMALL, owner, "tree.heroicpaths.bridge", stats, null, 440, middleAngle + 7);
-        int key = add(NodeType.KEYSTONE, owner, "", StatBlock.EMPTY, keystone, 515, middleAngle);
+        StatBlock stats = numeric(BRIDGE, 1f, 1f, owner);
+        int first = add(NodeType.SMALL, owner, "tree.heroicpaths.bridge", stats, null, 500, middleAngle - 6);
+        int middle = add(NodeType.SMALL, owner, "tree.heroicpaths.bridge", stats, null, 510, middleAngle);
+        int last = add(NodeType.SMALL, owner, "tree.heroicpaths.bridge", stats, null, 500, middleAngle + 6);
+        int key = add(NodeType.KEYSTONE, owner, "", StatBlock.EMPTY, keystone, 590, middleAngle);
         link(to, last);
         link(last, middle);
         link(middle, first);
@@ -365,8 +429,15 @@ public final class PassiveTree {
                            double radius, double angleDegrees) {
         double angle = Math.toRadians(angleDegrees);
         int id = NODES.size();
+        // Кольцо дерева открывается уровнем; значимые узлы и ключевые камни ещё и вложенными очками.
+        int level = type == NodeType.KEYSTONE ? KEYSTONE_LEVEL : levelForRadius(radius);
+        int points = switch (type) {
+            case KEYSTONE -> KEYSTONE_POINTS;
+            case NOTABLE -> radius > 600 ? DEEP_NOTABLE_POINTS : NOTABLE_POINTS;
+            default -> 0;
+        };
         NODES.add(new PassiveNode(id, type, region, nameKey, stats, keystone,
-                (float) (radius * Math.cos(angle)), (float) (radius * Math.sin(angle))));
+                (float) (radius * Math.cos(angle)), (float) (radius * Math.sin(angle)), level, points));
         return id;
     }
 

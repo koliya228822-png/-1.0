@@ -75,6 +75,11 @@ public final class RpgManager {
         if (level > previous) {
             onLevelUp(player, previous, level);
             autoFillSlots(data);
+            // Новый уровень прибавляет здоровье и ресурс: прибавка сразу и наполнена.
+            float healthBefore = player.getMaxHealth(), resourceBefore = PlayerStats.maxResource(player);
+            applyPassives(player);
+            player.heal(Math.max(0, player.getMaxHealth() - healthBefore));
+            data.setResource(Math.min(PlayerStats.maxResource(player), data.getResource() + Math.max(0, PlayerStats.maxResource(player) - resourceBefore)));
         }
         sync(player);
     }
@@ -173,7 +178,7 @@ public final class RpgManager {
 
     public static boolean allocateNode(ServerPlayer player, int nodeId) {
         RpgData data = get(player);
-        if (data.treePoints() <= 0 || !PassiveTree.canAllocate(data.getAllocatedNodes(), data.getPlayerClass(), nodeId)) return false;
+        if (data.treePoints() <= 0 || !PassiveTree.canAllocate(data.getAllocatedNodes(), data.getPlayerClass(), data.getLevel(), nodeId)) return false;
         data.allocateNode(nodeId);
         applyPassives(player);
         sync(player);
@@ -273,8 +278,13 @@ public final class RpgManager {
         return true;
     }
 
+    /** «Перегрузка» мага: заклинания на 30% дороже. */
+    public static final float OVERCHANNEL_COST = 1.3f, OVERCHANNEL_DAMAGE = 1.35f;
+
     public static int cost(Player player, AbilityDef def) {
-        return Math.max(0, Math.round(def.cost() * PlayerStats.costFactor(player) - PlayerStats.get(player).get(Stat.FLAT_COST_REDUCTION)));
+        float overchannel = def.kind() == AbilityDef.DamageKind.SPELL && PlayerStats.has(player, com.heroicpaths.rpg.stat.Keystone.OVERCHANNEL)
+                ? OVERCHANNEL_COST : 1f;
+        return Math.max(0, Math.round(def.cost() * overchannel * PlayerStats.costFactor(player) - PlayerStats.get(player).get(Stat.FLAT_COST_REDUCTION)));
     }
 
     /** Заклинания магов перезаряжаются в полтора раза дольше остальных умений. */

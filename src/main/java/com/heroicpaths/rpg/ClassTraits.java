@@ -56,6 +56,14 @@ public final class ClassTraits {
     public static final float VANISH_FACTOR = 1.6f;
     public static final float EAGLE_EYE_CRIT = 25f;
 
+    public static final float SECOND_WIND_BELOW = 0.3f, SECOND_WIND_HEAL = 0.25f;
+    public static final int SECOND_WIND_COOLDOWN = 1800;
+    public static final float OPPORTUNIST_FACTOR = 1.3f, STEADY_HANDS_FACTOR = 1.25f, APEX_HEAL = 0.1f;
+    public static final int STEADY_TICKS = 20;
+    private static final String SECOND_WIND_READY = "heroicpaths.second_wind_ready";
+    private static final String MOVED_AT = "heroicpaths.moved_at";
+    private static final String STILL_AT = "heroicpaths.still_pos";
+
     public static final String LAST_STAND_UNTIL = "heroicpaths.last_stand_until";
     public static final String MANA_SHIELD_UNTIL = "heroicpaths.mana_shield_until";
     public static final String VANISH_UNTIL = "heroicpaths.vanish_until";
@@ -120,12 +128,53 @@ public final class ClassTraits {
             factor *= 1f + archerRangeBonus(player.distanceTo(target));
         }
         if (PlayerStats.has(player, Keystone.AMBUSH) && target.getHealth() >= target.getMaxHealth() * 0.95f) factor *= AMBUSH_FACTOR;
+        if (PlayerStats.has(player, Keystone.OPPORTUNIST) && weakened(target)) factor *= OPPORTUNIST_FACTOR;
+        if (PlayerStats.has(player, Keystone.STEADY_HANDS) && source.getDirectEntity() instanceof AbstractArrow && standingStill(player)) {
+            factor *= STEADY_HANDS_FACTOR;
+        }
         if (melee && active(player, VANISH_UNTIL)) {
             factor *= VANISH_FACTOR;
             player.getPersistentData().remove(VANISH_UNTIL);
             player.removeEffect(MobEffects.INVISIBILITY);
         }
         if (factor != 1f) event.setAmount(event.getAmount() * factor);
+    }
+
+    /** Цель ослаблена: замедлена, оглушена, отравлена или кровоточит («Добыча слабых»). */
+    public static boolean weakened(LivingEntity target) {
+        return target.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) || target.hasEffect(MobEffects.POISON)
+                || target.hasEffect(com.heroicpaths.registry.ModEffects.STUN) || target.hasEffect(com.heroicpaths.registry.ModEffects.BLEEDING);
+    }
+
+    /** Лучник стоит на месте не меньше секунды («Твёрдая рука»). */
+    public static boolean standingStill(Player player) {
+        return player.level().getGameTime() - player.getPersistentData().getLong(MOVED_AT) >= STEADY_TICKS;
+    }
+
+    /** Запоминает, когда игрок в последний раз сдвинулся с места. */
+    @SubscribeEvent
+    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        CompoundTag data = player.getPersistentData();
+        long packed = net.minecraft.core.BlockPos.containing(player.getX() * 4, player.getY() * 4, player.getZ() * 4).asLong();
+        if (data.getLong(STILL_AT) != packed) {
+            data.putLong(STILL_AT, packed);
+            data.putLong(MOVED_AT, player.level().getGameTime());
+        }
+    }
+
+    /** «Второе дыхание»: здоровье упало ниже 30% — сразу четверть здоровья и вся выносливость. */
+    @SubscribeEvent
+    public static void onDamageTaken(LivingDamageEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !player.isAlive() || event.getNewDamage() <= 0
+                || !PlayerStats.has(player, Keystone.SECOND_WIND) || player.getHealth() >= player.getMaxHealth() * SECOND_WIND_BELOW) return;
+        long now = player.level().getGameTime();
+        if (player.getPersistentData().getLong(SECOND_WIND_READY) > now) return;
+        player.getPersistentData().putLong(SECOND_WIND_READY, now + SECOND_WIND_COOLDOWN);
+        player.heal(player.getMaxHealth() * SECOND_WIND_HEAL);
+        RpgManager.restoreResource(player, PlayerStats.maxResource(player));
+        player.serverLevel().sendParticles(ParticleTypes.HEART, player.getX(), player.getY(1), player.getZ(), 8, 0.4, 0.4, 0.4, 0.1);
+        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.6f, 0.6f);
     }
 
     /** Бонус «Дальнего выстрела» за расстояние до цели. */
@@ -170,9 +219,18 @@ public final class ClassTraits {
         }
     }
 
-    /** «Прилив жизни»: убийство лечит. */
+    /** «Прилив жизни»: убийство лечит. «Вершина стаи»: убийство зверя лечит и ускоряет охотника и зверя. */
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
+        if (event.getSource().getEntity() instanceof Mob killer && killer != event.getEntity()) {
+            ServerPlayer owner = com.heroicpaths.minion.Minions.owner(killer);
+            if (owner != null && PlayerStats.has(owner, Keystone.APEX_PREDATOR) && killer == CompanionManager.find(owner)) {
+                for (LivingEntity healed : new LivingEntity[]{owner, killer}) {
+                    healed.heal(healed.getMaxHealth() * APEX_HEAL);
+                    healed.addEffect(new net.minecraft.world.effect.MobEffectInstance(MobEffects.MOVEMENT_SPEED, 60, 1));
+                }
+            }
+        }
         if (event.getSource().getEntity() instanceof ServerPlayer player && player != event.getEntity()
                 && PlayerStats.has(player, Keystone.VITAL_SURGE)) {
             player.heal(player.getMaxHealth() * VITAL_SURGE_HEAL);
