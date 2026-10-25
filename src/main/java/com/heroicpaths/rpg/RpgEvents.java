@@ -38,7 +38,7 @@ public final class RpgEvents {
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
-        if (event.getSource().getEntity() instanceof ServerPlayer player) awardKillXp(player, event.getEntity());
+        if (event.getSource().getEntity() instanceof ServerPlayer player) Experience.awardKill(player, event.getEntity());
     }
 
     /**
@@ -46,12 +46,18 @@ public final class RpgEvents {
      * Разница уровней: моб на 5+ уровней выше игрока даёт +20%, на 5+ ниже — только 10%.
      */
     public static void awardKillXp(ServerPlayer player, LivingEntity victim) {
-        if (victim instanceof Player || victim instanceof com.heroicpaths.minion.Minion) return;
+        float xp = killXp(player, victim);
+        if (xp > 0) RpgManager.addXp(player, Math.max(1, Math.round(xp)));
+    }
+
+    /** Опыт этого игрока за эту жертву (0 — опыта не будет). */
+    public static float killXp(ServerPlayer player, LivingEntity victim) {
+        if (victim instanceof Player || victim instanceof com.heroicpaths.minion.Minion) return 0;
         float xp = Math.max(1, victim.getMaxHealth() / 2f);
         if (victim instanceof Enemy) xp *= 2;
         xp *= 1f + PlayerStats.get(player).get(Stat.XP_GAIN) / 100f;
         xp *= com.heroicpaths.combat.MobLevels.xpFactor(RpgManager.get(player).getLevel(), com.heroicpaths.combat.MobLevels.level(victim));
-        RpgManager.addXp(player, Math.max(1, Math.round(xp)));
+        return xp;
     }
 
     @SubscribeEvent

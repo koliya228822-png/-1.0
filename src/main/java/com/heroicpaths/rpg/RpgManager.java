@@ -75,6 +75,11 @@ public final class RpgManager {
         if (level > previous) {
             onLevelUp(player, previous, level);
             autoFillSlots(data);
+            // Новый уровень прибавляет здоровье и ресурс: прибавка сразу и наполнена.
+            float healthBefore = player.getMaxHealth(), resourceBefore = PlayerStats.maxResource(player);
+            applyPassives(player);
+            player.heal(Math.max(0, player.getMaxHealth() - healthBefore));
+            data.setResource(Math.min(PlayerStats.maxResource(player), data.getResource() + Math.max(0, PlayerStats.maxResource(player) - resourceBefore)));
         }
         sync(player);
     }
@@ -173,7 +178,7 @@ public final class RpgManager {
 
     public static boolean allocateNode(ServerPlayer player, int nodeId) {
         RpgData data = get(player);
-        if (data.treePoints() <= 0 || !PassiveTree.canAllocate(data.getAllocatedNodes(), data.getPlayerClass(), nodeId)) return false;
+        if (data.treePoints() <= 0 || !PassiveTree.canAllocate(data.getAllocatedNodes(), data.getPlayerClass(), data.getLevel(), nodeId)) return false;
         data.allocateNode(nodeId);
         applyPassives(player);
         sync(player);
@@ -224,7 +229,7 @@ public final class RpgManager {
     public static boolean rankUp(ServerPlayer player, String abilityId) {
         RpgData data = get(player);
         AbilityDef def = AbilityRegistry.get(abilityId);
-        if (def == null || !data.knows(abilityId) || data.getRank(abilityId) >= AbilityDef.MAX_RANK || data.abilityPoints() <= 0) return false;
+        if (def == null || def.passive() || !data.knows(abilityId) || data.getRank(abilityId) >= AbilityDef.MAX_RANK || data.abilityPoints() <= 0) return false;
         data.setRank(abilityId, data.getRank(abilityId) + 1);
         sync(player);
         player.sendSystemMessage(Component.translatable("message.heroicpaths.rank_up", def.name(), data.getRank(abilityId))
@@ -241,10 +246,10 @@ public final class RpgManager {
     public static void autoFillSlots(RpgData data) {
         for (int i = 0; i < RpgData.ABILITY_SLOTS; i++) {
             AbilityDef def = AbilityRegistry.get(data.getSlot(i));
-            if (def != null && !AbilityRegistry.isLearned(data, def)) data.setSlot(i, null);
+            if (def != null && (def.passive() || !AbilityRegistry.isLearned(data, def))) data.setSlot(i, null);
         }
         for (AbilityDef def : AbilityRegistry.learned(data)) {
-            if (slotOf(data, def.id()) >= 0) continue;
+            if (def.passive() || slotOf(data, def.id()) >= 0) continue;
             for (int i = 0; i < RpgData.ABILITY_SLOTS; i++) {
                 if (data.getSlot(i) == null) {
                     data.setSlot(i, def.id());
@@ -264,7 +269,7 @@ public final class RpgManager {
     public static boolean bindAbility(ServerPlayer player, String abilityId, int slot) {
         RpgData data = get(player);
         AbilityDef def = AbilityRegistry.get(abilityId);
-        if (def == null || slot < 0 || slot >= RpgData.ABILITY_SLOTS || !AbilityRegistry.isLearned(data, def)) return false;
+        if (def == null || def.passive() || slot < 0 || slot >= RpgData.ABILITY_SLOTS || !AbilityRegistry.isLearned(data, def)) return false;
         int previous = slotOf(data, abilityId);
         String displaced = data.getSlot(slot);
         data.setSlot(slot, abilityId);
@@ -273,8 +278,13 @@ public final class RpgManager {
         return true;
     }
 
+    /** «Перегрузка» мага: заклинания на 30% дороже. */
+    public static final float OVERCHANNEL_COST = 1.3f, OVERCHANNEL_DAMAGE = 1.35f;
+
     public static int cost(Player player, AbilityDef def) {
-        return Math.max(0, Math.round(def.cost() * PlayerStats.costFactor(player) - PlayerStats.get(player).get(Stat.FLAT_COST_REDUCTION)));
+        float overchannel = def.kind() == AbilityDef.DamageKind.SPELL && PlayerStats.has(player, com.heroicpaths.rpg.stat.Keystone.OVERCHANNEL)
+                ? OVERCHANNEL_COST : 1f;
+        return Math.max(0, Math.round(def.cost() * overchannel * PlayerStats.costFactor(player) - PlayerStats.get(player).get(Stat.FLAT_COST_REDUCTION)));
     }
 
     /** Заклинания магов перезаряжаются в полтора раза дольше остальных умений. */
@@ -295,6 +305,12 @@ public final class RpgManager {
         if (!AbilityRegistry.isLearned(data, def)) {
             player.displayClientMessage(Component.translatable("message.heroicpaths.not_learned", def.name())
                     .withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
+        // Повторное нажатие поддерживаемого умения (метеоритный дождь) прекращает его.
+        if (com.heroicpaths.rpg.ability.UniqueAbilities.channeling(player)) {
+            if (def.id().equals(com.heroicpaths.rpg.ability.UniqueAbilities.CHANNEL_ID)) com.heroicpaths.rpg.ability.UniqueAbilities.stopChannel(player);
+            else player.displayClientMessage(Component.translatable("message.heroicpaths.already_casting").withStyle(ChatFormatting.GRAY), true);
             return;
         }
         if (com.heroicpaths.rpg.ability.Casting.isCasting(player)) {
@@ -359,8 +375,15 @@ public final class RpgManager {
         ClassTraits.beforeCast(player, def);
         if (!AbilityLogic.cast(player, def)) return;
 
+        // «Всплеск маны»: заклинание мага бесплатно и сразу готово снова.
+        if (com.heroicpaths.rpg.ability.UniqueAbilities.manaSurge(player, def)) {
+            sync(player);
+            return;
+        }
         if (healthCost) player.setHealth(player.getHealth() - PlayerStats.healthCost(cost));
-        else data.setResource(data.getResource() - cost);
+        else if (!(com.heroicpaths.combat.Stamina.uses(data.getPlayerClass()) && com.heroicpaths.rpg.ability.UniqueAbilities.freeStamina(player))) {
+            data.setResource(data.getResource() - cost);
+        }
         // Выносливость после умения, как и после удара, начинает копиться через секунду.
         if (com.heroicpaths.combat.Stamina.uses(data.getPlayerClass())) data.setStaminaUsedAt(now);
         data.setCooldownEnd(def.id(), now + cooldown(player, def));

@@ -34,6 +34,10 @@ public final class PlayerStats {
         StatBlock stats = new StatBlock();
         if (data.getPlayerClass() == PlayerClass.NONE) return stats;
         for (CoreStat core : CoreStat.values()) core.apply(data.getStat(core), stats);
+        // Здоровье и ресурс растут с уровнем персонажа (в дереве узлов здоровья нет).
+        int levels = data.getLevel() - 1;
+        stats.add(Stat.MAX_HEALTH, data.getPlayerClass().healthPerLevel() * levels);
+        stats.add(Stat.MAX_RESOURCE, data.getPlayerClass().resourcePerLevel() * levels);
         if (data.getSubclass() != null) stats.addAll(data.getSubclass().passive());
         PassiveTree.collectStats(data.getAllocatedNodes(), data.getPlayerClass(), stats);
         EquipmentStats.collect(player, data.getPlayerClass(), stats);
@@ -63,6 +67,7 @@ public final class PlayerStats {
             stats.add(Stat.MINION_DAMAGE, 40).add(Stat.MINION_HEALTH, 40)
                     .add(Stat.MELEE_DAMAGE, -20).add(Stat.BOW_DAMAGE, -20).add(Stat.SPELL_DAMAGE, -20);
         }
+        if (keystones.contains(Keystone.STEADY_HANDS)) stats.add(Stat.MOVE_SPEED, -10);
         if (keystones.contains(Keystone.VITAL_SURGE)) {
             stats.add(Stat.MELEE_DAMAGE, -10).add(Stat.BOW_DAMAGE, -10).add(Stat.SPELL_DAMAGE, -10).add(Stat.MINION_DAMAGE, -10);
         }
@@ -158,7 +163,8 @@ public final class PlayerStats {
     }
 
     public static float critChance(Player player) {
-        return Math.min(MAX_CRIT_CHANCE, 5f + get(player).get(Stat.CRIT_CHANCE) + ClassTraits.critBonus(player));
+        return Math.min(MAX_CRIT_CHANCE, 5f + get(player).get(Stat.CRIT_CHANCE) + ClassTraits.critBonus(player)
+                + com.heroicpaths.rpg.ability.UniqueAbilities.critBonus(player));
     }
 
     public static float critMultiplier(Player player) {

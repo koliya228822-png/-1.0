@@ -116,7 +116,7 @@ public final class AbilityLogic {
             case "earthquake" -> earthquake(player, def);
             case "chain_lightning" -> chainLightning(player, def);
             case "tornado" -> tornado(player, def);
-            default -> SubclassAbilities.cast(player, def);
+            default -> def.unique() ? UniqueAbilities.cast(player, def) : SubclassAbilities.cast(player, def);
         };
     }
 
@@ -162,6 +162,7 @@ public final class AbilityLogic {
         if (def.kind() == DamageKind.SPELL && RpgManager.get(player).getPlayerClass() == com.heroicpaths.rpg.PlayerClass.MAGE) {
             factor *= com.heroicpaths.item.FocusItem.elementFactor(player, def.element());
             factor *= com.heroicpaths.rpg.ClassTraits.spellFactor(player, def);
+            if (PlayerStats.has(player, com.heroicpaths.rpg.stat.Keystone.OVERCHANNEL)) factor *= RpgManager.OVERCHANNEL_DAMAGE;
         }
         return factor;
     }
@@ -316,7 +317,7 @@ public final class AbilityLogic {
     private static boolean taunt(ServerPlayer player, AbilityDef def) {
         ServerLevel level = player.serverLevel();
         for (Mob mob : player.serverLevel().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(10),
-                mob -> mob instanceof Enemy && mob.isAlive())) {
+                mob -> mob instanceof Enemy && !(mob instanceof com.heroicpaths.minion.Minion) && mob.isAlive())) {
             mob.setTarget(player);
             Fx.embers(level, Palette.BLOOD, mob.position().add(0, mob.getBbHeight() + 0.3, 0), 6, 0.2, 0.05);
         }
@@ -931,7 +932,7 @@ public final class AbilityLogic {
         return false;
     }
 
-    static Vec3 horizontalLook(Player player) {
+    public static Vec3 horizontalLook(Player player) {
         Vec3 look = player.getLookAngle();
         Vec3 flat = new Vec3(look.x, 0, look.z);
         return flat.lengthSqr() < 1.0E-4 ? Vec3.directionFromRotation(0, player.getYRot()) : flat.normalize();

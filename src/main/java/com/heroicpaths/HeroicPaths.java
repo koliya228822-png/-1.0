@@ -65,11 +65,13 @@ public class HeroicPaths {
         modBus.addListener(ModEntities::registerAttributes);
 
         NeoForge.EVENT_BUS.register(RpgEvents.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.Experience.class);
         NeoForge.EVENT_BUS.register(MentorEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MentorHomes.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MerchantPosts.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.GuardPosts.class);
         NeoForge.EVENT_BUS.register(ItemRarity.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.item.SkillTable.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.CraftEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.SoulStones.class);
         NeoForge.EVENT_BUS.register(DungeonManager.class);
@@ -99,6 +101,9 @@ public class HeroicPaths {
         // Касты сильных умений и метки ударов по площади.
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Casting::onServerTick);
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Casting::onServerStopped);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.ability.UniqueAbilities.class);
+        NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.UniqueAbilities::onServerTick);
+        NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.UniqueAbilities::onServerStopped);
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Zones::onServerTick);
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Zones::onServerStopped);
         NeoForge.EVENT_BUS.addListener(AbilityLogic::onProjectileImpact);

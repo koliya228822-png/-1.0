@@ -108,6 +108,18 @@ public final class Casting {
         }
     }
 
+    /**
+     * Отмена игроком (двойной пробел): метеоритный дождь прекращается и уходит на перезарядку,
+     * обычный каст снимается без траты ресурса и без перезарядки.
+     */
+    public static void cancel(ServerPlayer player) {
+        if (UniqueAbilities.channeling(player)) {
+            UniqueAbilities.stopChannel(player);
+            return;
+        }
+        if (isCasting(player)) stop(player, "message.heroicpaths.cast_cancelled");
+    }
+
     /** Убрать каст без эффекта; messageKey — что сказать игроку (null — молча). */
     public static void stop(ServerPlayer player, @Nullable String messageKey) {
         Cast cast = CASTS.remove(player.getUUID());

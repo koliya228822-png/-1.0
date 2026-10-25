@@ -15,5 +15,8 @@ public final class ModEffects {
     public static final DeferredHolder<MobEffect, BleedingEffect> BLEEDING = EFFECTS.register("bleeding", BleedingEffect::new);
     public static final DeferredHolder<MobEffect, StunEffect> STUN = EFFECTS.register("stun", StunEffect::new);
 
+    /** Страх «Истинной скрытности»: колющие удары по напуганному врагу втрое сильнее. */
+    public static final DeferredHolder<MobEffect, MobEffect> FEAR = EFFECTS.register("fear", com.heroicpaths.combat.FearEffect::new);
+
     private ModEffects() {}
 }

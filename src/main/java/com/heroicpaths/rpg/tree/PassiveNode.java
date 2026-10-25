@@ -13,7 +13,8 @@ import java.util.List;
 
 /** Узел пассивного дерева. Координаты — в единицах экрана дерева при масштабе 1. */
 public record PassiveNode(int id, NodeType type, PlayerClass region, String nameKey, StatBlock stats,
-                          @Nullable Keystone keystone, float x, float y) {
+                          @Nullable Keystone keystone, float x, float y,
+                          int requiredLevel, int requiredPoints) {
 
     public MutableComponent name() {
         return keystone != null ? keystone.displayName() : Component.translatable(nameKey);
@@ -30,6 +31,8 @@ public record PassiveNode(int id, NodeType type, PlayerClass region, String name
         lines.add(name().withStyle(color));
         if (keystone != null) lines.add(keystone.description().withStyle(ChatFormatting.GRAY));
         for (Component line : stats.describe()) lines.add(line.copy().withStyle(ChatFormatting.BLUE));
+        if (requiredLevel > 1) lines.add(Component.translatable("screen.heroicpaths.node_level", requiredLevel).withStyle(ChatFormatting.DARK_AQUA));
+        if (requiredPoints > 0) lines.add(Component.translatable("screen.heroicpaths.node_points", requiredPoints).withStyle(ChatFormatting.DARK_AQUA));
         return lines;
     }
 }

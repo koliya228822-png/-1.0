@@ -26,6 +26,9 @@ public final class ModBlocks {
             BlockBehaviour.Properties.ofFullCopy(Blocks.HAY_BLOCK));
     public static final DeferredBlock<Block> ARCANE_LECTERN = BLOCKS.registerSimpleBlock("arcane_lectern",
             BlockBehaviour.Properties.ofFullCopy(Blocks.POLISHED_DEEPSLATE).lightLevel(state -> 7));
+    /** Полка умений: стол зачарований, обставленный шестью такими полками, делает книги уникальных умений. */
+    public static final DeferredBlock<Block> SKILL_BOOKSHELF = BLOCKS.registerSimpleBlock("skill_bookshelf",
+            BlockBehaviour.Properties.ofFullCopy(Blocks.BOOKSHELF).lightLevel(state -> 4));
     /** Конторка банкира — его рабочее место в банке деревни. */
     public static final DeferredBlock<Block> BANK_COUNTER = BLOCKS.registerSimpleBlock("bank_counter",
             BlockBehaviour.Properties.ofFullCopy(Blocks.DARK_OAK_PLANKS).strength(2.5f));

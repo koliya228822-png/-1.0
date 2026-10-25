@@ -116,7 +116,7 @@ public final class SubclassAbilities {
     }
 
     /** Сила выстрела без снаряда: к силе умения добавляются бонусы стрелкового оружия. */
-    private static float rangedPower(ServerPlayer player, AbilityDef def, float base) {
+    static float rangedPower(ServerPlayer player, AbilityDef def, float base) {
         return power(player, def, base) * (1f + PlayerStats.get(player).get(Stat.BOW_DAMAGE) / 100f);
     }
 
@@ -340,7 +340,7 @@ public final class SubclassAbilities {
 
     // ================================================================ маг: призыватель
 
-    private static <T extends Mob> List<T> summon(ServerPlayer player, EntityType<T> type, int count, int lifetime,
+    static <T extends Mob> List<T> summon(ServerPlayer player, EntityType<T> type, int count, int lifetime,
                                                  float health, float damage, Consumer<T> setup) {
         ServerLevel level = player.serverLevel();
         List<T> result = new ArrayList<>();
@@ -369,7 +369,7 @@ public final class SubclassAbilities {
     }
 
     /** Не больше max существ одного вида: лишние, самые старые, рассыпаются. */
-    private static void limit(ServerPlayer player, EntityType<?> type, int max) {
+    static void limit(ServerPlayer player, EntityType<?> type, int max) {
         List<Mob> owned = new ArrayList<>(Minions.ownedNear(player, 64).stream().filter(mob -> mob.getType() == type).toList());
         owned.sort(Comparator.comparingInt(mob -> -mob.tickCount));
         for (int i = 0; i < owned.size() - max; i++) Minions.vanish(owned.get(i));
@@ -510,7 +510,7 @@ public final class SubclassAbilities {
     // ================================================================ мушкетёр
 
     /** Дым и вспышка у ствола мушкета. */
-    private static void muzzle(ServerPlayer player, double scale) {
+    static void muzzle(ServerPlayer player, double scale) {
         Vec3 at = player.getEyePosition().add(player.getLookAngle().scale(1.2)).add(0, -0.15, 0);
         ServerLevel level = player.serverLevel();
         Fx.flash(level, Palette.FIRE, at, 1);

@@ -13,8 +13,11 @@ import net.minecraft.network.chat.MutableComponent;
  * @param cooldownTicks перезарядка до сокращений
  * @param weapon        какое оружие нужно держать, чтобы применить умение
  * @param castTicks     время произнесения (0 — мгновенно); сильные умения срабатывают в конце каста (Casting)
+ * @param unique        уникальное умение: его книгу делают только на столе зачарований 2-го уровня (UniqueAbilities)
+ * @param passive       пассивное умение: действует, как только выучено, слот не занимает
  */
-public record AbilityDef(String id, int unlockLevel, int cost, int cooldownTicks, Element element, DamageKind kind, WeaponReq weapon, int castTicks) {
+public record AbilityDef(String id, int unlockLevel, int cost, int cooldownTicks, Element element, DamageKind kind, WeaponReq weapon, int castTicks,
+                         boolean unique, boolean passive) {
     public static final int MAX_RANK = 3;
 
     public enum DamageKind {

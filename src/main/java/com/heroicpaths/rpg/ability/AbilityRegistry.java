@@ -144,17 +144,39 @@ public final class AbilityRegistry {
         cast("mend_pet", 10);
         cast("pack_howl", 10);
         cast("flame_wave", 8);
+
+        // Уникальные умения: книги делают на столе зачарований 2-го уровня (UniqueAbilities).
+        unique("meteor_shower", 0, 600, FIRE, SPELL, WeaponReq.FOCUS, 0, false);
+        unique("mana_surge", 0, 0, AIR, SPELL, WeaponReq.NONE, 0, true);
+        unique("hunting_frenzy", 30, 800, PHYSICAL, RANGED, WeaponReq.BOW, 0, false);
+        unique("critical_error", 0, 0, PHYSICAL, RANGED, WeaponReq.NONE, 0, true);
+        unique("boarding_hook", 40, 400, PHYSICAL, RANGED, WeaponReq.MUSKET, 0, false);
+        unique("healing_downpour", 60, 900, WATER, SPELL, WeaponReq.NONE, 20, false);
+        unique("summon_dracolich", 80, 2400, PHYSICAL, MINION, WeaponReq.FOCUS, 30, false);
+        unique("wake_the_beast", 50, 2400, PHYSICAL, MINION, WeaponReq.NONE, 10, false);
+        unique("slaughter", 40, 1800, PHYSICAL, MELEE, WeaponReq.NONE, 0, false);
+        unique("hand_of_god", 50, 1800, HOLY, MELEE, WeaponReq.NONE, 15, false);
+        unique("lone_warrior", 40, 900, PHYSICAL, MELEE, WeaponReq.TWO_HANDED, 0, false);
+        unique("full_steam", 30, 1200, PHYSICAL, MELEE, WeaponReq.SHIELD, 0, false);
+        unique("just_getting_started", 0, 0, PHYSICAL, MELEE, WeaponReq.NONE, 0, true);
+        unique("true_stealth", 40, 1200, PHYSICAL, MELEE, WeaponReq.NONE, 0, false);
+        unique("cutthroat", 0, 0, PHYSICAL, MELEE, WeaponReq.NONE, 0, true);
     }
 
     private AbilityRegistry() {}
 
     private static void add(String id, int unlockLevel, int cost, int cooldownTicks, Element element, DamageKind kind, WeaponReq weapon) {
-        BY_ID.put(id, new AbilityDef(id, unlockLevel, cost, cooldownTicks, element, kind, weapon, 0));
+        BY_ID.put(id, new AbilityDef(id, unlockLevel, cost, cooldownTicks, element, kind, weapon, 0, false, false));
     }
 
     private static void cast(String id, int ticks) {
         AbilityDef d = BY_ID.get(id);
-        BY_ID.put(id, new AbilityDef(d.id(), d.unlockLevel(), d.cost(), d.cooldownTicks(), d.element(), d.kind(), d.weapon(), ticks));
+        BY_ID.put(id, new AbilityDef(d.id(), d.unlockLevel(), d.cost(), d.cooldownTicks(), d.element(), d.kind(), d.weapon(), ticks, d.unique(), d.passive()));
+    }
+
+    /** Уникальное умение (книга со стола зачарований 2-го уровня); passive — действует без слота. */
+    private static void unique(String id, int cost, int cooldownTicks, Element element, DamageKind kind, WeaponReq weapon, int castTicks, boolean passive) {
+        BY_ID.put(id, new AbilityDef(id, UniqueAbilities.UNLOCK_LEVEL, cost, cooldownTicks, element, kind, weapon, castTicks, true, passive));
     }
 
     @Nullable
@@ -173,7 +195,18 @@ public final class AbilityRegistry {
 
     /** Умение подкласс может выучить по книге. */
     public static boolean isLearnable(@Nullable Subclass subclass, AbilityDef def) {
-        return subclass != null && subclass.learnableAbilities().contains(def.id());
+        return subclass != null && (subclass.learnableAbilities().contains(def.id()) || UniqueAbilities.learners(def).contains(subclass));
+    }
+
+    /** Уникальные умения, которые может выучить подкласс. */
+    public static List<AbilityDef> uniqueFor(@Nullable Subclass subclass) {
+        List<AbilityDef> result = new ArrayList<>();
+        for (AbilityDef def : BY_ID.values()) if (def.unique() && UniqueAbilities.learners(def).contains(subclass)) result.add(def);
+        return result;
+    }
+
+    public static List<AbilityDef> uniques() {
+        return BY_ID.values().stream().filter(AbilityDef::unique).toList();
     }
 
     /** Все умения подкласса: сначала известные с начала, потом из книг. */
@@ -182,6 +215,7 @@ public final class AbilityRegistry {
         if (subclass == null) return result;
         for (String id : subclass.startingAbilities()) add(result, id);
         for (String id : subclass.learnableAbilities()) add(result, id);
+        for (AbilityDef def : uniqueFor(subclass)) add(result, def.id());
         return result;
     }
 
@@ -206,6 +240,7 @@ public final class AbilityRegistry {
 
     /** Классы, которые могут выучить умение по книге (для подсказки книги). */
     public static List<Subclass> learners(AbilityDef def) {
+        if (def.unique()) return new ArrayList<>(UniqueAbilities.learners(def));
         List<Subclass> result = new ArrayList<>();
         for (Subclass subclass : Subclass.values()) {
             if (subclass.learnableAbilities().contains(def.id())) result.add(subclass);

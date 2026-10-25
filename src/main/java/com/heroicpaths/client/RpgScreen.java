@@ -239,6 +239,8 @@ public class RpgScreen extends Screen {
             MutableComponent label;
             if (!known) {
                 label = Component.translatable("screen.heroicpaths.book_ability", def.name(), def.unlockLevel()).withStyle(ChatFormatting.DARK_GRAY);
+            } else if (def.passive()) {
+                label = def.name().copy().append(" ").append(Component.translatable("ability.heroicpaths.passive").withStyle(ChatFormatting.DARK_PURPLE));
             } else {
                 label = def.name().copy().append(" ").append(Component.translatable("screen.heroicpaths.rank", data.getRank(def.id())));
                 if (def.id().equals(selectedAbility)) label = Component.literal("» ").append(label).append(" «").withStyle(ChatFormatting.YELLOW);
@@ -249,9 +251,9 @@ public class RpgScreen extends Screen {
                     })
                     .bounds(left, y, listWidth, rowHeight - 2)
                     .tooltip(Tooltip.create(abilityTooltip(data, def, known))).build();
-            button.active = known;
+            button.active = known && !def.passive();
             addRenderableWidget(button);
-            if (known && data.getRank(def.id()) < AbilityDef.MAX_RANK) {
+            if (known && !def.passive() && data.getRank(def.id()) < AbilityDef.MAX_RANK) {
                 Button rank = Button.builder(Component.literal("+"), b -> PacketDistributor.sendToServer(TreeActionPayload.rankUp(def.id())))
                         .bounds(left + listWidth + 2, y, 20, rowHeight - 2)
                         .tooltip(Tooltip.create(Component.translatable("screen.heroicpaths.rank_up_hint", data.getRank(def.id()) + 1))).build();
@@ -316,6 +318,28 @@ public class RpgScreen extends Screen {
             plus.active = points > 0 && data.getStat(stat) < CoreStat.MAX;
             addRenderableWidget(plus);
         }
+        // Перевод ванильного опыта: в опыт персонажа или любого ремесла.
+        int y = convertTop();
+        boolean hasXp = minecraft.player != null && com.heroicpaths.rpg.Experience.totalPoints(minecraft.player) > 0;
+        Button character = Button.builder(Component.translatable("screen.heroicpaths.convert.character"),
+                        b -> PacketDistributor.sendToServer(TreeActionPayload.convertXp("")))
+                .bounds(x, y + 12, 140, 18).tooltip(Tooltip.create(Component.translatable("screen.heroicpaths.convert.character_hint"))).build();
+        character.active = hasXp;
+        addRenderableWidget(character);
+        int i = 0;
+        for (com.heroicpaths.craft.Profession profession : com.heroicpaths.craft.Profession.values()) {
+            Button craft = Button.builder(profession.displayName(), b -> PacketDistributor.sendToServer(TreeActionPayload.convertXp(profession.id())))
+                    .bounds(x + (i % 2) * 71, y + 32 + (i / 2) * 20, 69, 18)
+                    .tooltip(Tooltip.create(Component.translatable("screen.heroicpaths.convert.craft_hint",
+                            com.heroicpaths.rpg.Experience.VANILLA_PER_CRAFT_XP))).build();
+            craft.active = hasXp;
+            addRenderableWidget(craft);
+            i++;
+        }
+    }
+
+    private int convertTop() {
+        return CONTENT_TOP + 20 + CoreStat.values().length * 22 + 16;
     }
 
     private static Component joinLines(List<Component> lines) {
@@ -532,6 +556,13 @@ public class RpgScreen extends Screen {
         return playerClass == PlayerClass.NONE || node.region() == playerClass;
     }
 
+    /** Направление сектора класса на карте дерева (радианы): там подписаны кольца. */
+    private static double classAngle(PlayerClass playerClass) {
+        int start = PassiveTree.startNode(playerClass);
+        PassiveNode node = PassiveTree.node(start);
+        return node == null ? -Math.PI / 2 : Math.atan2(node.y(), node.x()) + Math.toRadians(40);
+    }
+
     private void centerTreeOnClass(PlayerClass playerClass) {
         float sx = 0, sy = 0;
         int count = 0;
@@ -570,6 +601,18 @@ public class RpgScreen extends Screen {
 
         VertexConsumer lines = graphics.bufferSource().getBuffer(RenderType.gui());
         Matrix4f matrix = graphics.pose().last().pose();
+        // Кольца дерева: граница каждого кольца и уровень, с которого оно открывается.
+        for (int i = 0; i < PassiveTree.SEGMENT_RADII.length - 1; i++) {
+            float radius = PassiveTree.SEGMENT_RADII[i];
+            boolean open = data.getLevel() >= PassiveTree.SEGMENT_LEVELS[i + 1];
+            int color = open ? 0x5040A060 : 0x50A04040;
+            int steps = 180;
+            for (int k = 0; k < steps; k++) {
+                double a1 = Math.PI * 2 * k / steps, a2 = Math.PI * 2 * (k + 1) / steps;
+                line(lines, matrix, (float) (Math.cos(a1) * radius), (float) (Math.sin(a1) * radius),
+                        (float) (Math.cos(a2) * radius), (float) (Math.sin(a2) * radius), 1.5f, color);
+            }
+        }
         for (int[] edge : PassiveTree.edges()) {
             PassiveNode a = PassiveTree.node(edge[0]);
             PassiveNode b = PassiveTree.node(edge[1]);
@@ -584,17 +627,28 @@ public class RpgScreen extends Screen {
         for (PassiveNode node : PassiveTree.nodes()) {
             if (!shown(node, playerClass)) continue;
             boolean owned = PassiveTree.isAllocated(allocated, playerClass, node.id());
-            boolean available = !owned && points > 0 && PassiveTree.canAllocate(allocated, playerClass, node.id());
+            boolean available = !owned && points > 0 && PassiveTree.canAllocate(allocated, playerClass, data.getLevel(), node.id());
+            boolean gated = !owned && PassiveTree.lockReason(allocated, data.getLevel(), node.id()) != null;
             int size = nodeSize(node.type());
             int color;
             if (owned) color = node.type() == NodeType.KEYSTONE ? 0xFF8C1A : 0xFFD24A;
             else if (available) color = 0xF0F0FF;
+            else if (gated) color = 0x3A3036;
             else color = node.region() == PlayerClass.NONE ? 0x5A5A66 : dim(node.region().color());
             RenderSystem.setShaderColor(((color >> 16) & 0xFF) / 255f, ((color >> 8) & 0xFF) / 255f, (color & 0xFF) / 255f, 1f);
             graphics.blit(nodeTexture(node.type()), Math.round(node.x() - size / 2f), Math.round(node.y() - size / 2f),
                     0, 0, size, size, size, size);
         }
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        // Подписи колец: уровень открытия у границы, со стороны дерева своего класса.
+        double labelAngle = classAngle(playerClass);
+        for (int i = 0; i < PassiveTree.SEGMENT_RADII.length - 1; i++) {
+            float radius = PassiveTree.SEGMENT_RADII[i] + 8;
+            int level = PassiveTree.SEGMENT_LEVELS[i + 1];
+            Component label = Component.translatable("screen.heroicpaths.ring_level", level);
+            graphics.drawCenteredString(font, label, (int) Math.round(Math.cos(labelAngle) * radius), (int) Math.round(Math.sin(labelAngle) * radius) - 4,
+                    data.getLevel() >= level ? 0x80E080 : 0xE08080);
+        }
         graphics.pose().popPose();
         graphics.disableScissor();
 
@@ -609,6 +663,8 @@ public class RpgScreen extends Screen {
                 if (PassiveTree.canRefund(allocated, playerClass, hovered.id())) {
                     tooltip.add(Component.translatable("screen.heroicpaths.node_refund").withStyle(ChatFormatting.DARK_GRAY));
                 }
+            } else if (PassiveTree.lockReason(allocated, data.getLevel(), hovered.id()) instanceof PassiveTree.Lock lock) {
+                tooltip.add(Component.translatable(lock.key(), lock.value()).withStyle(ChatFormatting.RED));
             } else if (PassiveTree.canAllocate(allocated, playerClass, hovered.id())) {
                 tooltip.add(Component.translatable(points > 0 ? "screen.heroicpaths.node_learn" : "screen.heroicpaths.no_points")
                         .withStyle(points > 0 ? ChatFormatting.GREEN : ChatFormatting.RED));
@@ -720,6 +776,8 @@ public class RpgScreen extends Screen {
         }
         graphics.drawString(font, Component.translatable("screen.heroicpaths.stat_hint"), x,
                 CONTENT_TOP + 20 + CoreStat.values().length * 22 + 4, 0x777777, true);
+        graphics.drawString(font, Component.translatable("screen.heroicpaths.convert.title",
+                com.heroicpaths.rpg.Experience.totalPoints(minecraft.player)), x, convertTop(), 0x80FF80, true);
 
         StatBlock stats = PlayerStats.get(minecraft.player);
         List<Component> lines = new ArrayList<>();

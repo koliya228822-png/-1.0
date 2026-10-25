@@ -86,12 +86,12 @@ public class ClassGameTests {
         for (PlayerClass playerClass : PlayerClass.playable()) {
             helper.assertTrue(regionSizes.getOrDefault(playerClass, 0) == expected,
                     playerClass + " sector has " + regionSizes.get(playerClass) + " nodes, warrior has " + expected);
-            helper.assertTrue(classKeystones.getOrDefault(playerClass, 0) == 2, playerClass + " must have two keystones of its own");
+            helper.assertTrue(classKeystones.getOrDefault(playerClass, 0) == 3, playerClass + " must have three keystones of its own");
             int start = PassiveTree.startNode(playerClass);
             long branches = PassiveTree.neighbours(start).intStream().filter(id -> PassiveTree.node(id).region() == playerClass).count();
             helper.assertTrue(branches == 9, playerClass + " start must open 6 branches and 3 base nodes, opens " + branches);
         }
-        helper.assertTrue(Keystone.values().length == 10, "expected 10 keystones");
+        helper.assertTrue(Keystone.values().length == 15, "expected 15 keystones");
         helper.succeed();
     }
 

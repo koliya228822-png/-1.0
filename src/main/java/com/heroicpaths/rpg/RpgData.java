@@ -46,9 +46,9 @@ public class RpgData implements INBTSerializable<CompoundTag> {
      * 4 — пассивное дерево перестроено под пять классов: узлы сохранений версий 2–3 не переносятся,
      * очки дерева возвращаются игроку.
      */
-    private static final int DATA_VERSION = 4;
-    /** Первая версия данных с нынешней раскладкой дерева. */
-    private static final int TREE_LAYOUT_SINCE = 4;
+    private static final int DATA_VERSION = 5;
+    /** Первая версия данных с нынешней раскладкой дерева (5 — кольца по уровням, вдвое больше узлов, без здоровья). */
+    private static final int TREE_LAYOUT_SINCE = 5;
     /** С версии 3 есть подклассы, характеристики, книги умений и ранги. */
     private static final int SUBCLASSES_SINCE = 3;
 
@@ -134,6 +134,7 @@ public class RpgData implements INBTSerializable<CompoundTag> {
 
     public void setLevel(int level) {
         this.level = level;
+        invalidateStats();
     }
 
     public int getXp() {

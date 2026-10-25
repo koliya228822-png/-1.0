@@ -13,11 +13,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
  *     <li>CHOOSE_SUBCLASS — выбрать подкласс персонажу без подкласса (text = id подкласса);</li>
  *     <li>ADD_STAT — вложить очко в характеристику (value = номер характеристики);</li>
  *     <li>RANK_UP — повысить ранг умения (text = id умения);</li>
- *     <li>BIND — поставить умение в слот (text = id умения, value = слот).</li>
+ *     <li>BIND — поставить умение в слот (text = id умения, value = слот);</li>
+ *     <li>CONVERT_XP — перевести ванильный опыт (text = id ремесла или пусто — в опыт персонажа).</li>
  * </ul>
  */
 public record TreeActionPayload(Action action, int value, String text) implements CustomPacketPayload {
-    public enum Action { ALLOCATE, REFUND, CHOOSE_SUBCLASS, ADD_STAT, RANK_UP, BIND }
+    public enum Action { ALLOCATE, REFUND, CHOOSE_SUBCLASS, ADD_STAT, RANK_UP, BIND, CONVERT_XP }
 
     public static final CustomPacketPayload.Type<TreeActionPayload> TYPE =
             new CustomPacketPayload.Type<>(HeroicPaths.id("tree_action"));
@@ -50,6 +51,10 @@ public record TreeActionPayload(Action action, int value, String text) implement
 
     public static TreeActionPayload bind(String ability, int slot) {
         return new TreeActionPayload(Action.BIND, slot, ability);
+    }
+
+    public static TreeActionPayload convertXp(String profession) {
+        return new TreeActionPayload(Action.CONVERT_XP, 0, profession);
     }
 
     @Override

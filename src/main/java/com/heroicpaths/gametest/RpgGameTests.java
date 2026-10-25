@@ -85,25 +85,28 @@ public class RpgGameTests {
             for (PassiveNode node : PassiveTree.nodes())
                 if (node.region() != playerClass) helper.assertTrue(!PassiveTree.canAllocate(own, playerClass, node.id()), playerClass + " can take node " + node.id());
             long keystones = own.intStream().filter(id -> PassiveTree.node(id).keystone() != null).count();
-            helper.assertTrue(keystones == 2, playerClass + " must have two keystones, got " + keystones);
+            helper.assertTrue(keystones == 3, playerClass + " must have three keystones, got " + keystones);
         }
         helper.succeed();
     }
 
-    /** В дереве нет процентов: только числа, у бывших процентных бонусов — от 0.3 до 1 по глубине ветви. */
+    /** В дереве нет процентов (кроме снижения урона): только числа, у бывших процентных бонусов — от 0.15 до 1 по глубине ветви. */
     @GameTest(template = ARENA)
     public static void treeGivesNumbersFromPointThreeToOne(GameTestHelper helper) {
         for (PassiveNode node : PassiveTree.nodes()) {
             for (var entry : node.stats().asMap().entrySet()) {
-                helper.assertTrue(!entry.getKey().isPercent(), "node " + node.id() + " still gives a percent: " + entry.getKey());
+                helper.assertTrue(!entry.getKey().isPercent() || entry.getKey() == Stat.DAMAGE_REDUCTION,
+                        "node " + node.id() + " still gives a percent: " + entry.getKey());
+                helper.assertTrue(entry.getKey() != Stat.MAX_HEALTH && entry.getKey() != Stat.LIFE_STEAL && entry.getKey() != Stat.ARMOR
+                        && entry.getKey() != Stat.FLAT_LIFE_STEAL, "node " + node.id() + " still gives " + entry.getKey());
                 if (entry.getKey().name().startsWith("FLAT_"))
-                    helper.assertTrue(entry.getValue() >= 0.3f - 1e-4 && entry.getValue() <= 1f + 1e-4,
+                    helper.assertTrue(entry.getValue() >= 0.15f - 1e-4 && entry.getValue() <= 1f + 1e-4,
                             "node " + node.id() + " gives " + entry.getValue() + " " + entry.getKey());
             }
         }
-        // Ветвь «Мощь заклинаний» мага: 0.3, 0.5, 0.7, 0.85, значимый узел 1.
+        // Ветвь «Мощь заклинаний» мага: 0.15 … 0.5 по восьми малым узлам, значимый узел 1.
         int id = branchStart(PlayerClass.MAGE, "mage_power");
-        float[] expected = {0.3f, 0.5f, 0.7f, 0.85f};
+        float[] expected = {0.15f, 0.2f, 0.25f, 0.3f, 0.35f, 0.4f, 0.45f, 0.5f};
         for (float value : expected) {
             helper.assertTrue(Math.abs(PassiveTree.node(id).stats().get(Stat.FLAT_SPELL_DAMAGE) - value) < 1e-4,
                     "small node " + id + " must give " + value + " spell damage");
@@ -120,7 +123,7 @@ public class RpgGameTests {
         RpgManager.setLevel(player, 10);
         RpgManager.allocateNode(player, branchStart(PlayerClass.MAGE, "mage_power"));
         float flat = PlayerStats.flatAbilityDamage(player, AbilityRegistry.get("fireball"));
-        helper.assertTrue(Math.abs(flat - 0.3f) < 1e-4, "the first spell node must add 0.3 to every spell hit, got " + flat);
+        helper.assertTrue(Math.abs(flat - 0.15f) < 1e-4, "the first spell node must add 0.15 to every spell hit, got " + flat);
         helper.succeed();
     }
 
@@ -233,17 +236,59 @@ public class RpgGameTests {
     public static void statsAndTreeBecomeAttributes(GameTestHelper helper) {
         ServerPlayer player = playerInArena(helper);
         RpgManager.chooseClass(player, PlayerClass.WARRIOR);
-        // 20 + 10 (старт воина) + 2 (телосложение 2)
-        helper.assertTrue(player.getMaxHealth() == 32f, "warrior must have 32 health, got " + player.getMaxHealth());
+        // 20 + 2 (телосложение 2): узлов здоровья в дереве больше нет.
+        helper.assertTrue(player.getMaxHealth() == 22f, "warrior must have 22 health, got " + player.getMaxHealth());
         RpgManager.allocateNode(player, branchStart(PlayerClass.WARRIOR, "warrior_life"));
-        helper.assertTrue(player.getMaxHealth() == 40f, "life node must give +8 health, got " + player.getMaxHealth());
+        helper.assertTrue(player.getMaxHealth() == 22f, "tree nodes must not give health, got " + player.getMaxHealth());
         RpgManager.setLevel(player, 3);
+        // Воин получает 2.5 здоровья за уровень.
+        helper.assertTrue(player.getMaxHealth() == 27f, "level 3 warrior must have 27 health, got " + player.getMaxHealth());
         helper.assertTrue(RpgManager.addStat(player, CoreStat.CONSTITUTION), "constitution point was refused");
-        helper.assertTrue(player.getMaxHealth() == 41f, "constitution must give +1 health, got " + player.getMaxHealth());
+        helper.assertTrue(player.getMaxHealth() == 28f, "constitution must give +1 health, got " + player.getMaxHealth());
         RpgManager.addStat(player, CoreStat.CONSTITUTION);
         helper.assertTrue(!RpgManager.addStat(player, CoreStat.STRENGTH), "a stat point was spent without points");
         RpgManager.resetClass(player);
         helper.assertTrue(player.getMaxHealth() == 20f, "reset must remove all bonuses, got " + player.getMaxHealth());
+        helper.succeed();
+    }
+
+    /** Здоровье за уровень зависит от класса; мана и выносливость тоже растут с уровнем. */
+    @GameTest(template = ARENA)
+    public static void healthAndResourceGrowWithLevel(GameTestHelper helper) {
+        ServerPlayer warrior = playerInArena(helper);
+        RpgManager.chooseClass(warrior, PlayerClass.WARRIOR);
+        RpgManager.setLevel(warrior, 11);
+        ServerPlayer mage = playerInArena(helper);
+        RpgManager.chooseClass(mage, PlayerClass.MAGE);
+        RpgManager.setLevel(mage, 11);
+        helper.assertTrue(warrior.getMaxHealth() == 22f + 25f, "level 11 warrior: 47 health, got " + warrior.getMaxHealth());
+        helper.assertTrue(mage.getMaxHealth() == 22f + 12f, "level 11 mage: 34 health, got " + mage.getMaxHealth());
+        helper.assertTrue(PlayerStats.maxResource(mage) - PlayerStats.maxResource(warrior) > 15f, "mana must grow faster than stamina");
+        helper.succeed();
+    }
+
+    /** Кольца дерева открываются уровнем, значимые узлы и ключевые камни — ещё и вложенными очками. */
+    @GameTest(template = ARENA)
+    public static void treeRingsAreGatedByLevel(GameTestHelper helper) {
+        ServerPlayer player = playerInArena(helper);
+        RpgManager.chooseClass(player, PlayerClass.WARRIOR);
+        RpgManager.setLevel(player, 4);
+        RpgData data = RpgManager.get(player);
+        int node = branchStart(PlayerClass.WARRIOR, "warrior_sword");
+        for (int i = 0; i < 3; i++) {
+            helper.assertTrue(RpgManager.allocateNode(player, node), "node " + i + " of the first ring was not allocated");
+            int current = node;
+            node = PassiveTree.neighbours(current).intStream().filter(next -> next > current
+                    && PassiveTree.node(next).nameKey().equals("tree.heroicpaths.warrior_sword")).findFirst().orElseThrow();
+        }
+        helper.assertTrue(PassiveTree.node(node).requiredLevel() == 5, "the fourth node must be in the level 5 ring");
+        helper.assertTrue(!RpgManager.allocateNode(player, node), "a level 5 ring node was taken at level 4");
+        RpgManager.setLevel(player, 5);
+        helper.assertTrue(RpgManager.allocateNode(player, node), "a level 5 ring node must open at level 5");
+        int keystone = keystoneNode(Keystone.BLOOD_RAGE);
+        helper.assertTrue(PassiveTree.node(keystone).requiredLevel() == 30 && PassiveTree.node(keystone).requiredPoints() == 25,
+                "keystones need level 30 and 25 spent points");
+        helper.assertTrue(PassiveTree.lockReason(data.getAllocatedNodes(), 40, keystone) != null, "a keystone opened with 4 points spent");
         helper.succeed();
     }
 

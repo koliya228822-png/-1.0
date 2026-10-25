@@ -85,6 +85,10 @@ public class HeroicPathsClient {
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onScreenRender);
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onMouseClick);
         NeoForge.EVENT_BUS.addListener(HeroicPathsClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(PlayerForms::onRenderPlayer);
+        NeoForge.EVENT_BUS.addListener(PlayerForms::onClientTick);
+        NeoForge.EVENT_BUS.addListener(PlayerForms::onInteraction);
+        NeoForge.EVENT_BUS.addListener(PlayerForms::onLogout);
         NeoForge.EVENT_BUS.addListener(MobPlates::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(HeroicPathsClient::onTooltip);
     }
@@ -162,6 +166,7 @@ public class HeroicPathsClient {
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.FOOD_LEVEL, HeroicPaths.id("stamina_bar"), HudBars::renderStamina);
         event.registerAboveAll(HeroicPaths.id("rpg_hud"), new RpgHudLayer());
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("cast_bar"), new CastBarLayer());
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("power_attack"), new ClientCombat.Layer());
     }
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -180,6 +185,7 @@ public class HeroicPathsClient {
         event.registerEntityRenderer(ModEntities.COMPANION_BEAR.get(), PolarBearRenderer::new);
         event.registerEntityRenderer(ModEntities.COMPANION_OWLBEAR.get(), OwlbearRenderer::new);
         event.registerEntityRenderer(ModEntities.SUMMONED_SKELETON.get(), SkeletonRenderer::new);
+        event.registerEntityRenderer(ModEntities.DRACOLICH.get(), net.minecraft.client.renderer.entity.PhantomRenderer::new);
         event.registerEntityRenderer(ModEntities.SUMMONED_GOLEM.get(), IronGolemRenderer::new);
         event.registerEntityRenderer(ModEntities.MUSKET_BALL.get(), ThrownItemRenderer::new);
     }
@@ -187,6 +193,7 @@ public class HeroicPathsClient {
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) return;
+        ClientCombat.tick(minecraft);
         while (ModKeys.OPEN_SKILLS.consumeClick()) {
             minecraft.setScreen(new RpgScreen());
         }

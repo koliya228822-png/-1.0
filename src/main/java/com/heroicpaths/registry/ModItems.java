@@ -46,10 +46,15 @@ public final class ModItems {
             () -> new OblivionScrollItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<ExperienceTomeItem> EXPERIENCE_TOME = ITEMS.register("experience_tome",
             () -> new ExperienceTomeItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    /** Камень предков: выпадает с боссов, даёт 1500 опыта персонажа. */
+    public static final DeferredItem<ExperienceTomeItem> ANCESTOR_STONE = ITEMS.register("ancestor_stone",
+            () -> new ExperienceTomeItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC), com.heroicpaths.rpg.Experience.ANCESTOR_STONE_XP,
+                    "item.heroicpaths.ancestor_stone.desc"));
 
     public static final DeferredItem<BlockItem> WEAPON_RACK = ITEMS.registerSimpleBlockItem("weapon_rack", ModBlocks.WEAPON_RACK);
     public static final DeferredItem<BlockItem> ARCHERY_TARGET = ITEMS.registerSimpleBlockItem("archery_target", ModBlocks.ARCHERY_TARGET);
     public static final DeferredItem<BlockItem> ARCANE_LECTERN = ITEMS.registerSimpleBlockItem("arcane_lectern", ModBlocks.ARCANE_LECTERN);
+    public static final DeferredItem<BlockItem> SKILL_BOOKSHELF = ITEMS.registerSimpleBlockItem("skill_bookshelf", ModBlocks.SKILL_BOOKSHELF);
     public static final DeferredItem<BlockItem> BANK_COUNTER = ITEMS.registerSimpleBlockItem("bank_counter", ModBlocks.BANK_COUNTER);
     public static final DeferredItem<BlockItem> ARMS_DISPLAY = ITEMS.registerSimpleBlockItem("arms_display", ModBlocks.ARMS_DISPLAY);
 
@@ -142,6 +147,9 @@ public final class ModItems {
     // Книги умений и оружие подклассов
     public static final DeferredItem<AbilityBookItem> ABILITY_BOOK = ITEMS.register("ability_book",
             () -> new AbilityBookItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    /** Книга уникального умения: только со стола зачарований 2-го уровня. */
+    public static final DeferredItem<AbilityBookItem> UNIQUE_ABILITY_BOOK = ITEMS.register("unique_ability_book",
+            () -> new AbilityBookItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<DaggerItem> IRON_DAGGER = ITEMS.register("iron_dagger",
             () -> new DaggerItem(Tiers.IRON, new Item.Properties()));
     public static final DeferredItem<DaggerItem> DIAMOND_DAGGER = ITEMS.register("diamond_dagger",

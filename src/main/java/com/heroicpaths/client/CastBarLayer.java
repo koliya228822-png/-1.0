@@ -17,6 +17,11 @@ public class CastBarLayer implements LayeredDraw.Layer {
     private static long startTick;
     private static int duration;
 
+    /** Идёт ли сейчас каст (по последнему пакету с сервера). */
+    public static boolean casting() {
+        return ability != null;
+    }
+
     /** Пакет с сервера: каст начался (ticks > 0) или закончился (0). */
     public static void set(String id, int ticks) {
         Minecraft mc = Minecraft.getInstance();
