@@ -529,7 +529,7 @@ public final class DungeonManager {
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || !isDungeonLevel(level)) return;
-        if (!(event.getEntity() instanceof Mob mob) || !(mob instanceof Enemy)) return;
+        if (!(event.getEntity() instanceof Mob mob) || !(mob instanceof Enemy) || mob instanceof com.heroicpaths.minion.Minion) return;
         DungeonInstance instance = instanceAt(level.getServer(), mob.blockPosition());
         if (instance != null) {
             applyScaling(mob, instance.type, instance.partySize);

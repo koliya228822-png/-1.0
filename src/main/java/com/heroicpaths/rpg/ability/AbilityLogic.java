@@ -317,7 +317,7 @@ public final class AbilityLogic {
     private static boolean taunt(ServerPlayer player, AbilityDef def) {
         ServerLevel level = player.serverLevel();
         for (Mob mob : player.serverLevel().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(10),
-                mob -> mob instanceof Enemy && mob.isAlive())) {
+                mob -> mob instanceof Enemy && !(mob instanceof com.heroicpaths.minion.Minion) && mob.isAlive())) {
             mob.setTarget(player);
             Fx.embers(level, Palette.BLOOD, mob.position().add(0, mob.getBbHeight() + 0.3, 0), 6, 0.2, 0.05);
         }
