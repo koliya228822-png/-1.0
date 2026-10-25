@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "item": "heroicpaths:arcane_cloth", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:cloth_bracers", "count": 1, "components": { "heroicpaths:gear_grade": 2 } }
+}

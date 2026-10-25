@@ -14,14 +14,14 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TridentItem;
 
 /**
- * Что считается оружием и бронёй. Оно не выпадает при смерти, а теряет прочность, и его нельзя чинить.
+ * Что считается оружием и бронёй. Оно не изнашивается в бою, не выпадает при смерти, а теряет прочность, и его нельзя чинить.
  * Мечи, топоры, луки, арбалеты, трезубцы, булавы, щиты, жезлы и посохи и любая броня, плюс всё из тега {@code heroicpaths:gear}
  * (туда модпак может добавить оружие других модов).
  */
 public final class GearRules {
     public static final TagKey<Item> GEAR = TagKey.create(Registries.ITEM, HeroicPaths.id("gear"));
-    /** Сколько прочности снаряжение теряет при смерти: 20% от максимума. */
-    public static final float DEATH_DURABILITY_LOSS = 0.2f;
+    /** Сколько прочности снаряжение теряет при смерти: 5% от максимума. */
+    public static final float DEATH_DURABILITY_LOSS = 0.05f;
 
     private GearRules() {}
 

@@ -49,6 +49,8 @@ public class HeroicPathsClient {
         container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
         container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new SettingsScreen(parent));
         modBus.addListener(HeroicPathsClient::onRegisterKeys);
+        modBus.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) ->
+                event.register(com.heroicpaths.registry.ModMenus.ACCESSORIES.get(), AccessoryScreen::new));
         modBus.addListener(HeroicPathsClient::onRegisterGuiLayers);
         modBus.addListener(HeroicPathsClient::onRegisterRenderers);
         modBus.addListener(HeroicPathsClient::onClientSetup);
@@ -107,7 +109,7 @@ public class HeroicPathsClient {
     /** Новые луки натягиваются так же, как обычный: те же свойства модели pull и pulling. */
     private static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            for (Item bow : new Item[]{ModItems.COMPOSITE_BOW.get(), ModItems.RANGER_LONGBOW.get()}) {
+            for (Item bow : BuiltInRegistries.ITEM.stream().filter(item -> item instanceof com.heroicpaths.item.GradedBowItem).toList()) {
                 ItemProperties.register(bow, ResourceLocation.withDefaultNamespace("pull"), (stack, level, entity, seed) ->
                         entity == null || entity.getUseItem() != stack ? 0f
                                 : (stack.getUseDuration(entity) - entity.getUseItemRemainingTicks()) / 20f);
@@ -125,7 +127,7 @@ public class HeroicPathsClient {
                         com.heroicpaths.item.SoulStoneItem.souls(stack) > 0 ? 1f : 0f);
             }
             // Ручные арбалеты: те же свойства модели, что у обычного арбалета, но со своим временем зарядки.
-            for (Item crossbow : new Item[]{ModItems.HAND_CROSSBOW.get(), ModItems.STEEL_HAND_CROSSBOW.get(), ModItems.DAMASCUS_HAND_CROSSBOW.get()}) {
+            for (Item crossbow : BuiltInRegistries.ITEM.stream().filter(item -> item instanceof HandCrossbowItem).toList()) {
                 ItemProperties.register(crossbow, ResourceLocation.withDefaultNamespace("pull"), (stack, level, entity, seed) ->
                         entity == null || CrossbowItem.isCharged(stack) || !(stack.getItem() instanceof HandCrossbowItem hand) ? 0f
                                 : (stack.getUseDuration(entity) - entity.getUseItemRemainingTicks()) / (float) hand.chargeDuration(stack, entity));
@@ -150,6 +152,7 @@ public class HeroicPathsClient {
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(ModKeys.OPEN_SKILLS);
+        event.register(ModKeys.OPEN_ACCESSORIES);
         for (KeyMapping key : ModKeys.ABILITIES) event.register(key);
     }
 
@@ -186,6 +189,9 @@ public class HeroicPathsClient {
         if (minecraft.player == null) return;
         while (ModKeys.OPEN_SKILLS.consumeClick()) {
             minecraft.setScreen(new RpgScreen());
+        }
+        while (ModKeys.OPEN_ACCESSORIES.consumeClick()) {
+            PacketDistributor.sendToServer(com.heroicpaths.network.OpenAccessoriesPayload.INSTANCE);
         }
         for (int slot = 0; slot < ModKeys.ABILITIES.length; slot++) {
             while (ModKeys.ABILITIES[slot].consumeClick()) {

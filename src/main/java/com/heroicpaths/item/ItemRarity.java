@@ -126,7 +126,8 @@ public final class ItemRarity {
     /** Редкость есть у нескладываемых предметов с прочностью (оружие, инструменты, броня, луки, щиты) и у жезлов и посохов. */
     public static boolean canHaveRarity(ItemStack stack) {
         return !stack.isEmpty() && stack.getMaxStackSize() == 1
-                && (stack.has(DataComponents.MAX_DAMAGE) || stack.getItem() instanceof FocusItem);
+                && (stack.has(DataComponents.MAX_DAMAGE) || stack.getItem() instanceof FocusItem
+                || stack.getItem() instanceof com.heroicpaths.accessory.AccessoryItem);
     }
 
     @Nullable
@@ -225,6 +226,24 @@ public final class ItemRarity {
         }
         applyStats(stack, Tier.RELIC, traits);
         return true;
+    }
+
+    /**
+     * Вещь сменила предмет (заготовка на наковальне подняла её грейд): урон, броня, прочность и название
+     * считаются заново от нового прототипа, редкость, бонусы и чары остаются.
+     */
+    public static void refresh(ItemStack stack) {
+        resetToPrototype(stack, DataComponents.ATTRIBUTE_MODIFIERS);
+        resetToPrototype(stack, DataComponents.MAX_DAMAGE);
+        resetToPrototype(stack, DataComponents.ITEM_NAME);
+        Tier tier = get(stack);
+        if (tier != null) applyStats(stack, tier, traits(stack));
+    }
+
+    private static <T> void resetToPrototype(ItemStack stack, net.minecraft.core.component.DataComponentType<T> type) {
+        T value = stack.getPrototype().get(type);
+        if (value == null) stack.remove(type);
+        else stack.set(type, value);
     }
 
     /** Ставит редкость с готовыми бонусами: прочность, урон, броня и цвет названия считаются от прототипа. */
@@ -338,6 +357,10 @@ public final class ItemRarity {
         com.heroicpaths.craft.SoulStones.Payment payment = com.heroicpaths.craft.SoulStones.settle(player, roll(player.getRandom(), rank));
         Tier tier = payment.tier();
         apply(target, tier, player.getRandom(), player.level().registryAccess());
+        com.heroicpaths.gear.GearSet set = com.heroicpaths.gear.GearSets.roll(target, player.getRandom());
+        if (set != null && player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(Component.translatable("message.heroicpaths.crafted_set", set.displayName()).withStyle(ChatFormatting.GOLD));
+        }
         if (payment.wanted() != null && player instanceof ServerPlayer serverPlayer) {
             serverPlayer.sendSystemMessage(com.heroicpaths.craft.SoulStones.shortMessage(payment));
         }

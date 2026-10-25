@@ -51,6 +51,7 @@ public class HeroicPaths {
         com.heroicpaths.registry.ModWorldgen.PIECES.register(modBus);
         com.heroicpaths.registry.ModParticles.PARTICLES.register(modBus);
         ModAttachments.ATTACHMENT_TYPES.register(modBus);
+        com.heroicpaths.registry.ModMenus.MENUS.register(modBus);
         ModVillagers.POI_TYPES.register(modBus);
         ModVillagers.PROFESSIONS.register(modBus);
         ModCreativeTabs.CREATIVE_TABS.register(modBus);
@@ -75,6 +76,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(DungeonRules.class);
         NeoForge.EVENT_BUS.register(PartyManager.class);
         NeoForge.EVENT_BUS.register(GearEvents.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.gear.GearSets.class);
         NeoForge.EVENT_BUS.register(WeaponCombat.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.Stamina.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.MobLevels.class);

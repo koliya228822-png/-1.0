@@ -4,11 +4,20 @@
     "heroicpaths:iron_buckler",
     "heroicpaths:steel_buckler",
     "heroicpaths:damascus_buckler",
+    "heroicpaths:diamond_buckler",
+    "heroicpaths:faceted_buckler",
+    "heroicpaths:brilliant_buckler",
     "heroicpaths:iron_heater_shield",
     "heroicpaths:steel_heater_shield",
     "heroicpaths:damascus_heater_shield",
+    "heroicpaths:diamond_heater_shield",
+    "heroicpaths:faceted_heater_shield",
+    "heroicpaths:brilliant_heater_shield",
     "heroicpaths:iron_kite_shield",
     "heroicpaths:steel_kite_shield",
-    "heroicpaths:damascus_kite_shield"
+    "heroicpaths:damascus_kite_shield",
+    "heroicpaths:diamond_kite_shield",
+    "heroicpaths:faceted_kite_shield",
+    "heroicpaths:brilliant_kite_shield"
   ]
 }

@@ -65,12 +65,18 @@ public final class StationCrafting {
         return consume(inventory, recipe.ingredients(), true);
     }
 
-    /** Ступень ремесла, нужная для рецепта: по грейду вещи или ступени материала (I — новичок, II — подмастерье, III — мастер-ремесленник). */
+    /**
+     * Ступень ремесла, нужная для рецепта: по грейду вещи или ступени материала (I — новичок, II — подмастерье,
+     * III — мастер-ремесленник, IV–VI — гроссмейстер).
+     */
     public static int requiredRank(StationRecipe recipe) {
         int grade = Grades.of(recipe.result());
         if (grade == 0) grade = Grades.materialGrade(recipe.result());
-        return Math.max(Professions.MIN_RANK, grade);
+        return Math.max(Professions.MIN_RANK, Math.min(GrandmasterForging.RANK, grade));
     }
+
+    /** Шанс, что камень расколется при огранке (ингредиенты пропадают, результата нет). */
+    public static final float CUT_BREAK_CHANCE = 0.5f;
 
     public static boolean isUnlocked(Player player, StationRecipe recipe) {
         return RpgManager.get(player).professions().rank(Profession.of(recipe.station())) >= requiredRank(recipe);
@@ -128,14 +134,23 @@ public final class StationCrafting {
         }
 
         int limit = all ? Math.max(1, recipe.result().getMaxStackSize() / Math.max(1, recipe.result().getCount())) : 1;
-        int crafted = 0;
+        int crafted = 0, broken = 0;
         while (crafted < limit && consume(player.getInventory(), recipe.ingredients(), true)) {
             consume(player.getInventory(), recipe.ingredients(), false);
+            crafted++;
+            if (recipe.station() == Station.GEM_TABLE && player.getRandom().nextFloat() < CUT_BREAK_CHANCE) {
+                broken++;
+                continue;
+            }
             ItemStack result = recipe.result().copy();
             if (ItemRarity.canHaveRarity(result)) ItemRarity.rollFor(player, result, profession);
             result.onCraftedBy(player.level(), player, result.getCount());
             if (!player.getInventory().add(result)) player.drop(result, false);
-            crafted++;
+        }
+        if (broken > 0) {
+            player.displayClientMessage(Component.translatable("message.heroicpaths.gem_broken", broken, crafted)
+                    .withStyle(ChatFormatting.RED), true);
+            player.serverLevel().playSound(null, pos, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 1f, 0.8f);
         }
         if (crafted > 0) {
             ProfessionProgress.award(player, profession, craftXp(recipe) * crafted);
@@ -151,6 +166,8 @@ public final class StationCrafting {
             case TANNERY -> SoundEvents.ARMOR_EQUIP_LEATHER.value();
             case LOOM -> SoundEvents.UI_LOOM_TAKE_RESULT;
             case RUNE_TABLE -> SoundEvents.ENCHANTMENT_TABLE_USE;
+            case GEM_TABLE -> SoundEvents.GRINDSTONE_USE;
+            case JEWELER_TABLE -> SoundEvents.AMETHYST_BLOCK_CHIME;
         };
     }
 

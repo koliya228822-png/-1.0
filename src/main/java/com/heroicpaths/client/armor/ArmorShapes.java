@@ -5,7 +5,7 @@ package com.heroicpaths.client.armor;
 // кубоид x y z, размер w h d, раздувание, зеркальная развёртка.
 public final class ArmorShapes {
     public static final int TEX_W = 128, TEX_H = 128;
-    public static final String[] SETS = {"warrior_iron", "warrior", "warrior_damascus", "archer_leather", "archer", "archer_impregnated", "mage_wool", "mage", "mage_astral"};
+    public static final String[] SETS = {"warrior_iron", "warrior", "warrior_damascus", "archer_leather", "archer", "archer_impregnated", "mage_wool", "mage", "mage_astral", "warrior_diamond", "warrior_faceted", "warrior_brilliant", "archer_diamond", "archer_faceted", "archer_brilliant", "mage_diamond", "mage_faceted", "mage_brilliant"};
 
     private ArmorShapes() {}
 
@@ -67,23 +67,6 @@ public final class ArmorShapes {
             {0, -1, 0, 0, 0, 0, 0, 0, 0, 17, -5.4F, -0.75F, -5.4F, 10.8F, 1.5F, 10.8F, 0, 0},
             {0, -1, 0, -10, 0.5F, -0.349F, 0, 0, 48, 42, -0.75F, -3.5F, -2.25F, 1.5F, 3.5F, 4.5F, 0, 0},
             {0, 4, 0, 0, 2.25F, -0.785F, 0, 0, 0, 52, -0.6F, -3.5F, -0.75F, 1.2F, 3.5F, 2, 0, 0},
-    };
-
-    private static final float[][] WARRIOR_CHEST = {
-            {1, -1, 0, 0, 0, 0, 0, 0, 33, 0, -4, 0, -2, 8, 12, 4, 1, 0},
-            {1, -1, 0, 0, 0, 0, 0, 0, 0, 42, -5.25F, -1.5F, -3.25F, 10.5F, 2, 6.5F, 0, 0},
-            {1, -1, 0, 0, 0, 0, 0, 0, 68, 17, -2.25F, 1.5F, -3.5F, 4.5F, 10.25F, 0.5F, 0, 0},
-            {1, -1, 0, 0, 0, 0, 0, 0, 83, 31, -5.25F, 10.5F, -3.25F, 10.5F, 2.25F, 6.5F, 0, 0},
-            {2, -1, 0, 0, 0, 0, 0, 0, 100, 17, -4.5F, -3.75F, -3.5F, 6, 2.5F, 7, 0, 0},
-            {2, -1, 0, 0, 0, 0, 0, 0, 56, 31, -4.75F, -1.5F, -3.6F, 5.5F, 1.75F, 7.2F, 0, 0},
-            {2, -1, 0, 0, 0, 0, 0, 0, 29, 31, -5, 0, -3.75F, 5.25F, 1.75F, 7.5F, 0, 0},
-            {3, -1, 0, 0, 0, 0, 0, 0, 100, 17, -1.5F, -3.75F, -3.5F, 6, 2.5F, 7, 0.02F, 1},
-            {3, -1, 0, 0, 0, 0, 0, 0, 56, 31, -0.75F, -1.5F, -3.6F, 5.5F, 1.75F, 7.2F, 0.02F, 1},
-            {3, -1, 0, 0, 0, 0, 0, 0, 29, 31, -0.25F, 0, -3.75F, 5.25F, 1.75F, 7.5F, 0.02F, 1},
-            {2, -1, 0, 0, 0, 0, 0, 0, 58, 0, -3, -2, -2, 4, 12, 4, 1, 0},
-            {3, -1, 0, 0, 0, 0, 0, 0, 58, 0, -1, -2, -2, 4, 12, 4, 1.02F, 1},
-            {2, -1, 0, 0, 0, 0, 0, 0, 0, 31, -4.4F, 7.5F, -3.4F, 6.8F, 2.5F, 6.8F, 0, 0},
-            {3, -1, 0, 0, 0, 0, 0, 0, 0, 31, -2.4F, 7.5F, -3.4F, 6.8F, 2.5F, 6.8F, 0.02F, 1},
     };
 
     private static final float[][] WARRIOR_LEGS = {
@@ -644,7 +627,7 @@ public final class ArmorShapes {
             case "warrior_iron/legs" -> WARRIOR_IRON_LEGS;
             case "warrior_iron/feet" -> WARRIOR_IRON_FEET;
             case "warrior/head" -> WARRIOR_HEAD;
-            case "warrior/chest" -> WARRIOR_CHEST;
+            case "warrior/chest" -> WARRIOR_IRON_CHEST;
             case "warrior/legs" -> WARRIOR_LEGS;
             case "warrior/feet" -> WARRIOR_FEET;
             case "warrior_damascus/head" -> WARRIOR_DAMASCUS_HEAD;
@@ -675,6 +658,42 @@ public final class ArmorShapes {
             case "mage_astral/chest" -> MAGE_ASTRAL_CHEST;
             case "mage_astral/legs" -> MAGE_ASTRAL_LEGS;
             case "mage_astral/feet" -> MAGE_ASTRAL_FEET;
+            case "warrior_diamond/head" -> WARRIOR_DAMASCUS_HEAD;
+            case "warrior_diamond/chest" -> WARRIOR_DAMASCUS_CHEST;
+            case "warrior_diamond/legs" -> WARRIOR_DAMASCUS_LEGS;
+            case "warrior_diamond/feet" -> WARRIOR_DAMASCUS_FEET;
+            case "warrior_faceted/head" -> WARRIOR_DAMASCUS_HEAD;
+            case "warrior_faceted/chest" -> WARRIOR_DAMASCUS_CHEST;
+            case "warrior_faceted/legs" -> WARRIOR_DAMASCUS_LEGS;
+            case "warrior_faceted/feet" -> WARRIOR_DAMASCUS_FEET;
+            case "warrior_brilliant/head" -> WARRIOR_DAMASCUS_HEAD;
+            case "warrior_brilliant/chest" -> WARRIOR_DAMASCUS_CHEST;
+            case "warrior_brilliant/legs" -> WARRIOR_DAMASCUS_LEGS;
+            case "warrior_brilliant/feet" -> WARRIOR_DAMASCUS_FEET;
+            case "archer_diamond/head" -> ARCHER_IMPREGNATED_HEAD;
+            case "archer_diamond/chest" -> ARCHER_IMPREGNATED_CHEST;
+            case "archer_diamond/legs" -> ARCHER_IMPREGNATED_LEGS;
+            case "archer_diamond/feet" -> ARCHER_IMPREGNATED_FEET;
+            case "archer_faceted/head" -> ARCHER_IMPREGNATED_HEAD;
+            case "archer_faceted/chest" -> ARCHER_IMPREGNATED_CHEST;
+            case "archer_faceted/legs" -> ARCHER_IMPREGNATED_LEGS;
+            case "archer_faceted/feet" -> ARCHER_IMPREGNATED_FEET;
+            case "archer_brilliant/head" -> ARCHER_IMPREGNATED_HEAD;
+            case "archer_brilliant/chest" -> ARCHER_IMPREGNATED_CHEST;
+            case "archer_brilliant/legs" -> ARCHER_IMPREGNATED_LEGS;
+            case "archer_brilliant/feet" -> ARCHER_IMPREGNATED_FEET;
+            case "mage_diamond/head" -> MAGE_ASTRAL_HEAD;
+            case "mage_diamond/chest" -> MAGE_ASTRAL_CHEST;
+            case "mage_diamond/legs" -> MAGE_ASTRAL_LEGS;
+            case "mage_diamond/feet" -> MAGE_ASTRAL_FEET;
+            case "mage_faceted/head" -> MAGE_ASTRAL_HEAD;
+            case "mage_faceted/chest" -> MAGE_ASTRAL_CHEST;
+            case "mage_faceted/legs" -> MAGE_ASTRAL_LEGS;
+            case "mage_faceted/feet" -> MAGE_ASTRAL_FEET;
+            case "mage_brilliant/head" -> MAGE_ASTRAL_HEAD;
+            case "mage_brilliant/chest" -> MAGE_ASTRAL_CHEST;
+            case "mage_brilliant/legs" -> MAGE_ASTRAL_LEGS;
+            case "mage_brilliant/feet" -> MAGE_ASTRAL_FEET;
             default -> null;
         };
     }

@@ -1,0 +1,9 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "heroicpaths:impregnated_leather", "count": 2 },
+    { "item": "minecraft:diamond", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:leather_bracers", "count": 1, "components": { "heroicpaths:gear_grade": 4 } }
+}

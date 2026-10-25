@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/gem_table_top",
+    "front": "heroicpaths:block/gem_table_front",
+    "side": "heroicpaths:block/gem_table_side"
+  }
+}

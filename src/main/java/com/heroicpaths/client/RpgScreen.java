@@ -49,7 +49,7 @@ import java.util.Set;
  * и характеристики (вложение очков).
  */
 public class RpgScreen extends Screen {
-    private enum Tab { TREE, ABILITIES, STATS, CRAFTS }
+    private enum Tab { TREE, ABILITIES, STATS, CRAFTS, BOOK }
 
     private static final ResourceLocation NODE_SMALL = HeroicPaths.id("textures/gui/node_small.png");
     private static final ResourceLocation NODE_NOTABLE = HeroicPaths.id("textures/gui/node_notable.png");
@@ -116,11 +116,15 @@ public class RpgScreen extends Screen {
             case ABILITIES -> initAbilitiesTab(data);
             case STATS -> initStatsTab(data);
             case CRAFTS -> { }
+            case BOOK -> initBookTab();
         }
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds(width - 106, height - 26, 100, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("screen.heroicpaths.settings_button"),
                 b -> minecraft.setScreen(new SettingsScreen(this))).bounds(width - 212, height - 26, 100, 20).build());
+        addRenderableWidget(Button.builder(Component.translatable("screen.heroicpaths.accessories_button"),
+                b -> PacketDistributor.sendToServer(com.heroicpaths.network.OpenAccessoriesPayload.INSTANCE))
+                .bounds(width - 318, height - 26, 100, 20).build());
     }
 
     private void switchTab(Tab target) {
@@ -354,12 +358,48 @@ public class RpgScreen extends Screen {
             case ABILITIES -> renderAbilitiesHeader(graphics, data);
             case STATS -> renderStats(graphics, data);
             case CRAFTS -> renderCrafts(graphics, data, mouseX, mouseY);
+            case BOOK -> renderBook(graphics, mouseX, mouseY);
         }
+    }
+
+    // ---------------------------------------------------------------- книга крафтов
+
+    private final CraftBookView book = new CraftBookView();
+
+    /** Кнопки разделов книги: станки и верстак — в ряд под вкладками. */
+    private void initBookTab() {
+        int count = CraftBookView.categories();
+        int buttonWidth = Math.max(40, Math.min(90, (width - 16) / count - 2));
+        int startX = width / 2 - (count * (buttonWidth + 2) - 2) / 2;
+        for (int i = 0; i < count; i++) {
+            int index = i;
+            Button button = Button.builder(CraftBookView.categoryName(i), b -> {
+                book.select(index);
+                rebuildWidgets();
+            }).bounds(startX + i * (buttonWidth + 2), CONTENT_TOP, buttonWidth, 16).build();
+            button.active = i != CraftBookView.category();
+            addRenderableWidget(button);
+        }
+    }
+
+    private int bookLeft() {
+        return Math.max(8, width / 2 - 230);
+    }
+
+    private int bookTop() {
+        return CONTENT_TOP + 20;
+    }
+
+    private void renderBook(GuiGraphics graphics, int mouseX, int mouseY) {
+        int left = bookLeft();
+        int right = width - left - 8;
+        ItemStack hovered = book.render(graphics, font, minecraft, left, bookTop(), right, height - 32, mouseX, mouseY);
+        if (!hovered.isEmpty()) graphics.renderTooltip(font, hovered, mouseX, mouseY);
     }
 
     // ---------------------------------------------------------------- ремёсла
 
-    private static final String[] GRADE_RANGE = {"", "I", "I–II", "I–III", "I–III", "I–III"};
+    private static final String[] GRADE_RANGE = {"", "I", "I–II", "I–III", "I–VI", "I–VI"};
 
     /**
      * Три ремесла: ступень, опыт до следующей, какой трактат нужен, открытые грейды и шансы редкости.
@@ -753,6 +793,7 @@ public class RpgScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (tab == Tab.BOOK && scrollY != 0) return book.scroll(scrollY, Math.max(1, (height - 32 - bookTop()) / CraftBookView.ROW));
         if (tab != Tab.TREE || scrollY == 0) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         float old = zoom;
         zoom = Mth.clamp(zoom * (scrollY > 0 ? 1.15f : 1 / 1.15f), 0.25f, 2.0f);

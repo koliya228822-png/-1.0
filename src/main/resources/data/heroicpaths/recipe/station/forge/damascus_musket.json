@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:damascus_ingot", "count": 2 },
+    { "item": "minecraft:flint_and_steel", "count": 1 },
+    { "tag": "minecraft:planks", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:damascus_musket", "count": 1 }
+}

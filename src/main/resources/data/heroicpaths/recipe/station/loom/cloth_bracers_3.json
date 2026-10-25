@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "loom",
+  "ingredients": [
+    { "item": "heroicpaths:astral_silk", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:cloth_bracers", "count": 1, "components": { "heroicpaths:gear_grade": 3 } }
+}

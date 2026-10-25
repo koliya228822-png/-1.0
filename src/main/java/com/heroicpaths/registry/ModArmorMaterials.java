@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 /**
  * Материалы классовой брони трёх грейдов: латы мечника (железо → сталь → дамаск),
  * лёгкая броня (кожа → прочная → пропитанная), мантия мага (шерсть → чародейская ткань → астральный шёлк).
+ * Грейды IV–VI у всех трёх — алмазные (алмаз → гранёный алмаз → бриллиант).
  */
 public final class ModArmorMaterials {
     public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS =
@@ -48,6 +49,26 @@ public final class ModArmorMaterials {
             3, 6, 7, 2, 18, SoundEvents.ARMOR_EQUIP_LEATHER, () -> Ingredient.of(ModItems.IMPREGNATED_LEATHER.get()), 1.5f, 0f);
     public static final DeferredHolder<ArmorMaterial, ArmorMaterial> MAGE_ASTRAL = register("mage_astral",
             2, 5, 6, 2, 30, SoundEvents.ARMOR_EQUIP_GENERIC, () -> Ingredient.of(ModItems.ASTRAL_SILK.get()), 1.0f, 0f);
+
+    // Грейды IV–VI: алмаз, гранёный алмаз, бриллиант
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> WARRIOR_DIAMOND = register("warrior_diamond",
+            4, 7, 9, 4, 18, SoundEvents.ARMOR_EQUIP_DIAMOND, () -> Ingredient.of(Items.DIAMOND), 3.0f, 0.1f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> WARRIOR_FACETED = register("warrior_faceted",
+            4, 8, 10, 4, 20, SoundEvents.ARMOR_EQUIP_DIAMOND, () -> Ingredient.of(ModItems.FACETED_DIAMOND.get()), 3.5f, 0.12f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> WARRIOR_BRILLIANT = register("warrior_brilliant",
+            4, 8, 11, 5, 22, SoundEvents.ARMOR_EQUIP_DIAMOND, () -> Ingredient.of(ModItems.BRILLIANT.get()), 4.0f, 0.15f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ARCHER_DIAMOND = register("archer_diamond",
+            3, 6, 8, 3, 20, SoundEvents.ARMOR_EQUIP_LEATHER, () -> Ingredient.of(Items.DIAMOND), 2.0f, 0f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ARCHER_FACETED = register("archer_faceted",
+            3, 7, 8, 3, 22, SoundEvents.ARMOR_EQUIP_LEATHER, () -> Ingredient.of(ModItems.FACETED_DIAMOND.get()), 2.5f, 0f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> ARCHER_BRILLIANT = register("archer_brilliant",
+            4, 7, 9, 3, 24, SoundEvents.ARMOR_EQUIP_LEATHER, () -> Ingredient.of(ModItems.BRILLIANT.get()), 3.0f, 0f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> MAGE_DIAMOND = register("mage_diamond",
+            2, 5, 7, 3, 32, SoundEvents.ARMOR_EQUIP_GENERIC, () -> Ingredient.of(Items.DIAMOND), 1.5f, 0f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> MAGE_FACETED = register("mage_faceted",
+            3, 6, 7, 3, 34, SoundEvents.ARMOR_EQUIP_GENERIC, () -> Ingredient.of(ModItems.FACETED_DIAMOND.get()), 2.0f, 0f);
+    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> MAGE_BRILLIANT = register("mage_brilliant",
+            3, 6, 8, 3, 36, SoundEvents.ARMOR_EQUIP_GENERIC, () -> Ingredient.of(ModItems.BRILLIANT.get()), 2.5f, 0f);
 
     private ModArmorMaterials() {}
 

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ " D ", "IGI", "SSS" ],
+  "key": { "D": { "item": "minecraft:diamond" }, "G": { "item": "minecraft:grindstone" }, "I": { "item": "minecraft:iron_ingot" }, "S": { "item": "minecraft:polished_andesite" } },
+  "result": { "id": "heroicpaths:gem_table", "count": 1 }
+}

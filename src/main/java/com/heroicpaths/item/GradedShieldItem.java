@@ -13,6 +13,9 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 
 import java.util.List;
+import net.minecraft.world.entity.LivingEntity;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Щит с грейдом, как у оружия: железо (I), сталь (II), дамаск (III). Блокирует как обычный щит,
@@ -42,7 +45,7 @@ public class GradedShieldItem extends ShieldItem {
     }
 
     private static double gradeFactor(int grade) {
-        return grade == 1 ? 1 : grade == 2 ? 1.5 : 2;
+        return 1 + 0.5 * (Math.max(1, grade) - 1);
     }
 
     public static int durability(Type type, int grade) {
@@ -51,7 +54,8 @@ public class GradedShieldItem extends ShieldItem {
             case HEATER -> 336;
             case KITE -> 450;
         };
-        return (int) Math.round(base * (grade == 1 ? 1 : grade == 2 ? 1.8 : 3));
+        double[] factor = {1, 1, 1.8, 3, 4, 5, 6.5};
+        return (int) Math.round(base * factor[Math.max(1, Math.min(6, grade))]);
     }
 
     public static ItemAttributeModifiers attributes(Type type, int grade) {
@@ -82,5 +86,11 @@ public class GradedShieldItem extends ShieldItem {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.heroicpaths.shield." + type.name().toLowerCase()).withStyle(ChatFormatting.GRAY));
+    }
+
+    /** Снаряжение не изнашивается в бою: прочность уходит только при смерти. */
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        return 0;
     }
 }

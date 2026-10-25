@@ -19,6 +19,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
+import net.minecraft.world.entity.LivingEntity;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Мушкет: бьёт сильнее лука, но стреляет недалеко и медленно перезаряжается. Стреляет пулями из инвентаря.
@@ -30,8 +33,36 @@ public class MusketItem extends Item {
     public static final float SPEED = 5f;
     public static final String STEADY_AIM = "heroicpaths.steady_aim_until";
 
-    public MusketItem(Properties properties) {
+    private final int grade;
+    private final float damage;
+    private final int reloadTicks;
+
+    /** С каждым грейдом урон растёт, а перезарядка короче. */
+    public MusketItem(int grade, Properties properties) {
         super(properties);
+        this.grade = grade;
+        this.damage = damage(grade);
+        this.reloadTicks = reloadTicks(grade);
+    }
+
+    public int grade() {
+        return grade;
+    }
+
+    public float damage() {
+        return damage;
+    }
+
+    public int reloadTicks() {
+        return reloadTicks;
+    }
+
+    public static float damage(int grade) {
+        return BASE_DAMAGE * (1f + 0.3f * (grade - 1));
+    }
+
+    public static int reloadTicks(int grade) {
+        return Math.max(20, RELOAD_TICKS - 4 * (grade - 1));
     }
 
     @Override
@@ -45,7 +76,7 @@ public class MusketItem extends Item {
             return InteractionResultHolder.fail(musket);
         }
         if (level instanceof ServerLevel serverLevel) {
-            float damage = BASE_DAMAGE;
+            float damage = this.damage;
             boolean steady = player.getPersistentData().getLong(STEADY_AIM) > level.getGameTime();
             if (steady) {
                 damage *= 2f;
@@ -64,7 +95,7 @@ public class MusketItem extends Item {
             if (!player.getAbilities().instabuild) ammo.shrink(1);
             musket.hurtAndBreak(1, player, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
         }
-        player.getCooldowns().addCooldown(this, RELOAD_TICKS);
+        player.getCooldowns().addCooldown(this, reloadTicks);
         return InteractionResultHolder.consume(musket);
     }
 
@@ -83,7 +114,13 @@ public class MusketItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.heroicpaths.musket.hint", Math.round(BASE_DAMAGE), RELOAD_TICKS / 20f)
+        tooltip.add(Component.translatable("item.heroicpaths.musket.hint", Math.round(damage), reloadTicks / 20f)
                 .withStyle(ChatFormatting.GRAY));
+    }
+
+    /** Снаряжение не изнашивается в бою: прочность уходит только при смерти. */
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        return 0;
     }
 }

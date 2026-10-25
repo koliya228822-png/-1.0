@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:steel_plate", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:plate_bracers", "count": 1, "components": { "heroicpaths:gear_grade": 2 } }
+}

@@ -23,12 +23,13 @@ import java.util.function.Supplier;
 /**
  * Ремесло игрока. Кузнец работает у горна (металлическое оружие и латы), плотник — у дубильного чана
  * и ткацкого станка (луки, арбалеты, кожаная броня и мантии), рунный мастер — у рунного стола
- * (руны, жезлы, посохи и рунные зачарования).
+ * (руны, жезлы, посохи и рунные зачарования), ювелир — у гранильного стола и стола ювелира (огранка алмазов и украшения).
  */
 public enum Profession {
     BLACKSMITH(ChatFormatting.GOLD, () -> ModItems.BLACKSMITH_MANUAL.get()),
     CARPENTER(ChatFormatting.GREEN, () -> ModItems.CARPENTRY_MANUAL.get()),
-    RUNECRAFTER(ChatFormatting.AQUA, () -> ModItems.RUNECRAFT_MANUAL.get());
+    RUNECRAFTER(ChatFormatting.AQUA, () -> ModItems.RUNECRAFT_MANUAL.get()),
+    JEWELER(ChatFormatting.LIGHT_PURPLE, () -> ModItems.JEWELER_MANUAL.get());
 
     private final ChatFormatting color;
     private final Supplier<Item> manual;
@@ -67,6 +68,7 @@ public enum Profession {
             case FORGE -> BLACKSMITH;
             case TANNERY, LOOM -> CARPENTER;
             case RUNE_TABLE -> RUNECRAFTER;
+            case GEM_TABLE, JEWELER_TABLE -> JEWELER;
         };
     }
 
@@ -74,6 +76,10 @@ public enum Profession {
     public static Profession forItem(ItemStack stack) {
         Item item = stack.getItem();
         if (item instanceof FocusItem) return RUNECRAFTER;
+        if (item instanceof com.heroicpaths.accessory.AccessoryItem accessory) {
+            if (accessory.armorClass() == null) return JEWELER;
+            return accessory.armorClass() == PlayerClass.WARRIOR ? BLACKSMITH : CARPENTER;
+        }
         if (item instanceof ProjectileWeaponItem || item instanceof MusketItem || item instanceof ShieldItem) return CARPENTER;
         if (item instanceof ClassArmorItem armor) {
             return ClassArmorItem.armorClass(armor.playerClass()) == PlayerClass.WARRIOR ? BLACKSMITH : CARPENTER;
@@ -94,6 +100,7 @@ public enum Profession {
             return CARPENTER;
         }
         if (villager == VillagerProfession.LIBRARIAN || villager == VillagerProfession.CLERIC) return RUNECRAFTER;
+        if (villager == VillagerProfession.MASON) return JEWELER;
         return null;
     }
 }

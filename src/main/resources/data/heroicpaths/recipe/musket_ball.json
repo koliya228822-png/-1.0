@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shapeless",
   "category": "equipment",
-  "ingredients": [ { "item": "minecraft:iron_nugget" }, { "item": "minecraft:gunpowder" } ],
-  "result": { "id": "heroicpaths:musket_ball", "count": 4 }
+  "ingredients": [ { "item": "minecraft:gunpowder" }, { "item": "minecraft:iron_nugget" }, { "item": "minecraft:paper" } ],
+  "result": { "id": "heroicpaths:musket_ball", "count": 16 }
 }

@@ -42,6 +42,9 @@ public final class ModNetwork {
                 ContractService.takeFromBoard(player, type);
             }
         });
+        registrar.playToServer(OpenAccessoriesPayload.TYPE, OpenAccessoriesPayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) com.heroicpaths.accessory.AccessoryMenu.open(player);
+        });
         registrar.playToClient(OpenStationPayload.TYPE, OpenStationPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.ClientHooks.openStation(payload.station(), payload.pos()));
         registrar.playToServer(StationCraftPayload.TYPE, StationCraftPayload.STREAM_CODEC, (payload, context) -> {

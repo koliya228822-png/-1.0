@@ -28,9 +28,9 @@ public final class ModCreativeTabs {
                             output.accept(com.heroicpaths.item.SoulStoneItem.full(stone.get()));
                         }
                         // Трактаты ремёсел всех ступеней.
-                        for (var manual : java.util.List.of(ModItems.BLACKSMITH_MANUAL, ModItems.CARPENTRY_MANUAL, ModItems.RUNECRAFT_MANUAL)) {
+                        for (var craft : com.heroicpaths.craft.Profession.values()) {
                             for (int rank = 2; rank <= com.heroicpaths.craft.Professions.MAX_RANK; rank++) {
-                                output.accept(com.heroicpaths.item.ProfessionManualItem.create(manual.get(), rank));
+                                output.accept(com.heroicpaths.item.ProfessionManualItem.create(craft.manual(), rank));
                             }
                         }
                         // По книге на каждое умение, которое учат по книгам.

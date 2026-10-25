@@ -4,11 +4,20 @@
     "heroicpaths:warrior_helmet",
     "heroicpaths:warrior_iron_helmet",
     "heroicpaths:warrior_damascus_helmet",
+    "heroicpaths:warrior_diamond_helmet",
+    "heroicpaths:warrior_faceted_helmet",
+    "heroicpaths:warrior_brilliant_helmet",
     "heroicpaths:archer_helmet",
     "heroicpaths:archer_leather_helmet",
     "heroicpaths:archer_impregnated_helmet",
+    "heroicpaths:archer_diamond_helmet",
+    "heroicpaths:archer_faceted_helmet",
+    "heroicpaths:archer_brilliant_helmet",
     "heroicpaths:mage_helmet",
     "heroicpaths:mage_wool_helmet",
-    "heroicpaths:mage_astral_helmet"
+    "heroicpaths:mage_astral_helmet",
+    "heroicpaths:mage_diamond_helmet",
+    "heroicpaths:mage_faceted_helmet",
+    "heroicpaths:mage_brilliant_helmet"
   ]
 }

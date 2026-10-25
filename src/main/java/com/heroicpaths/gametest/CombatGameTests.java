@@ -227,7 +227,7 @@ public class CombatGameTests {
         float paired = hit(player, dual, 6);
         // Железный кинжал бьёт на 4 (1 + 1 + 2): вторая рука добавляет половину — 2.
         helper.assertTrue(Math.abs(alone - 6f) < 0.01f && Math.abs(paired - 8f) < 0.01f, "dual: alone " + alone + ", paired " + paired);
-        helper.assertTrue(player.getOffhandItem().getDamageValue() == 1, "the off-hand weapon must lose durability");
+        helper.assertTrue(player.getOffhandItem().getDamageValue() == 0, "gear must not wear in combat");
 
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.IRON_WARHAMMER.get()));
         player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
@@ -251,7 +251,7 @@ public class CombatGameTests {
         // Железный кинжал бьёт на 4, второй такой же добавляет половину — 2.
         float paired = hit(player, pig, 4);
         helper.assertTrue(Math.abs(paired - 6f) < 0.01f, "paired daggers: " + paired);
-        helper.assertTrue(player.getMainHandItem().getDamageValue() == 0, "the pair must not spend durability twice");
+        helper.assertTrue(player.getMainHandItem().getDamageValue() == 0, "daggers must not wear in combat");
 
         // Кинжал во второй руке к мечу — по-прежнему обычная пара разного оружия, вторая рука не закрыта.
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.STEEL_SWORD.get()));

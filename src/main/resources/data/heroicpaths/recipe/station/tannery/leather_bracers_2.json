@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "tannery",
+  "ingredients": [
+    { "item": "heroicpaths:hardened_leather", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:leather_bracers", "count": 1, "components": { "heroicpaths:gear_grade": 2 } }
+}

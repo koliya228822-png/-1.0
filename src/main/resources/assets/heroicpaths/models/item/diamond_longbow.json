@@ -1,0 +1,14 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/diamond_longbow" },
+  "base": { "parent": "heroicpaths:item/3d/diamond_longbow" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/diamond_longbow" } }
+  },
+  "overrides": [
+    { "predicate": { "pulling": 1 }, "model": "heroicpaths:item/diamond_longbow_pulling_0" },
+    { "predicate": { "pulling": 1, "pull": 0.65 }, "model": "heroicpaths:item/diamond_longbow_pulling_1" },
+    { "predicate": { "pulling": 1, "pull": 0.9 }, "model": "heroicpaths:item/diamond_longbow_pulling_2" }
+  ]
+}

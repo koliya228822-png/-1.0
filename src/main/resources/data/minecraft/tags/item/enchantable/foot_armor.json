@@ -4,11 +4,20 @@
     "heroicpaths:warrior_boots",
     "heroicpaths:warrior_iron_boots",
     "heroicpaths:warrior_damascus_boots",
+    "heroicpaths:warrior_diamond_boots",
+    "heroicpaths:warrior_faceted_boots",
+    "heroicpaths:warrior_brilliant_boots",
     "heroicpaths:archer_boots",
     "heroicpaths:archer_leather_boots",
     "heroicpaths:archer_impregnated_boots",
+    "heroicpaths:archer_diamond_boots",
+    "heroicpaths:archer_faceted_boots",
+    "heroicpaths:archer_brilliant_boots",
     "heroicpaths:mage_boots",
     "heroicpaths:mage_wool_boots",
-    "heroicpaths:mage_astral_boots"
+    "heroicpaths:mage_astral_boots",
+    "heroicpaths:mage_diamond_boots",
+    "heroicpaths:mage_faceted_boots",
+    "heroicpaths:mage_brilliant_boots"
   ]
 }

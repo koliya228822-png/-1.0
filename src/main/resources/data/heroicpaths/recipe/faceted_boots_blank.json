@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": ["X X", "X X"],
+  "key": {"X": {"item": "heroicpaths:faceted_diamond"}},
+  "result": { "id": "heroicpaths:faceted_boots_blank", "count": 1 }
+}

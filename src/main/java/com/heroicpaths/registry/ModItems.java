@@ -4,10 +4,14 @@ import com.heroicpaths.HeroicPaths;
 import com.heroicpaths.dungeon.DungeonScrollItem;
 import com.heroicpaths.dungeon.GateStoneItem;
 import com.heroicpaths.dungeon.TrophyItem;
+import com.heroicpaths.accessory.AccessoryItem;
+import com.heroicpaths.accessory.AccessoryKind;
 import com.heroicpaths.item.AbilityBookItem;
+import com.heroicpaths.item.BattleAxeItem;
 import com.heroicpaths.item.ClassArmorItem;
 import com.heroicpaths.item.DaggerItem;
 import com.heroicpaths.item.FocusItem;
+import com.heroicpaths.item.GearBlankItem;
 import com.heroicpaths.item.GradedBowItem;
 import com.heroicpaths.combat.WeaponType;
 import com.heroicpaths.item.GradedShieldItem;
@@ -17,7 +21,6 @@ import com.heroicpaths.item.MusketItem;
 import net.minecraft.world.item.Tier;
 import com.heroicpaths.rpg.stat.Element;
 import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import com.heroicpaths.item.ExperienceTomeItem;
 import com.heroicpaths.item.OblivionScrollItem;
@@ -32,6 +35,7 @@ import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.Nullable;
 
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(HeroicPaths.MODID);
@@ -141,13 +145,14 @@ public final class ModItems {
     public static final DeferredItem<DaggerItem> IRON_DAGGER = ITEMS.register("iron_dagger",
             () -> new DaggerItem(Tiers.IRON, new Item.Properties()));
     public static final DeferredItem<DaggerItem> DIAMOND_DAGGER = ITEMS.register("diamond_dagger",
-            () -> new DaggerItem(Tiers.DIAMOND, new Item.Properties()));
+            () -> new DaggerItem(ModTiers.DIAMOND, new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<GreatswordItem> IRON_GREATSWORD = ITEMS.register("iron_greatsword",
             () -> new GreatswordItem(Tiers.IRON, new Item.Properties()));
     public static final DeferredItem<GreatswordItem> DIAMOND_GREATSWORD = ITEMS.register("diamond_greatsword",
-            () -> new GreatswordItem(Tiers.DIAMOND, new Item.Properties()));
-    public static final DeferredItem<MusketItem> MUSKET = ITEMS.register("musket",
-            () -> new MusketItem(new Item.Properties().durability(350)));
+            () -> new GreatswordItem(ModTiers.DIAMOND, new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<MusketItem> MUSKET = musket("musket", 1);
+    public static final DeferredItem<MusketItem> STEEL_MUSKET = musket("steel_musket", 2);
+    public static final DeferredItem<MusketItem> DAMASCUS_MUSKET = musket("damascus_musket", 3);
     public static final DeferredItem<Item> MUSKET_BALL = ITEMS.registerSimpleItem("musket_ball");
     // Жезлы и посохи: от них зависит урон заклинаний мага
     public static final DeferredItem<FocusItem> APPRENTICE_WAND = ITEMS.register("apprentice_wand",
@@ -246,19 +251,17 @@ public final class ModItems {
     public static final DeferredItem<ClassArmorItem> MAGE_ASTRAL_BOOTS = armor("mage_astral_boots", ModArmorMaterials.MAGE_ASTRAL, ArmorItem.Type.BOOTS, PlayerClass.MAGE, 3, 22);
 
     // Оружие грейдов II (сталь) и III (дамаск)
-    public static final DeferredItem<SwordItem> STEEL_SWORD = ITEMS.register("steel_sword",
-            () -> new SwordItem(ModTiers.STEEL, new Item.Properties().attributes(SwordItem.createAttributes(ModTiers.STEEL, 3, -2.4f))));
-    public static final DeferredItem<AxeItem> STEEL_AXE = ITEMS.register("steel_axe",
-            () -> new AxeItem(ModTiers.STEEL, new Item.Properties().attributes(AxeItem.createAttributes(ModTiers.STEEL, 6f, -3.05f))));
+    public static final DeferredItem<MeleeWeaponItem> IRON_SWORD = weapon("iron_sword", Tiers.IRON, WeaponType.SLASHING, false, 3, -2.4f, 0);
+    public static final DeferredItem<MeleeWeaponItem> STEEL_SWORD = weapon("steel_sword", ModTiers.STEEL, WeaponType.SLASHING, false, 3, -2.4f, 0);
+    public static final DeferredItem<BattleAxeItem> STEEL_AXE = ITEMS.register("steel_axe",
+            () -> new BattleAxeItem(ModTiers.STEEL, new Item.Properties().attributes(AxeItem.createAttributes(ModTiers.STEEL, 6f, -3.05f))));
     public static final DeferredItem<DaggerItem> STEEL_DAGGER = ITEMS.register("steel_dagger",
             () -> new DaggerItem(ModTiers.STEEL, new Item.Properties()));
     public static final DeferredItem<GreatswordItem> STEEL_GREATSWORD = ITEMS.register("steel_greatsword",
             () -> new GreatswordItem(ModTiers.STEEL, new Item.Properties()));
-    public static final DeferredItem<SwordItem> DAMASCUS_SWORD = ITEMS.register("damascus_sword",
-            () -> new SwordItem(ModTiers.DAMASCUS, new Item.Properties().rarity(Rarity.UNCOMMON)
-                    .attributes(SwordItem.createAttributes(ModTiers.DAMASCUS, 3, -2.4f))));
-    public static final DeferredItem<AxeItem> DAMASCUS_AXE = ITEMS.register("damascus_axe",
-            () -> new AxeItem(ModTiers.DAMASCUS, new Item.Properties().rarity(Rarity.UNCOMMON)
+    public static final DeferredItem<MeleeWeaponItem> DAMASCUS_SWORD = weapon("damascus_sword", ModTiers.DAMASCUS, WeaponType.SLASHING, false, 3, -2.4f, 0);
+    public static final DeferredItem<BattleAxeItem> DAMASCUS_AXE = ITEMS.register("damascus_axe",
+            () -> new BattleAxeItem(ModTiers.DAMASCUS, new Item.Properties().rarity(Rarity.UNCOMMON)
                     .attributes(AxeItem.createAttributes(ModTiers.DAMASCUS, 5.5f, -3.0f))));
     public static final DeferredItem<DaggerItem> DAMASCUS_DAGGER = ITEMS.register("damascus_dagger",
             () -> new DaggerItem(ModTiers.DAMASCUS, new Item.Properties().rarity(Rarity.UNCOMMON)));
@@ -344,7 +347,160 @@ public final class ModItems {
     public static final DeferredItem<GradedShieldItem> STEEL_KITE_SHIELD = shield("steel_kite_shield", GradedShieldItem.Type.KITE, 2);
     public static final DeferredItem<GradedShieldItem> DAMASCUS_KITE_SHIELD = shield("damascus_kite_shield", GradedShieldItem.Type.KITE, 3);
 
-    /** Бонус фокуса к заклинаниям своей стихии, %: рунный — 15, архимага — 30. */
+    // ===== Алмазный тир: грейды IV–VI (алмаз → гранёный алмаз → бриллиант), ремесло гроссмейстера =====
+    // Огранка на гранильном столе: алмаз → гранёный алмаз → бриллиант, каждый раз камень может расколоться.
+    public static final DeferredItem<Item> FACETED_DIAMOND = ITEMS.registerSimpleItem("faceted_diamond", new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> BRILLIANT = ITEMS.registerSimpleItem("brilliant", new Item.Properties().rarity(Rarity.RARE));
+    public static final DeferredItem<BlockItem> GEM_TABLE = ITEMS.registerSimpleBlockItem("gem_table", ModBlocks.GEM_TABLE);
+    public static final DeferredItem<BlockItem> JEWELER_TABLE = ITEMS.registerSimpleBlockItem("jeweler_table", ModBlocks.JEWELER_TABLE);
+    public static final DeferredItem<com.heroicpaths.item.ProfessionManualItem> JEWELER_MANUAL = ITEMS.register("jeweler_manual",
+            () -> new com.heroicpaths.item.ProfessionManualItem(com.heroicpaths.craft.Profession.JEWELER, new Item.Properties().stacksTo(16)));
+    // Заготовки: на наковальне вещь грейда III + заготовка IV даёт ту же вещь грейда IV, IV + V — грейд V, V + VI — грейд VI.
+    public static final DeferredItem<GearBlankItem> DIAMOND_HELMET_BLANK = blank("diamond_helmet_blank", 4, ArmorItem.Type.HELMET);
+    public static final DeferredItem<GearBlankItem> DIAMOND_CHESTPLATE_BLANK = blank("diamond_chestplate_blank", 4, ArmorItem.Type.CHESTPLATE);
+    public static final DeferredItem<GearBlankItem> DIAMOND_LEGGINGS_BLANK = blank("diamond_leggings_blank", 4, ArmorItem.Type.LEGGINGS);
+    public static final DeferredItem<GearBlankItem> DIAMOND_BOOTS_BLANK = blank("diamond_boots_blank", 4, ArmorItem.Type.BOOTS);
+    public static final DeferredItem<GearBlankItem> DIAMOND_WEAPON_BLANK = blank("diamond_weapon_blank", 4, null);
+    public static final DeferredItem<GearBlankItem> FACETED_HELMET_BLANK = blank("faceted_helmet_blank", 5, ArmorItem.Type.HELMET);
+    public static final DeferredItem<GearBlankItem> FACETED_CHESTPLATE_BLANK = blank("faceted_chestplate_blank", 5, ArmorItem.Type.CHESTPLATE);
+    public static final DeferredItem<GearBlankItem> FACETED_LEGGINGS_BLANK = blank("faceted_leggings_blank", 5, ArmorItem.Type.LEGGINGS);
+    public static final DeferredItem<GearBlankItem> FACETED_BOOTS_BLANK = blank("faceted_boots_blank", 5, ArmorItem.Type.BOOTS);
+    public static final DeferredItem<GearBlankItem> FACETED_WEAPON_BLANK = blank("faceted_weapon_blank", 5, null);
+    public static final DeferredItem<GearBlankItem> BRILLIANT_HELMET_BLANK = blank("brilliant_helmet_blank", 6, ArmorItem.Type.HELMET);
+    public static final DeferredItem<GearBlankItem> BRILLIANT_CHESTPLATE_BLANK = blank("brilliant_chestplate_blank", 6, ArmorItem.Type.CHESTPLATE);
+    public static final DeferredItem<GearBlankItem> BRILLIANT_LEGGINGS_BLANK = blank("brilliant_leggings_blank", 6, ArmorItem.Type.LEGGINGS);
+    public static final DeferredItem<GearBlankItem> BRILLIANT_BOOTS_BLANK = blank("brilliant_boots_blank", 6, ArmorItem.Type.BOOTS);
+    public static final DeferredItem<GearBlankItem> BRILLIANT_WEAPON_BLANK = blank("brilliant_weapon_blank", 6, null);
+
+    // Оружие ближнего боя IV–VI
+    public static final DeferredItem<MeleeWeaponItem> DIAMOND_SWORD = weapon("diamond_sword", ModTiers.DIAMOND, WeaponType.SLASHING, false, 3, -2.4f, 0);
+    public static final DeferredItem<BattleAxeItem> DIAMOND_AXE = ITEMS.register("diamond_axe",
+            () -> new BattleAxeItem(ModTiers.DIAMOND, new Item.Properties().rarity(Rarity.RARE).attributes(AxeItem.createAttributes(ModTiers.DIAMOND, 5.5f, -3.0f))));
+    public static final DeferredItem<MeleeWeaponItem> DIAMOND_RAPIER = weapon("diamond_rapier", ModTiers.DIAMOND, WeaponType.PIERCING, false, 2, -2.0f, 0);
+    public static final DeferredItem<MeleeWeaponItem> DIAMOND_SPEAR = weapon("diamond_spear", ModTiers.DIAMOND, WeaponType.PIERCING, true, 4, -2.8f, 1.0);
+    public static final DeferredItem<MeleeWeaponItem> DIAMOND_FLANGED_MACE = weapon("diamond_flanged_mace", ModTiers.DIAMOND, WeaponType.CRUSHING, false, 4, -2.8f, 0);
+    public static final DeferredItem<MeleeWeaponItem> DIAMOND_WARHAMMER = weapon("diamond_warhammer", ModTiers.DIAMOND, WeaponType.CRUSHING, true, 8, -3.3f, 0);
+    public static final DeferredItem<MeleeWeaponItem> FACETED_SWORD = weapon("faceted_sword", ModTiers.FACETED, WeaponType.SLASHING, false, 3, -2.4f, 0);
+    public static final DeferredItem<BattleAxeItem> FACETED_AXE = ITEMS.register("faceted_axe",
+            () -> new BattleAxeItem(ModTiers.FACETED, new Item.Properties().rarity(Rarity.RARE).attributes(AxeItem.createAttributes(ModTiers.FACETED, 5.5f, -3.0f))));
+    public static final DeferredItem<DaggerItem> FACETED_DAGGER = ITEMS.register("faceted_dagger", () -> new DaggerItem(ModTiers.FACETED, new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<GreatswordItem> FACETED_GREATSWORD = ITEMS.register("faceted_greatsword", () -> new GreatswordItem(ModTiers.FACETED, new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<MeleeWeaponItem> FACETED_RAPIER = weapon("faceted_rapier", ModTiers.FACETED, WeaponType.PIERCING, false, 2, -2.0f, 0);
+    public static final DeferredItem<MeleeWeaponItem> FACETED_SPEAR = weapon("faceted_spear", ModTiers.FACETED, WeaponType.PIERCING, true, 4, -2.8f, 1.0);
+    public static final DeferredItem<MeleeWeaponItem> FACETED_FLANGED_MACE = weapon("faceted_flanged_mace", ModTiers.FACETED, WeaponType.CRUSHING, false, 4, -2.8f, 0);
+    public static final DeferredItem<MeleeWeaponItem> FACETED_WARHAMMER = weapon("faceted_warhammer", ModTiers.FACETED, WeaponType.CRUSHING, true, 8, -3.3f, 0);
+    public static final DeferredItem<MeleeWeaponItem> BRILLIANT_SWORD = weapon("brilliant_sword", ModTiers.BRILLIANT, WeaponType.SLASHING, false, 3, -2.4f, 0);
+    public static final DeferredItem<BattleAxeItem> BRILLIANT_AXE = ITEMS.register("brilliant_axe",
+            () -> new BattleAxeItem(ModTiers.BRILLIANT, new Item.Properties().rarity(Rarity.RARE).attributes(AxeItem.createAttributes(ModTiers.BRILLIANT, 5.5f, -3.0f))));
+    public static final DeferredItem<DaggerItem> BRILLIANT_DAGGER = ITEMS.register("brilliant_dagger", () -> new DaggerItem(ModTiers.BRILLIANT, new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<GreatswordItem> BRILLIANT_GREATSWORD = ITEMS.register("brilliant_greatsword", () -> new GreatswordItem(ModTiers.BRILLIANT, new Item.Properties().rarity(Rarity.RARE)));
+    public static final DeferredItem<MeleeWeaponItem> BRILLIANT_RAPIER = weapon("brilliant_rapier", ModTiers.BRILLIANT, WeaponType.PIERCING, false, 2, -2.0f, 0);
+    public static final DeferredItem<MeleeWeaponItem> BRILLIANT_SPEAR = weapon("brilliant_spear", ModTiers.BRILLIANT, WeaponType.PIERCING, true, 4, -2.8f, 1.0);
+    public static final DeferredItem<MeleeWeaponItem> BRILLIANT_FLANGED_MACE = weapon("brilliant_flanged_mace", ModTiers.BRILLIANT, WeaponType.CRUSHING, false, 4, -2.8f, 0);
+    public static final DeferredItem<MeleeWeaponItem> BRILLIANT_WARHAMMER = weapon("brilliant_warhammer", ModTiers.BRILLIANT, WeaponType.CRUSHING, true, 8, -3.3f, 0);
+    // Щиты, луки, ручные арбалеты и мушкеты IV–VI
+    public static final DeferredItem<GradedShieldItem> DIAMOND_BUCKLER = shield("diamond_buckler", GradedShieldItem.Type.BUCKLER, 4);
+    public static final DeferredItem<GradedShieldItem> DIAMOND_HEATER_SHIELD = shield("diamond_heater_shield", GradedShieldItem.Type.HEATER, 4);
+    public static final DeferredItem<GradedShieldItem> DIAMOND_KITE_SHIELD = shield("diamond_kite_shield", GradedShieldItem.Type.KITE, 4);
+    public static final DeferredItem<GradedShieldItem> FACETED_BUCKLER = shield("faceted_buckler", GradedShieldItem.Type.BUCKLER, 5);
+    public static final DeferredItem<GradedShieldItem> FACETED_HEATER_SHIELD = shield("faceted_heater_shield", GradedShieldItem.Type.HEATER, 5);
+    public static final DeferredItem<GradedShieldItem> FACETED_KITE_SHIELD = shield("faceted_kite_shield", GradedShieldItem.Type.KITE, 5);
+    public static final DeferredItem<GradedShieldItem> BRILLIANT_BUCKLER = shield("brilliant_buckler", GradedShieldItem.Type.BUCKLER, 6);
+    public static final DeferredItem<GradedShieldItem> BRILLIANT_HEATER_SHIELD = shield("brilliant_heater_shield", GradedShieldItem.Type.HEATER, 6);
+    public static final DeferredItem<GradedShieldItem> BRILLIANT_KITE_SHIELD = shield("brilliant_kite_shield", GradedShieldItem.Type.KITE, 6);
+    public static final DeferredItem<GradedBowItem> DIAMOND_LONGBOW = ITEMS.register("diamond_longbow",
+            () -> new GradedBowItem(4, 75, new Item.Properties().durability(1300).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.heroicpaths.item.HandCrossbowItem> DIAMOND_HAND_CROSSBOW = ITEMS.register("diamond_hand_crossbow",
+            () -> new com.heroicpaths.item.HandCrossbowItem(4, 9, 3.3f, new Item.Properties().durability(1300).rarity(Rarity.RARE)));
+    public static final DeferredItem<MusketItem> DIAMOND_MUSKET = musket("diamond_musket", 4);
+    public static final DeferredItem<GradedBowItem> FACETED_LONGBOW = ITEMS.register("faceted_longbow",
+            () -> new GradedBowItem(5, 100, new Item.Properties().durability(1700).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.heroicpaths.item.HandCrossbowItem> FACETED_HAND_CROSSBOW = ITEMS.register("faceted_hand_crossbow",
+            () -> new com.heroicpaths.item.HandCrossbowItem(5, 8, 3.6f, new Item.Properties().durability(1700).rarity(Rarity.RARE)));
+    public static final DeferredItem<MusketItem> FACETED_MUSKET = musket("faceted_musket", 5);
+    public static final DeferredItem<GradedBowItem> BRILLIANT_LONGBOW = ITEMS.register("brilliant_longbow",
+            () -> new GradedBowItem(6, 130, new Item.Properties().durability(2200).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.heroicpaths.item.HandCrossbowItem> BRILLIANT_HAND_CROSSBOW = ITEMS.register("brilliant_hand_crossbow",
+            () -> new com.heroicpaths.item.HandCrossbowItem(6, 7, 4.0f, new Item.Properties().durability(2200).rarity(Rarity.RARE)));
+    public static final DeferredItem<MusketItem> BRILLIANT_MUSKET = musket("brilliant_musket", 6);
+    // Жезлы и посохи IV–VI четырёх стихий
+    public static final DeferredItem<FocusItem> FIRE_DIAMOND_WAND = focus("fire_diamond_wand", 8.5f, false, 4, Element.FIRE);
+    public static final DeferredItem<FocusItem> FIRE_DIAMOND_STAFF = focus("fire_diamond_staff", 12f, true, 4, Element.FIRE);
+    public static final DeferredItem<FocusItem> FROST_DIAMOND_WAND = focus("frost_diamond_wand", 8.5f, false, 4, Element.WATER);
+    public static final DeferredItem<FocusItem> FROST_DIAMOND_STAFF = focus("frost_diamond_staff", 12f, true, 4, Element.WATER);
+    public static final DeferredItem<FocusItem> EARTH_DIAMOND_WAND = focus("earth_diamond_wand", 8.5f, false, 4, Element.EARTH);
+    public static final DeferredItem<FocusItem> EARTH_DIAMOND_STAFF = focus("earth_diamond_staff", 12f, true, 4, Element.EARTH);
+    public static final DeferredItem<FocusItem> STORM_DIAMOND_WAND = focus("storm_diamond_wand", 8.5f, false, 4, Element.AIR);
+    public static final DeferredItem<FocusItem> STORM_DIAMOND_STAFF = focus("storm_diamond_staff", 12f, true, 4, Element.AIR);
+    public static final DeferredItem<FocusItem> FIRE_FACETED_WAND = focus("fire_faceted_wand", 10f, false, 5, Element.FIRE);
+    public static final DeferredItem<FocusItem> FIRE_FACETED_STAFF = focus("fire_faceted_staff", 14f, true, 5, Element.FIRE);
+    public static final DeferredItem<FocusItem> FROST_FACETED_WAND = focus("frost_faceted_wand", 10f, false, 5, Element.WATER);
+    public static final DeferredItem<FocusItem> FROST_FACETED_STAFF = focus("frost_faceted_staff", 14f, true, 5, Element.WATER);
+    public static final DeferredItem<FocusItem> EARTH_FACETED_WAND = focus("earth_faceted_wand", 10f, false, 5, Element.EARTH);
+    public static final DeferredItem<FocusItem> EARTH_FACETED_STAFF = focus("earth_faceted_staff", 14f, true, 5, Element.EARTH);
+    public static final DeferredItem<FocusItem> STORM_FACETED_WAND = focus("storm_faceted_wand", 10f, false, 5, Element.AIR);
+    public static final DeferredItem<FocusItem> STORM_FACETED_STAFF = focus("storm_faceted_staff", 14f, true, 5, Element.AIR);
+    public static final DeferredItem<FocusItem> FIRE_BRILLIANT_WAND = focus("fire_brilliant_wand", 11.5f, false, 6, Element.FIRE);
+    public static final DeferredItem<FocusItem> FIRE_BRILLIANT_STAFF = focus("fire_brilliant_staff", 16f, true, 6, Element.FIRE);
+    public static final DeferredItem<FocusItem> FROST_BRILLIANT_WAND = focus("frost_brilliant_wand", 11.5f, false, 6, Element.WATER);
+    public static final DeferredItem<FocusItem> FROST_BRILLIANT_STAFF = focus("frost_brilliant_staff", 16f, true, 6, Element.WATER);
+    public static final DeferredItem<FocusItem> EARTH_BRILLIANT_WAND = focus("earth_brilliant_wand", 11.5f, false, 6, Element.EARTH);
+    public static final DeferredItem<FocusItem> EARTH_BRILLIANT_STAFF = focus("earth_brilliant_staff", 16f, true, 6, Element.EARTH);
+    public static final DeferredItem<FocusItem> STORM_BRILLIANT_WAND = focus("storm_brilliant_wand", 11.5f, false, 6, Element.AIR);
+    public static final DeferredItem<FocusItem> STORM_BRILLIANT_STAFF = focus("storm_brilliant_staff", 16f, true, 6, Element.AIR);
+    // Классовая броня IV–VI
+    public static final DeferredItem<ClassArmorItem> WARRIOR_DIAMOND_HELMET = armor("warrior_diamond_helmet", ModArmorMaterials.WARRIOR_DIAMOND, ArmorItem.Type.HELMET, PlayerClass.WARRIOR, 4, 40);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_DIAMOND_CHESTPLATE = armor("warrior_diamond_chestplate", ModArmorMaterials.WARRIOR_DIAMOND, ArmorItem.Type.CHESTPLATE, PlayerClass.WARRIOR, 4, 40);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_DIAMOND_LEGGINGS = armor("warrior_diamond_leggings", ModArmorMaterials.WARRIOR_DIAMOND, ArmorItem.Type.LEGGINGS, PlayerClass.WARRIOR, 4, 40);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_DIAMOND_BOOTS = armor("warrior_diamond_boots", ModArmorMaterials.WARRIOR_DIAMOND, ArmorItem.Type.BOOTS, PlayerClass.WARRIOR, 4, 40);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_FACETED_HELMET = armor("warrior_faceted_helmet", ModArmorMaterials.WARRIOR_FACETED, ArmorItem.Type.HELMET, PlayerClass.WARRIOR, 5, 48);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_FACETED_CHESTPLATE = armor("warrior_faceted_chestplate", ModArmorMaterials.WARRIOR_FACETED, ArmorItem.Type.CHESTPLATE, PlayerClass.WARRIOR, 5, 48);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_FACETED_LEGGINGS = armor("warrior_faceted_leggings", ModArmorMaterials.WARRIOR_FACETED, ArmorItem.Type.LEGGINGS, PlayerClass.WARRIOR, 5, 48);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_FACETED_BOOTS = armor("warrior_faceted_boots", ModArmorMaterials.WARRIOR_FACETED, ArmorItem.Type.BOOTS, PlayerClass.WARRIOR, 5, 48);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_BRILLIANT_HELMET = armor("warrior_brilliant_helmet", ModArmorMaterials.WARRIOR_BRILLIANT, ArmorItem.Type.HELMET, PlayerClass.WARRIOR, 6, 56);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_BRILLIANT_CHESTPLATE = armor("warrior_brilliant_chestplate", ModArmorMaterials.WARRIOR_BRILLIANT, ArmorItem.Type.CHESTPLATE, PlayerClass.WARRIOR, 6, 56);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_BRILLIANT_LEGGINGS = armor("warrior_brilliant_leggings", ModArmorMaterials.WARRIOR_BRILLIANT, ArmorItem.Type.LEGGINGS, PlayerClass.WARRIOR, 6, 56);
+    public static final DeferredItem<ClassArmorItem> WARRIOR_BRILLIANT_BOOTS = armor("warrior_brilliant_boots", ModArmorMaterials.WARRIOR_BRILLIANT, ArmorItem.Type.BOOTS, PlayerClass.WARRIOR, 6, 56);
+    public static final DeferredItem<ClassArmorItem> ARCHER_DIAMOND_HELMET = armor("archer_diamond_helmet", ModArmorMaterials.ARCHER_DIAMOND, ArmorItem.Type.HELMET, PlayerClass.ARCHER, 4, 31);
+    public static final DeferredItem<ClassArmorItem> ARCHER_DIAMOND_CHESTPLATE = armor("archer_diamond_chestplate", ModArmorMaterials.ARCHER_DIAMOND, ArmorItem.Type.CHESTPLATE, PlayerClass.ARCHER, 4, 31);
+    public static final DeferredItem<ClassArmorItem> ARCHER_DIAMOND_LEGGINGS = armor("archer_diamond_leggings", ModArmorMaterials.ARCHER_DIAMOND, ArmorItem.Type.LEGGINGS, PlayerClass.ARCHER, 4, 31);
+    public static final DeferredItem<ClassArmorItem> ARCHER_DIAMOND_BOOTS = armor("archer_diamond_boots", ModArmorMaterials.ARCHER_DIAMOND, ArmorItem.Type.BOOTS, PlayerClass.ARCHER, 4, 31);
+    public static final DeferredItem<ClassArmorItem> ARCHER_FACETED_HELMET = armor("archer_faceted_helmet", ModArmorMaterials.ARCHER_FACETED, ArmorItem.Type.HELMET, PlayerClass.ARCHER, 5, 37);
+    public static final DeferredItem<ClassArmorItem> ARCHER_FACETED_CHESTPLATE = armor("archer_faceted_chestplate", ModArmorMaterials.ARCHER_FACETED, ArmorItem.Type.CHESTPLATE, PlayerClass.ARCHER, 5, 37);
+    public static final DeferredItem<ClassArmorItem> ARCHER_FACETED_LEGGINGS = armor("archer_faceted_leggings", ModArmorMaterials.ARCHER_FACETED, ArmorItem.Type.LEGGINGS, PlayerClass.ARCHER, 5, 37);
+    public static final DeferredItem<ClassArmorItem> ARCHER_FACETED_BOOTS = armor("archer_faceted_boots", ModArmorMaterials.ARCHER_FACETED, ArmorItem.Type.BOOTS, PlayerClass.ARCHER, 5, 37);
+    public static final DeferredItem<ClassArmorItem> ARCHER_BRILLIANT_HELMET = armor("archer_brilliant_helmet", ModArmorMaterials.ARCHER_BRILLIANT, ArmorItem.Type.HELMET, PlayerClass.ARCHER, 6, 43);
+    public static final DeferredItem<ClassArmorItem> ARCHER_BRILLIANT_CHESTPLATE = armor("archer_brilliant_chestplate", ModArmorMaterials.ARCHER_BRILLIANT, ArmorItem.Type.CHESTPLATE, PlayerClass.ARCHER, 6, 43);
+    public static final DeferredItem<ClassArmorItem> ARCHER_BRILLIANT_LEGGINGS = armor("archer_brilliant_leggings", ModArmorMaterials.ARCHER_BRILLIANT, ArmorItem.Type.LEGGINGS, PlayerClass.ARCHER, 6, 43);
+    public static final DeferredItem<ClassArmorItem> ARCHER_BRILLIANT_BOOTS = armor("archer_brilliant_boots", ModArmorMaterials.ARCHER_BRILLIANT, ArmorItem.Type.BOOTS, PlayerClass.ARCHER, 6, 43);
+    public static final DeferredItem<ClassArmorItem> MAGE_DIAMOND_HELMET = armor("mage_diamond_helmet", ModArmorMaterials.MAGE_DIAMOND, ArmorItem.Type.HELMET, PlayerClass.MAGE, 4, 27);
+    public static final DeferredItem<ClassArmorItem> MAGE_DIAMOND_CHESTPLATE = armor("mage_diamond_chestplate", ModArmorMaterials.MAGE_DIAMOND, ArmorItem.Type.CHESTPLATE, PlayerClass.MAGE, 4, 27);
+    public static final DeferredItem<ClassArmorItem> MAGE_DIAMOND_LEGGINGS = armor("mage_diamond_leggings", ModArmorMaterials.MAGE_DIAMOND, ArmorItem.Type.LEGGINGS, PlayerClass.MAGE, 4, 27);
+    public static final DeferredItem<ClassArmorItem> MAGE_DIAMOND_BOOTS = armor("mage_diamond_boots", ModArmorMaterials.MAGE_DIAMOND, ArmorItem.Type.BOOTS, PlayerClass.MAGE, 4, 27);
+    public static final DeferredItem<ClassArmorItem> MAGE_FACETED_HELMET = armor("mage_faceted_helmet", ModArmorMaterials.MAGE_FACETED, ArmorItem.Type.HELMET, PlayerClass.MAGE, 5, 32);
+    public static final DeferredItem<ClassArmorItem> MAGE_FACETED_CHESTPLATE = armor("mage_faceted_chestplate", ModArmorMaterials.MAGE_FACETED, ArmorItem.Type.CHESTPLATE, PlayerClass.MAGE, 5, 32);
+    public static final DeferredItem<ClassArmorItem> MAGE_FACETED_LEGGINGS = armor("mage_faceted_leggings", ModArmorMaterials.MAGE_FACETED, ArmorItem.Type.LEGGINGS, PlayerClass.MAGE, 5, 32);
+    public static final DeferredItem<ClassArmorItem> MAGE_FACETED_BOOTS = armor("mage_faceted_boots", ModArmorMaterials.MAGE_FACETED, ArmorItem.Type.BOOTS, PlayerClass.MAGE, 5, 32);
+    public static final DeferredItem<ClassArmorItem> MAGE_BRILLIANT_HELMET = armor("mage_brilliant_helmet", ModArmorMaterials.MAGE_BRILLIANT, ArmorItem.Type.HELMET, PlayerClass.MAGE, 6, 37);
+    public static final DeferredItem<ClassArmorItem> MAGE_BRILLIANT_CHESTPLATE = armor("mage_brilliant_chestplate", ModArmorMaterials.MAGE_BRILLIANT, ArmorItem.Type.CHESTPLATE, PlayerClass.MAGE, 6, 37);
+    public static final DeferredItem<ClassArmorItem> MAGE_BRILLIANT_LEGGINGS = armor("mage_brilliant_leggings", ModArmorMaterials.MAGE_BRILLIANT, ArmorItem.Type.LEGGINGS, PlayerClass.MAGE, 6, 37);
+    public static final DeferredItem<ClassArmorItem> MAGE_BRILLIANT_BOOTS = armor("mage_brilliant_boots", ModArmorMaterials.MAGE_BRILLIANT, ArmorItem.Type.BOOTS, PlayerClass.MAGE, 6, 37);
+
+    // ===== Аксессуары: перчатки, пояс и наручи под тип брони (части сетов) и украшения ювелира. Грейд — в компоненте gear_grade. =====
+    public static final DeferredItem<AccessoryItem> PLATE_GLOVES = accessory("plate_gloves", AccessoryKind.GLOVES, PlayerClass.WARRIOR);
+    public static final DeferredItem<AccessoryItem> PLATE_BELT = accessory("plate_belt", AccessoryKind.BELT, PlayerClass.WARRIOR);
+    public static final DeferredItem<AccessoryItem> PLATE_BRACERS = accessory("plate_bracers", AccessoryKind.BRACERS, PlayerClass.WARRIOR);
+    public static final DeferredItem<AccessoryItem> LEATHER_GLOVES = accessory("leather_gloves", AccessoryKind.GLOVES, PlayerClass.ARCHER);
+    public static final DeferredItem<AccessoryItem> LEATHER_BELT = accessory("leather_belt", AccessoryKind.BELT, PlayerClass.ARCHER);
+    public static final DeferredItem<AccessoryItem> LEATHER_BRACERS = accessory("leather_bracers", AccessoryKind.BRACERS, PlayerClass.ARCHER);
+    public static final DeferredItem<AccessoryItem> CLOTH_GLOVES = accessory("cloth_gloves", AccessoryKind.GLOVES, PlayerClass.MAGE);
+    public static final DeferredItem<AccessoryItem> CLOTH_BELT = accessory("cloth_belt", AccessoryKind.BELT, PlayerClass.MAGE);
+    public static final DeferredItem<AccessoryItem> CLOTH_BRACERS = accessory("cloth_bracers", AccessoryKind.BRACERS, PlayerClass.MAGE);
+    public static final DeferredItem<AccessoryItem> NECKLACE = accessory("necklace", AccessoryKind.NECKLACE, null);
+    public static final DeferredItem<AccessoryItem> EARRING = accessory("earring", AccessoryKind.EARRING, null);
+    public static final DeferredItem<AccessoryItem> RING = accessory("ring", AccessoryKind.RING, null);
+
+    /** Бонус фокуса к заклинаниям своей стихии, %: рунный — 15, архимага — 30, дальше +10 за грейд. */
     public static final int RUNE_FOCUS_ELEMENT_BONUS = 15;
     public static final int ARCHMAGE_FOCUS_ELEMENT_BONUS = 30;
 
@@ -357,26 +513,46 @@ public final class ModItems {
 
     private static DeferredItem<ClassArmorItem> armor(String name, Holder<ArmorMaterial> material, ArmorItem.Type type,
                                                       PlayerClass playerClass, int grade, int durabilityFactor) {
-        Rarity rarity = grade >= 3 ? Rarity.UNCOMMON : Rarity.COMMON;
+        Rarity rarity = gradeRarity(grade);
         return ITEMS.register(name, () -> new ClassArmorItem(material, type, playerClass, grade,
                 new Item.Properties().durability(type.getDurability(durabilityFactor)).rarity(rarity)));
     }
 
     private static DeferredItem<MeleeWeaponItem> weapon(String name, Tier tier, WeaponType type, boolean twoHanded,
                                                         int damage, float speed, double reach) {
-        Rarity rarity = tier == ModTiers.DAMASCUS ? Rarity.UNCOMMON : Rarity.COMMON;
+        Rarity rarity = tier == ModTiers.DAMASCUS ? Rarity.UNCOMMON
+                : tier == ModTiers.DIAMOND || tier == ModTiers.FACETED || tier == ModTiers.BRILLIANT ? Rarity.RARE : Rarity.COMMON;
         return ITEMS.register(name, () -> new MeleeWeaponItem(tier, type, twoHanded, new Item.Properties().rarity(rarity)
                 .attributes(MeleeWeaponItem.attributes(tier, damage, speed, reach))));
     }
 
+    private static DeferredItem<MusketItem> musket(String name, int grade) {
+        Rarity rarity = gradeRarity(grade);
+        return ITEMS.register(name, () -> new MusketItem(grade, new Item.Properties().durability(350 + 250 * (grade - 1)).rarity(rarity)));
+    }
+
+    private static DeferredItem<AccessoryItem> accessory(String name, AccessoryKind kind, @Nullable PlayerClass armorClass) {
+        return ITEMS.register(name, () -> new AccessoryItem(kind, armorClass, new Item.Properties()));
+    }
+
+    /** Заготовка грейда grade для брони слота type или, если type == null, для оружия. */
+    private static DeferredItem<GearBlankItem> blank(String name, int grade, @Nullable ArmorItem.Type type) {
+        return ITEMS.register(name, () -> new GearBlankItem(grade, type, new Item.Properties().stacksTo(16).rarity(gradeRarity(grade))));
+    }
+
+    /** Цвет названия по грейду: I–II — обычный, III — необычный, IV–VI — редкий. */
+    private static Rarity gradeRarity(int grade) {
+        return grade >= 4 ? Rarity.RARE : grade >= 3 ? Rarity.UNCOMMON : Rarity.COMMON;
+    }
+
     private static DeferredItem<GradedShieldItem> shield(String name, GradedShieldItem.Type type, int grade) {
-        Rarity rarity = grade >= 3 ? Rarity.UNCOMMON : Rarity.COMMON;
+        Rarity rarity = gradeRarity(grade);
         return ITEMS.register(name, () -> new GradedShieldItem(type, grade, new Item.Properties().rarity(rarity)));
     }
 
     private static DeferredItem<FocusItem> focus(String name, float power, boolean staff, int grade, Element element) {
-        int bonus = grade >= 3 ? ARCHMAGE_FOCUS_ELEMENT_BONUS : RUNE_FOCUS_ELEMENT_BONUS;
-        Rarity rarity = grade >= 3 ? Rarity.RARE : Rarity.UNCOMMON;
+        int bonus = grade >= 3 ? ARCHMAGE_FOCUS_ELEMENT_BONUS + 10 * (grade - 3) : RUNE_FOCUS_ELEMENT_BONUS;
+        Rarity rarity = grade >= 4 ? Rarity.EPIC : grade >= 3 ? Rarity.RARE : Rarity.UNCOMMON;
         return ITEMS.register(name, () -> new FocusItem(power, staff, grade, element, bonus,
                 new Item.Properties().stacksTo(1).rarity(rarity)));
     }

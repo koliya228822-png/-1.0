@@ -75,6 +75,10 @@ public final class ModBlocks {
     public static final DeferredBlock<StationBlock> RUNE_TABLE = BLOCKS.register("rune_table",
             () -> new StationBlock(Station.RUNE_TABLE, BlockBehaviour.Properties.ofFullCopy(Blocks.POLISHED_DEEPSLATE)
                     .strength(3f, 6f).lightLevel(state -> 6)));
+    public static final DeferredBlock<StationBlock> GEM_TABLE = BLOCKS.register("gem_table",
+            () -> new StationBlock(Station.GEM_TABLE, BlockBehaviour.Properties.ofFullCopy(Blocks.STONECUTTER).noOcclusion().strength(3f, 6f)));
+    public static final DeferredBlock<StationBlock> JEWELER_TABLE = BLOCKS.register("jeweler_table",
+            () -> new StationBlock(Station.JEWELER_TABLE, BlockBehaviour.Properties.ofFullCopy(Blocks.SMITHING_TABLE)));
 
     /** Доска заказов гильдии искателей приключений (рабочее место распорядителя гильдии). */
     /** Доска наказов глашатая гильдии: наказы на боссов данжей. */

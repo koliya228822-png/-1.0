@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/brilliant_hand_crossbow_pulling_0" },
+  "base": { "parent": "heroicpaths:item/3d/brilliant_hand_crossbow_pulling_0" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/brilliant_hand_crossbow_pulling_0" } }
+  }
+}

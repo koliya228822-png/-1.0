@@ -1,0 +1,10 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "heroicpaths:steel_plate", "count": 2 },
+    { "item": "minecraft:flint_and_steel", "count": 1 },
+    { "tag": "minecraft:planks", "count": 2 }
+  ],
+  "result": { "id": "heroicpaths:steel_musket", "count": 1 }
+}

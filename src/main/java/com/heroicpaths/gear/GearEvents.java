@@ -1,8 +1,11 @@
 package com.heroicpaths.gear;
 
+import com.heroicpaths.craft.GrandmasterForging;
 import com.heroicpaths.registry.ModAttachments;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Inventory;
@@ -15,8 +18,10 @@ import net.minecraft.world.level.GameRules;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
+import net.neoforged.neoforge.event.entity.player.AnvilRepairEvent;
 import net.neoforged.neoforge.event.GrindstoneEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 
@@ -25,7 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Снаряжение — расходник. При смерти надетое оружие и броня не выпадают, а теряют 20% прочности
+ * Снаряжение — расходник. В бою оно не изнашивается, а при смерти надетое оружие и броня не выпадают, а теряют 5% прочности
  * (сломанное исчезает навсегда). Чинить оружие и броню нельзя: ни на наковальне, ни на точиле,
  * ни крафтом, ни починкой опытом. Инструменты и прочие предметы чинятся как обычно.
  */
@@ -34,6 +39,23 @@ public final class GearEvents {
     private static final int[] EQUIPMENT_SLOTS = {36, 37, 38, 39, Inventory.SLOT_OFFHAND};
 
     private GearEvents() {}
+
+    // ================================================================ износ
+
+    /**
+     * Снаряжение мода не изнашивается само ({@code damageItem} возвращает 0), а ванильный лук после выстрела
+     * получает прочность обратно на следующем тике: выстрел тратит её уже после этого события.
+     */
+    @SubscribeEvent
+    public static void onUseStop(LivingEntityUseItemEvent.Stop event) {
+        ItemStack bow = event.getItem();
+        if (!bow.is(Items.BOW) || !(event.getEntity() instanceof ServerPlayer player)) return;
+        int before = bow.getDamageValue();
+        MinecraftServer server = player.getServer();
+        server.tell(new TickTask(server.getTickCount(), () -> {
+            if (bow.is(Items.BOW) && bow.getDamageValue() > before) bow.setDamageValue(before);
+        }));
+    }
 
     // ================================================================ смерть
 
@@ -125,7 +147,32 @@ public final class GearEvents {
      */
     @SubscribeEvent
     public static void onAnvil(AnvilUpdateEvent event) {
+        ItemStack upgraded = GrandmasterForging.result(event.getLeft(), event.getRight());
+        if (!upgraded.isEmpty()) {
+            // Заготовка поднимает грейд вещи — это не ремонт, но только для гроссмейстера её ремесла.
+            if (event.getPlayer() == null || !GrandmasterForging.canForge(event.getPlayer(), upgraded)) {
+                event.setCanceled(true);
+                return;
+            }
+            if (!event.getName().isBlank() && !event.getName().equals(upgraded.getHoverName().getString())) {
+                upgraded.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal(event.getName()));
+            }
+            event.setOutput(upgraded);
+            event.setCost(GrandmasterForging.levelCost(upgraded));
+            event.setMaterialCost(1);
+            return;
+        }
         if (isBlockedAnvilRepair(event.getLeft(), event.getRight())) event.setCanceled(true);
+    }
+
+    /** Опыт ремесла за переплавку на наковальне. */
+    @SubscribeEvent
+    public static void onAnvilTake(AnvilRepairEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && event.getRight().getItem() instanceof com.heroicpaths.item.GearBlankItem) {
+            ItemStack output = event.getOutput();
+            com.heroicpaths.craft.ProfessionProgress.award(player, com.heroicpaths.craft.Profession.forItem(output),
+                    10 * com.heroicpaths.item.Grades.of(output));
+        }
     }
 
     public static boolean isBlockedAnvilRepair(ItemStack left, ItemStack right) {

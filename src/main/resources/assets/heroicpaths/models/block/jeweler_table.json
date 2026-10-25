@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "heroicpaths:block/jeweler_table_top",
+    "front": "heroicpaths:block/jeweler_table_front",
+    "side": "heroicpaths:block/jeweler_table_side"
+  }
+}

@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public final class ArmorGlow {
     /** Комплекты, у которых есть текстура свечения (её пишет tools/ArmorGen.java). */
-    private static final Set<String> GLOWING = Set.of("mage_wool", "mage_astral");
+    private static final Set<String> GLOWING = Set.of("mage_wool", "mage_astral", "mage_diamond", "mage_faceted", "mage_brilliant");
     private static final EquipmentSlot[] SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
     private ArmorGlow() {}

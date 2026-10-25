@@ -41,7 +41,7 @@ public final class MentorTrades {
             add(trades, 2, buy(Items.IRON_INGOT, 4, 10), sell(ModItems.IRON_BUCKLER.get(), 5, 1, 5), enchanted(ModItems.IRON_RAPIER.get(), 4, 5),
                     sell(ModItems.STEEL_PLATE.get(), 2, 2, 5));
             add(trades, 3, buy(Items.FLINT, 24, 20), enchanted(Items.IRON_AXE, 5, 10));
-            add(trades, 4, buy(Items.DIAMOND, 1, 30), enchanted(ModItems.DIAMOND_GREATSWORD.get(), 12, 15), sell(ModItems.OBLIVION_SCROLL.get(), 10, 1, 15));
+            add(trades, 4, buy(Items.DIAMOND, 1, 30), enchanted(ModItems.DAMASCUS_GREATSWORD.get(), 12, 15), sell(ModItems.OBLIVION_SCROLL.get(), 10, 1, 15));
             add(trades, 5, enchanted(Items.DIAMOND_AXE, 17, 30));
         } else if (profession == ModVillagers.MASTER_ARCHER.get()) {
             add(trades, 1, sell(ModItems.MUSKET_BALL.get(), 1, 8, 1));

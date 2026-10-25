@@ -224,12 +224,11 @@ public final class MerchantPosts {
     /** Товар оружейника и уровень торговца, с которого он появляется на прилавке. */
     record Ware(Supplier<? extends Item> item, int level) {}
 
-    /** Мечи и луки на прилавке: железо — с новичка, сталь — с ученика, алмаз — с подмастерья, дамаск — с эксперта. */
+    /** Мечи и луки на прилавке: железо — с новичка, сталь — с ученика, дамаск — с эксперта. Алмазное оружие только куют. */
     static final List<Ware> BLADES = List.of(
             new Ware(ModItems.IRON_DAGGER, 1), new Ware(ModItems.IRON_RAPIER, 1), new Ware(ModItems.IRON_GREATSWORD, 1),
             new Ware(ModItems.STEEL_DAGGER, 2), new Ware(ModItems.STEEL_SWORD, 2), new Ware(ModItems.STEEL_RAPIER, 2),
             new Ware(ModItems.STEEL_GREATSWORD, 2),
-            new Ware(ModItems.DIAMOND_DAGGER, 3), new Ware(ModItems.DIAMOND_GREATSWORD, 3),
             new Ware(ModItems.DAMASCUS_DAGGER, 4), new Ware(ModItems.DAMASCUS_SWORD, 4), new Ware(ModItems.DAMASCUS_RAPIER, 4),
             new Ware(ModItems.DAMASCUS_GREATSWORD, 4));
     static final List<Ware> BOWS = List.of(new Ware(() -> Items.BOW, 1), new Ware(ModItems.COMPOSITE_BOW, 2), new Ware(ModItems.RANGER_LONGBOW, 4));

@@ -4,11 +4,20 @@
     "heroicpaths:warrior_chestplate",
     "heroicpaths:warrior_iron_chestplate",
     "heroicpaths:warrior_damascus_chestplate",
+    "heroicpaths:warrior_diamond_chestplate",
+    "heroicpaths:warrior_faceted_chestplate",
+    "heroicpaths:warrior_brilliant_chestplate",
     "heroicpaths:archer_chestplate",
     "heroicpaths:archer_leather_chestplate",
     "heroicpaths:archer_impregnated_chestplate",
+    "heroicpaths:archer_diamond_chestplate",
+    "heroicpaths:archer_faceted_chestplate",
+    "heroicpaths:archer_brilliant_chestplate",
     "heroicpaths:mage_chestplate",
     "heroicpaths:mage_wool_chestplate",
-    "heroicpaths:mage_astral_chestplate"
+    "heroicpaths:mage_astral_chestplate",
+    "heroicpaths:mage_diamond_chestplate",
+    "heroicpaths:mage_faceted_chestplate",
+    "heroicpaths:mage_brilliant_chestplate"
   ]
 }

@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 /**
  * Жезл или посох мага. Урон заклинаний мага рассчитывается от силы магии фокуса в руке:
@@ -269,5 +270,11 @@ public class FocusItem extends Item {
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("item.heroicpaths.focus.bolt", Component.translatable("item.heroicpaths.focus.bolt." + boltPalette().id()))
                 .withStyle(ChatFormatting.AQUA));
+    }
+
+    /** Снаряжение не изнашивается в бою: прочность уходит только при смерти. */
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        return 0;
     }
 }

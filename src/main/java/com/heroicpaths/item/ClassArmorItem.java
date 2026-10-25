@@ -16,6 +16,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Предмет классовой брони: прибавки к характеристикам, если класс игрока совпадает.
@@ -50,11 +54,14 @@ public class ClassArmorItem extends ArmorItem {
         return HeroicPaths.id("textures/models/armor3d/" + setName() + ".png");
     }
 
-    /** Множитель прибавок брони от грейда: I — 0.6, II — 1, III — 1.5. */
+    /** Множитель прибавок брони от грейда: I — 0.6, II — 1, III — 1.5, IV — 2, V — 2.5, VI — 3. */
     public static float gradeFactor(int grade) {
         return switch (grade) {
             case 1 -> 0.6f;
             case 3 -> 1.5f;
+            case 4 -> 2f;
+            case 5 -> 2.5f;
+            case 6 -> 3f;
             default -> 1f;
         };
     }
@@ -96,5 +103,11 @@ public class ClassArmorItem extends ArmorItem {
             tooltip.add(Component.literal("  ").append(line).withStyle(ChatFormatting.DARK_AQUA));
         }
         tooltip.add(Component.translatable("tooltip.heroicpaths.set_grade_hint").withStyle(ChatFormatting.DARK_GRAY));
+    }
+
+    /** Снаряжение не изнашивается в бою: прочность уходит только при смерти. */
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        return 0;
     }
 }

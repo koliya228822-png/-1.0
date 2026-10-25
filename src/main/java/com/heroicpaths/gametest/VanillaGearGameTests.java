@@ -62,7 +62,7 @@ public class VanillaGearGameTests {
             helper.assertTrue(!com.heroicpaths.item.VanillaGear.isRemoved(result), holder.id() + " still makes " + result);
         }
         // Оружие мода тоже делается только на станках.
-        for (String[] entry : List.of(new String[]{"iron_dagger", "forge"}, new String[]{"diamond_greatsword", "forge"},
+        for (String[] entry : List.of(new String[]{"iron_dagger", "forge"}, new String[]{"iron_sword", "forge"},
                 new String[]{"musket", "forge"}, new String[]{"apprentice_wand", "rune_table"}, new String[]{"apprentice_staff", "rune_table"})) {
             helper.assertTrue(manager.byKey(HeroicPaths.id(entry[0])).isEmpty(), "the crafting table still makes " + entry[0]);
             helper.assertTrue(manager.byKey(HeroicPaths.id("station/" + entry[1] + "/" + entry[0])).isPresent(), entry[0] + " is not made at the " + entry[1]);

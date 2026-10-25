@@ -320,7 +320,7 @@ public class PartyGearGameTests {
         GearEvents.restore(player);
         ItemStack sword = inventory.getItem(0);
         helper.assertTrue(sword.is(Items.DIAMOND_SWORD) && sword.getDamageValue() == GearRules.deathLoss(sword),
-                "the sword must come back with 20% wear, got " + sword + " damage " + sword.getDamageValue());
+                "the sword must come back with 5% wear, got " + sword + " damage " + sword.getDamageValue());
         helper.assertTrue(inventory.getItem(38).is(Items.IRON_CHESTPLATE) && inventory.getItem(38).getDamageValue() > 0,
                 "the chestplate must come back worn");
         helper.assertTrue(inventory.getItem(Inventory.SLOT_OFFHAND).is(Items.SHIELD), "the shield must come back to the off hand");

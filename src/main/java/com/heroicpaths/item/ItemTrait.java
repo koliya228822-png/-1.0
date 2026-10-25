@@ -115,7 +115,7 @@ public enum ItemTrait {
         Set<Kind> kinds = EnumSet.noneOf(Kind.class);
         if (stack.getItem() instanceof FocusItem) kinds.add(Kind.FOCUS);
         if (stack.getItem() instanceof ProjectileWeaponItem || stack.getItem() instanceof MusketItem) kinds.add(Kind.RANGED);
-        if (stack.getItem() instanceof ArmorItem) kinds.add(Kind.ARMOR);
+        if (stack.getItem() instanceof ArmorItem || stack.getItem() instanceof com.heroicpaths.accessory.AccessoryItem) kinds.add(Kind.ARMOR);
         if (stack.getItem() instanceof ShieldItem) kinds.add(Kind.SHIELD);
         WeaponType weapon = WeaponType.of(stack);
         if (weapon != null) {

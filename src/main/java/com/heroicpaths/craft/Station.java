@@ -17,7 +17,11 @@ public enum Station {
     /** Ткацкий станок: чародейская ткань и астральный шёлк, мантии мага. */
     LOOM,
     /** Рунный стол: руны из кристаллов, жезлы и посохи из рун и самоцветов. */
-    RUNE_TABLE;
+    RUNE_TABLE,
+    /** Гранильный стол: огранка алмазов (камень может расколоться). */
+    GEM_TABLE,
+    /** Стол ювелира: ожерелья, серьги и кольца. */
+    JEWELER_TABLE;
 
     public static final Codec<Station> CODEC = Codec.STRING.comapFlatMap(id -> {
         Station station = byId(id);

@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/frost_faceted_staff" },
+  "base": { "parent": "heroicpaths:item/3d/frost_faceted_staff" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/frost_faceted_staff" } }
+  }
+}

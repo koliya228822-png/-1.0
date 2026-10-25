@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [ "GAG", "WCW", "WWW" ],
+  "key": { "G": { "item": "minecraft:gold_ingot" }, "A": { "item": "minecraft:amethyst_shard" }, "C": { "tag": "minecraft:wool_carpets" }, "W": { "item": "minecraft:dark_oak_planks" } },
+  "result": { "id": "heroicpaths:jeweler_table", "count": 1 }
+}

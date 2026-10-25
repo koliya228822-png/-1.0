@@ -29,7 +29,9 @@ public class ArmorGen {
     static final String[] BONES = {"head", "body", "right_arm", "left_arm", "right_leg", "left_leg"};
     static final String[] SLOTS = {"head", "chest", "legs", "feet"};
     static final String[] SETS = {"warrior_iron", "warrior", "warrior_damascus", "archer_leather", "archer",
-            "archer_impregnated", "mage_wool", "mage", "mage_astral"};
+            "archer_impregnated", "mage_wool", "mage", "mage_astral",
+            "warrior_diamond", "warrior_faceted", "warrior_brilliant", "archer_diamond", "archer_faceted", "archer_brilliant",
+            "mage_diamond", "mage_faceted", "mage_brilliant"};
 
     public static void main(String[] args) throws IOException {
         Path root = Path.of(args.length > 0 ? args[0] : ".");
@@ -44,6 +46,7 @@ public class ArmorGen {
                 .append("    public static final int TEX_W = ").append(TW).append(", TEX_H = ").append(TH).append(";\n")
                 .append("    public static final String[] SETS = {\"").append(String.join("\", \"", SETS)).append("\"};\n\n")
                 .append("    private ArmorShapes() {}\n\n");
+        Map<String, String> shapes = new HashMap<>();
         StringBuilder sw = new StringBuilder("    public static float[][] get(String key) {\n        return switch (key) {\n");
         for (String set : SETS) {
             Builder b = new Builder(set);
@@ -66,9 +69,16 @@ public class ArmorGen {
                         root.resolve("src/main/resources/assets/heroicpaths/textures/item/" + set + "_" + items[i] + ".png").toFile());
             for (String slot : SLOTS) {
                 String name = (set + "_" + slot).toUpperCase(Locale.ROOT);
-                java.append("    private static final float[][] ").append(name).append(" = {\n");
-                for (Cube c : b.slots.get(slot)) java.append("            ").append(c.row()).append(",\n");
-                java.append("    };\n\n");
+                StringBuilder rows = new StringBuilder();
+                for (Cube c : b.slots.get(slot)) rows.append("            ").append(c.row()).append(",\n");
+                // Комплекты IV–VI скроены как III: одинаковые детали пишутся один раз, иначе класс не влезает в лимит JVM.
+                String same = shapes.get(rows.toString());
+                if (same != null) {
+                    name = same;
+                } else {
+                    shapes.put(rows.toString(), name);
+                    java.append("    private static final float[][] ").append(name).append(" = {\n").append(rows).append("    };\n\n");
+                }
                 sw.append("            case \"").append(set).append('/').append(slot).append("\" -> ").append(name).append(";\n");
             }
             System.out.println(set + ": " + b.blocks.size() + " blocks, uv height " + b.usedH);
@@ -157,6 +167,7 @@ public class ArmorGen {
         Builder(String set) {
             this.set = set;
             this.cls = set.split("_")[0];
+            // Грейды IV–VI (алмаз, гранёный алмаз, бриллиант) — тот же покрой, что у III, другие палитры.
             this.grade = set.contains("_") ? (set.endsWith("iron") || set.endsWith("leather") || set.endsWith("wool") ? 1 : 3) : 2;
             for (String s : SLOTS) slots.put(s, new ArrayList<>());
         }
@@ -535,6 +546,11 @@ public class ArmorGen {
         static Pal of(String o, String d, String m, String l, String h) {
             return new Pal(c(o), c(d), c(m), c(l), c(h));
         }
+
+        /** Та же палитра от тёмного к светлому, если записана наоборот. */
+        Pal reversed() {
+            return new Pal(h, l, m, d, o);
+        }
     }
 
     static Color c(String hex) {
@@ -561,6 +577,14 @@ public class ArmorGen {
     static final Pal FUR = Pal.of("3A3022", "7A6A50", "B0A080", "D8CCAE", "F0E8D4");
     static final Pal FEATHER = Pal.of("6A6A64", "A8A8A0", "D8D8D0", "F2F2EC", "FFFFFF");
 
+    static final java.util.regex.Pattern GRANDMASTER = java.util.regex.Pattern.compile(".*_(diamond|faceted|brilliant)");
+    static final Pal DIAMOND = Pal.of("08383A", "168884", "3CC8C0", "9AF2EC", "F2FFFF");
+    static final Pal DIAMOND2 = Pal.of("06282A", "106460", "249A94", "62CEC6", "B4F2EC");
+    static final Pal FACETED = Pal.of("0A2448", "1E5A9A", "4AA0E0", "B4E4FF", "FFFFFF");
+    static final Pal FACETED2 = Pal.of("081A34", "143E70", "2C70B0", "6AAEE0", "BCE0FA");
+    static final Pal BRILLIANT = Pal.of("3A3A52", "8A8EB0", "D0D6F0", "F4F6FF", "FFFFFF");
+    static final Pal BRILLIANT2 = Pal.of("2A2A3C", "5E6280", "989EC0", "C8CCE6", "ECEEFA");
+
     static Map<String, Pal> palettes(String set) {
         Map<String, Pal> p = new HashMap<>();
         p.put("feather", FEATHER);
@@ -584,6 +608,59 @@ public class ArmorGen {
                 p.put("cloth", Pal.of("0A0204", "2A0608", "5A0E14", "8A1C24", "B8404A"));
                 p.put("leather2", LEATHER_BLACK); p.put("plume", Pal.of("080406", "240A0E", "4A1018", "7A1C26", "A8303A"));
                 p.put("gem", Pal.of("4A0610", "8A0E1E", "C01A2C", "FF8A94", "FFE0E4"));
+            }
+            case "warrior_diamond" -> {
+                p.put("metal", DIAMOND); p.put("metal2", DIAMOND2); p.put("trim", GOLD);
+                p.put("cloth", Pal.of("041A1C", "0A3C40", "126468", "1E9096", "48C0C4"));
+                p.put("leather2", LEATHER_BLACK); p.put("plume", Pal.of("06282A", "106460", "249A94", "62CEC6", "B4F2EC"));
+                p.put("gem", Pal.of("0A4A56", "1AA8C0", "5AD8E8", "B4FFFF", "F4FFFF"));
+            }
+            case "warrior_faceted" -> {
+                p.put("metal", FACETED); p.put("metal2", FACETED2); p.put("trim", SILVER);
+                p.put("cloth", Pal.of("060C24", "101E4E", "1C3280", "2E4CB0", "5A78D8"));
+                p.put("leather2", LEATHER_BLACK); p.put("plume", Pal.of("F0F4FF", "C8D4F0", "9AB0E0", "6A88C8", "3A5698"));
+                p.put("gem", Pal.of("0C1C5A", "2A5AD8", "5A8AF0", "A8C4FF", "F0F6FF"));
+            }
+            case "warrior_brilliant" -> {
+                p.put("metal", BRILLIANT); p.put("metal2", BRILLIANT2); p.put("trim", GOLD);
+                p.put("cloth", Pal.of("2A0E3A", "4A1A66", "70309A", "9A54C8", "C890EC"));
+                p.put("leather2", LEATHER_BLACK); p.put("plume", Pal.of("FFFFFF", "F0ECFF", "D8D0F4", "B4A8E0", "8A7CC0"));
+                p.put("gem", Pal.of("3A2A6A", "7A6AD8", "B8A8FF", "E8E0FF", "FFFFFF"));
+            }
+            case "archer_diamond", "archer_faceted", "archer_brilliant" -> {
+                Pal metal = set.endsWith("diamond") ? DIAMOND : set.endsWith("faceted") ? FACETED : BRILLIANT;
+                p.put("cloth", set.endsWith("diamond") ? Pal.of("041A1C", "0A3236", "124C50", "1E6C70", "3A9094")
+                        : set.endsWith("faceted") ? Pal.of("060C20", "0E1A40", "182A60", "263E84", "3E5AA8")
+                        : Pal.of("1A1426", "2E2440", "463A5E", "62567E", "8478A2"));
+                p.put("cloth2", Pal.of("08080A", "18161C", "2A262E", "423C46", "625A66"));
+                p.put("leather", set.endsWith("diamond") ? Pal.of("041618", "0C3236", "185458", "2A7A7C", "4AA4A2")
+                        : set.endsWith("faceted") ? Pal.of("060A1C", "0E1A3C", "1A2C60", "2C4486", "4A64AE")
+                        : Pal.of("2A2638", "4A4460", "6E6888", "9692B0", "C4C0D8"));
+                p.put("leather2", Pal.of("060404", "120C0A", "1E1612", "30241C", "48382C"));
+                p.put("fur", Pal.of("2A2E36", "5C6470", "9AA2B0", "D0D6E0", "F4F6FA"));
+                p.put("trim", set.endsWith("faceted") ? SILVER : GOLD);
+                p.put("metal", metal);
+                p.put("feather", metal);
+            }
+            case "mage_diamond", "mage_faceted", "mage_brilliant" -> {
+                boolean dia = set.endsWith("diamond"), fac = set.endsWith("faceted");
+                p.put("cloth", dia ? Pal.of("02141A", "06303A", "0C4E5C", "167480", "3A9CA8")
+                        : fac ? Pal.of("040A20", "0A1846", "142A72", "22409E", "4A66C8")
+                        : Pal.of("E0E2F0", "C8CCE2", "A8AECC", "8088B0", "5A6290").reversed());
+                p.put("cloth2", dia ? Pal.of("06102A", "102454", "1C3A80", "3058AC", "5A80D0")
+                        : fac ? Pal.of("0E0620", "24104A", "3A1C72", "58349C", "8058C4")
+                        : Pal.of("2A0E3A", "4A1A66", "70309A", "9A54C8", "C890EC"));
+                p.put("scarf", p.get("cloth2"));
+                p.put("feather", dia ? DIAMOND : fac ? FACETED : BRILLIANT);
+                p.put("leather", Pal.of("080C1E", "141C40", "222E62", "34448A", "4E62B0"));
+                p.put("leather2", LEATHER_BLACK);
+                p.put("trim", fac ? SILVER : GOLD);
+                p.put("metal", dia ? DIAMOND : fac ? FACETED : BRILLIANT);
+                p.put("metal2", dia ? DIAMOND2 : fac ? FACETED2 : BRILLIANT2);
+                p.put("book", dia ? Pal.of("06282A", "106460", "249A94", "62CEC6", "B4F2EC") : p.get("cloth2"));
+                p.put("gem", dia ? Pal.of("0A4A56", "1AA8C0", "5AD8E8", "B4FFFF", "F4FFFF")
+                        : fac ? Pal.of("0C1C5A", "2A5AD8", "5A8AF0", "A8C4FF", "F0F6FF")
+                        : Pal.of("3A2A6A", "7A6AD8", "B8A8FF", "E8E0FF", "FFFFFF"));
             }
             case "archer_leather" -> {
                 p.put("cloth", Pal.of("1E1208", "4A2E14", "7A5028", "A47444", "C89A68"));
@@ -686,9 +763,9 @@ public class ArmorGen {
             this.c = c;
             this.u = u;
             this.v = v;
-            this.astral = set.equals("mage_astral");
+            this.astral = set.equals("mage_astral") || GRANDMASTER.matcher(set).matches() && set.startsWith("mage");
             this.damascus = set.equals("warrior_damascus");
-            this.gilded = set.equals("mage") || set.equals("mage_astral");
+            this.gilded = set.equals("mage") || set.equals("mage_astral") || GRANDMASTER.matcher(set).matches() && set.startsWith("mage");
             this.deco = List.of(c.deco);
             this.rnd = new Random(c.key().hashCode());
         }

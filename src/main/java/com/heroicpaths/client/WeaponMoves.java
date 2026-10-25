@@ -1,9 +1,9 @@
 package com.heroicpaths.client;
 
+import com.heroicpaths.HeroicPaths;
 import com.heroicpaths.item.DaggerItem;
 import com.heroicpaths.item.FocusItem;
 import com.heroicpaths.item.GreatswordItem;
-import com.heroicpaths.registry.ModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -22,6 +22,7 @@ import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
@@ -82,10 +83,16 @@ public final class WeaponMoves {
 
     @Nullable
     static Style style(ItemStack stack) {
-        if (stack.is(ModItems.STEEL_SWORD.get()) || stack.is(ModItems.DAMASCUS_SWORD.get())) return Style.LONGSWORD;
+        if (isLongsword(stack)) return Style.LONGSWORD;
         if (stack.getItem() instanceof FocusItem focus && focus.isStaff()) return Style.STAFF;
         if (stack.getItem() instanceof GreatswordItem) return Style.GREATSWORD;
         return stack.getItem() instanceof DaggerItem ? Style.DAGGERS : null;
+    }
+
+    /** Одноручные мечи мода всех грейдов: iron_sword … brilliant_sword. */
+    static boolean isLongsword(ItemStack stack) {
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return id.getNamespace().equals(HeroicPaths.MODID) && id.getPath().endsWith("_sword");
     }
 
     public static boolean is(ItemStack stack) {

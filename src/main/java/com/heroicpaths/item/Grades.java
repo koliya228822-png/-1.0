@@ -15,12 +15,15 @@ import net.minecraft.world.item.Tiers;
 import java.util.List;
 
 /**
- * Грейд снаряжения I–III по ступени материала: железо → сталь → дамаск, кожа → прочная → пропитанная,
+ * Грейд снаряжения I–VI по ступени материала: железо → сталь → дамаск, кожа → прочная → пропитанная,
  * шерсть → чародейская ткань → астральный шёлк; у жезлов и посохов — ученический → рунный → архимага.
+ * Грейды IV–VI у всего снаряжения алмазные: алмаз → гранёный алмаз → бриллиант.
  */
 public final class Grades {
-    private static final String[] ROMAN = {"", "I", "II", "III"};
-    private static final ChatFormatting[] COLORS = {ChatFormatting.GRAY, ChatFormatting.GRAY, ChatFormatting.YELLOW, ChatFormatting.LIGHT_PURPLE};
+    public static final int MAX = 6;
+    private static final String[] ROMAN = {"", "I", "II", "III", "IV", "V", "VI"};
+    private static final ChatFormatting[] COLORS = {ChatFormatting.GRAY, ChatFormatting.GRAY, ChatFormatting.YELLOW, ChatFormatting.LIGHT_PURPLE,
+            ChatFormatting.AQUA, ChatFormatting.BLUE, ChatFormatting.WHITE};
 
     private Grades() {}
 
@@ -32,6 +35,8 @@ public final class Grades {
         if (item instanceof GradedBowItem bow) return bow.grade();
         if (item instanceof HandCrossbowItem crossbow) return crossbow.grade();
         if (item instanceof GradedShieldItem shield) return shield.grade();
+        if (item instanceof MusketItem musket) return musket.grade();
+        if (item instanceof com.heroicpaths.accessory.AccessoryItem) return com.heroicpaths.accessory.AccessoryItem.grade(stack);
         if (item == Items.BOW) return 1;
         if (item instanceof SwordItem sword) return ofTier(sword.getTier());
         if (item instanceof AxeItem axe) return ofTier(axe.getTier());
@@ -46,6 +51,9 @@ public final class Grades {
         // Камни души: великий — подмастерье рунного дела, древний — мастер-ремесленник.
         if (item == ModItems.GREATER_SOUL_STONE.get()) return 2;
         if (item == ModItems.ANCIENT_SOUL_STONE.get()) return 3;
+        // Огранка: гранёный алмаз — подмастерье ювелира, бриллиант — мастер-ремесленник.
+        if (item == ModItems.FACETED_DIAMOND.get()) return 2;
+        if (item == ModItems.BRILLIANT.get()) return 3;
         return 0;
     }
 
@@ -53,6 +61,9 @@ public final class Grades {
         if (tier == Tiers.IRON) return 1;
         if (tier == ModTiers.STEEL) return 2;
         if (tier == ModTiers.DAMASCUS) return 3;
+        if (tier == ModTiers.DIAMOND) return 4;
+        if (tier == ModTiers.FACETED) return 5;
+        if (tier == ModTiers.BRILLIANT) return 6;
         return 0;
     }
 
@@ -63,7 +74,7 @@ public final class Grades {
     /** Строка «Грейд: II» на позиции index (под названием, редкостью и её бонусами). Возвращает, сколько строк добавлено. */
     public static int addTooltip(ItemStack stack, List<Component> tooltip, int index) {
         int grade = of(stack);
-        if (grade < 1 || grade > 3) return 0;
+        if (grade < 1 || grade > MAX) return 0;
         tooltip.add(Math.min(index, tooltip.size()), Component.translatable("tooltip.heroicpaths.grade", label(grade)).withStyle(ChatFormatting.GRAY));
         return 1;
     }

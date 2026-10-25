@@ -20,6 +20,9 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Locale;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Ручной арбалет, как в BG3: одноручный, заряжается быстрее обычного арбалета, но бьёт слабее.
@@ -117,5 +120,11 @@ public class HandCrossbowItem extends CrossbowItem {
         tooltip.add(Component.translatable("item.heroicpaths.hand_crossbow.charge",
                 String.format(Locale.ROOT, "%.2f", chargeTicks / 20f)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("item.heroicpaths.hand_crossbow.pair").withStyle(ChatFormatting.DARK_AQUA));
+    }
+
+    /** Снаряжение не изнашивается в бою: прочность уходит только при смерти. */
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        return 0;
     }
 }

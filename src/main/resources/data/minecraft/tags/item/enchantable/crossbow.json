@@ -3,6 +3,9 @@
   "values": [
     "heroicpaths:hand_crossbow",
     "heroicpaths:steel_hand_crossbow",
-    "heroicpaths:damascus_hand_crossbow"
+    "heroicpaths:damascus_hand_crossbow",
+    "heroicpaths:diamond_hand_crossbow",
+    "heroicpaths:faceted_hand_crossbow",
+    "heroicpaths:brilliant_hand_crossbow"
   ]
 }

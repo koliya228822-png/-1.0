@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "forge",
+  "ingredients": [
+    { "item": "minecraft:iron_ingot", "count": 3 }
+  ],
+  "result": { "id": "heroicpaths:plate_gloves", "count": 1, "components": { "heroicpaths:gear_grade": 1 } }
+}

@@ -11,6 +11,9 @@ public final class ModKeys {
     public static final KeyMapping OPEN_SKILLS = new KeyMapping("key.heroicpaths.skills",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
 
+    public static final KeyMapping OPEN_ACCESSORIES = new KeyMapping("key.heroicpaths.accessories",
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, CATEGORY);
+
     public static final KeyMapping[] ABILITIES = {
             new KeyMapping("key.heroicpaths.ability_1", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY),
             new KeyMapping("key.heroicpaths.ability_2", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY),

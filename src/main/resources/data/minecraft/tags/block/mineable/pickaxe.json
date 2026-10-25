@@ -19,6 +19,7 @@
     "heroicpaths:ruby_ore",
     "heroicpaths:deepslate_ruby_ore",
     "heroicpaths:smithing_forge",
-    "heroicpaths:rune_table"
+    "heroicpaths:rune_table",
+    "heroicpaths:gem_table"
   ]
 }

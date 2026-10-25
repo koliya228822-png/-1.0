@@ -2,13 +2,22 @@
   "replace": false,
   "values": [
     "heroicpaths:steel_sword",
+    "heroicpaths:iron_sword",
     "heroicpaths:damascus_sword",
+    "heroicpaths:diamond_sword",
+    "heroicpaths:faceted_sword",
+    "heroicpaths:brilliant_sword",
     "heroicpaths:iron_greatsword",
     "heroicpaths:diamond_greatsword",
     "heroicpaths:steel_greatsword",
     "heroicpaths:damascus_greatsword",
+    "heroicpaths:faceted_greatsword",
+    "heroicpaths:brilliant_greatsword",
     "heroicpaths:iron_rapier",
     "heroicpaths:steel_rapier",
-    "heroicpaths:damascus_rapier"
+    "heroicpaths:damascus_rapier",
+    "heroicpaths:diamond_rapier",
+    "heroicpaths:faceted_rapier",
+    "heroicpaths:brilliant_rapier"
   ]
 }

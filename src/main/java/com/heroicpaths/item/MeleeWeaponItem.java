@@ -12,6 +12,9 @@ import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.ItemAbility;
+import net.minecraft.world.item.Item;
+import java.util.function.Consumer;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Оружие ближнего боя с типом урона и хватом. Рубящим ударом по площади бьёт только режущее оружие;
@@ -54,5 +57,11 @@ public class MeleeWeaponItem extends SwordItem {
     @Override
     public boolean canDisableShield(ItemStack stack, ItemStack shield, LivingEntity entity, LivingEntity attacker) {
         return weaponType == WeaponType.CRUSHING || super.canDisableShield(stack, shield, entity, attacker);
+    }
+
+    /** Снаряжение не изнашивается в бою: прочность уходит только при смерти. */
+    @Override
+    public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, @Nullable T entity, Consumer<Item> onBroken) {
+        return 0;
     }
 }

@@ -34,6 +34,13 @@ public final class EquipmentStats {
             }
         }
         if (pieces == ARMOR_SLOTS.length) into.addAll(ClassArmorItem.setBonus(playerClass).scaled(ClassArmorItem.gradeFactor(lowestGrade)));
+        // Аксессуары: перчатки, пояс и наручи своего типа брони и украшения.
+        for (ItemStack stack : com.heroicpaths.rpg.RpgManager.get(player).accessories().worn()) {
+            if (stack.getItem() instanceof com.heroicpaths.accessory.AccessoryItem accessory && accessory.worksFor(playerClass)) {
+                into.addAll(accessory.stats(stack));
+            }
+        }
+        com.heroicpaths.gear.GearSets.collect(player, into);
     }
 
     /**
@@ -42,6 +49,7 @@ public final class EquipmentStats {
      */
     public static void collectTraits(Player player, StatBlock into) {
         for (EquipmentSlot slot : ARMOR_SLOTS) addTraits(player.getItemBySlot(slot), into);
+        for (ItemStack stack : com.heroicpaths.rpg.RpgManager.get(player).accessories().worn()) addTraits(stack, into);
         ItemStack main = player.getMainHandItem();
         if (!(main.getItem() instanceof net.minecraft.world.item.ArmorItem)) addTraits(main, into);
         ItemStack off = player.getOffhandItem();

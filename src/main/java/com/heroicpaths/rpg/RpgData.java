@@ -75,6 +75,8 @@ public class RpgData implements INBTSerializable<CompoundTag> {
     private final Set<String> takenOrders = new LinkedHashSet<>();
     /** Ремёсла: кузнец, плотник, рунный мастер. Сброс класса их не трогает. */
     private final com.heroicpaths.craft.Professions professions = new com.heroicpaths.craft.Professions();
+    /** Слоты аксессуаров: перчатки, пояс, наручи и украшения. */
+    private final com.heroicpaths.accessory.Accessories accessories = new com.heroicpaths.accessory.Accessories();
     /** Зверь охотника, если он призван. */
     @Nullable
     private UUID companion;
@@ -282,6 +284,10 @@ public class RpgData implements INBTSerializable<CompoundTag> {
         return professions;
     }
 
+    public com.heroicpaths.accessory.Accessories accessories() {
+        return accessories;
+    }
+
     // ---------------------------------------------------------------- зверь охотника
 
     @Nullable
@@ -432,6 +438,7 @@ public class RpgData implements INBTSerializable<CompoundTag> {
         for (String id : takenOrders) takenTag.add(StringTag.valueOf(id));
         tag.put("takenOrders", takenTag);
         tag.put("crafts", professions.save());
+        tag.put("accessories", accessories.save(provider));
         return tag;
     }
 
@@ -461,6 +468,7 @@ public class RpgData implements INBTSerializable<CompoundTag> {
         takenOrders.clear();
         for (Tag id : tag.getList("takenOrders", Tag.TAG_STRING)) takenOrders.add(id.getAsString());
         professions.load(tag.getCompound("crafts"));
+        accessories.load(provider, tag.getCompound("accessories"));
 
         // Сохранения версии 1 (ранги навыков) и старые раскладки дерева (до версии 4) переносятся без узлов:
         // очки дерева возвращаются.

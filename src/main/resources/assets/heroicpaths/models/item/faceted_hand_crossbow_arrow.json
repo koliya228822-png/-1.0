@@ -1,0 +1,9 @@
+{
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": { "particle": "heroicpaths:item/faceted_hand_crossbow_arrow" },
+  "base": { "parent": "heroicpaths:item/3d/faceted_hand_crossbow_arrow" },
+  "perspectives": {
+    "gui": { "parent": "minecraft:item/generated", "textures": { "layer0": "heroicpaths:item/faceted_hand_crossbow_arrow" } }
+  }
+}

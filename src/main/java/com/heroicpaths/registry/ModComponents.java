@@ -56,5 +56,17 @@ public final class ModComponents {
                     .persistent(Codec.intRange(0, 100000))
                     .networkSynchronized(ByteBufCodecs.VAR_INT));
 
+    /** Грейд аксессуара (перчатки, пояс, наручи, украшения): 1 — I … 6 — VI. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> GEAR_GRADE =
+            COMPONENTS.registerComponentType("gear_grade", builder -> builder
+                    .persistent(Codec.intRange(1, 6))
+                    .networkSynchronized(ByteBufCodecs.VAR_INT));
+
+    /** Комплект (сет), к которому принадлежит вещь, — id из GearSet. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> GEAR_SET =
+            COMPONENTS.registerComponentType("gear_set", builder -> builder
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8));
+
     private ModComponents() {}
 }

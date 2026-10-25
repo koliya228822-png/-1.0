@@ -1,0 +1,8 @@
+{
+  "type": "heroicpaths:station",
+  "station": "gem_table",
+  "ingredients": [
+    { "item": "heroicpaths:faceted_diamond", "count": 1 }
+  ],
+  "result": { "id": "heroicpaths:brilliant", "count": 1 }
+}

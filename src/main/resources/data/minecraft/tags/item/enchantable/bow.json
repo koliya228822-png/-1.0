@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "heroicpaths:composite_bow",
-    "heroicpaths:ranger_longbow"
+    "heroicpaths:ranger_longbow",
+    "heroicpaths:diamond_longbow",
+    "heroicpaths:faceted_longbow",
+    "heroicpaths:brilliant_longbow"
   ]
 }

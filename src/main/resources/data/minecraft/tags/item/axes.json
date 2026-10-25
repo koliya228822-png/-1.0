@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "heroicpaths:steel_axe",
-    "heroicpaths:damascus_axe"
+    "heroicpaths:damascus_axe",
+    "heroicpaths:diamond_axe",
+    "heroicpaths:faceted_axe",
+    "heroicpaths:brilliant_axe"
   ]
 }

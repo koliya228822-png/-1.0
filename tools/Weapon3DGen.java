@@ -45,6 +45,9 @@ public class Weapon3DGen {
     static final String[] DIAMOND = {"08383A", "168884", "3CC8C0", "9AF2EC", "F2FFFF"};
     static final String[] STEEL = {"161E2C", "3C4A64", "6E86A8", "B2C4DE", "F2F8FF"};
     static final String[] DAMASCUS = {"0E101A", "2C3042", "565C72", "8E96AC", "D2DAEA"};
+    static final String[] FACETED = {"0A2448", "1E5A9A", "4AA0E0", "B4E4FF", "FFFFFF"};
+    static final String[] BRILLIANT = {"3A3A52", "8A8EB0", "D0D6F0", "F4F6FF", "FFFFFF"};
+    static final String[] SILVER = {"2A2E36", "6A707C", "AEB4C0", "E2E6EE", "FFFFFF"};
     static final String[] DARK = {"101218", "262A36", "444A5C", "6E7690", "A8B2CC"};
     static final String[] GOLD = {"3A2606", "7A5414", "C08A2C", "ECC462", "FFF2B8"};
     static final String[] BRASS = {"3A2A0E", "6E5222", "A8823E", "D8B46A", "F8E6B0"};
@@ -69,6 +72,7 @@ public class Weapon3DGen {
         GEMS.put("frost", new String[]{"0A3A6A", "3AB8F0", "E8FCFF"});
         GEMS.put("earth", new String[]{"243A0A", "7AB83A", "E4F8A8"});
         GEMS.put("storm", new String[]{"2A1A5A", "8A6AF0", "FFF6A8"});
+        GEMS.put("prism", new String[]{"3A2A6A", "B8A8FF", "FFFFFF"});
     }
 
     /** Размер текстур материалов: 128×128, 8 пикселей на единицу модели вдоль детали. */
@@ -83,6 +87,9 @@ public class Weapon3DGen {
         save(metal(DIAMOND, false), "metal_diamond");
         save(metal(STEEL, false), "metal_steel");
         save(metal(DAMASCUS, true), "metal_damascus");
+        save(metal(FACETED, false), "metal_faceted");
+        save(metal(BRILLIANT, false), "metal_brilliant");
+        save(metal(SILVER, false), "metal_silver");
         save(metal(DARK, false), "metal_dark");
         save(metal(GOLD, false), "metal_gold");
         save(metal(BRASS, false), "metal_brass");
@@ -90,6 +97,8 @@ public class Weapon3DGen {
         save(grip(LEATHER, "E2B654"), "grip_diamond");
         save(grip(BLACK_LEATHER, "8E9AB2"), "grip_steel");
         save(grip(BLACK_LEATHER, "A41C2E"), "grip_damascus");
+        save(grip(BLACK_LEATHER, "C8D4E8"), "grip_faceted");
+        save(grip(BLACK_LEATHER, "F0D070"), "grip_brilliant");
         save(grip(GREEN_LEATHER, "9AC870"), "grip_ranger");
         save(grip(LEATHER, "B08A50"), "grip_bow");
         save(grip(LEATHER, "C8A050"), "grip_focus");
@@ -114,7 +123,7 @@ public class Weapon3DGen {
         save(plain("2E4A1A", "7AA84E", "B4DC86", 0), "belly_green");
         save(plain("5A0A0A", "C01E1E", "F05A4A", 2), "paper_red");
         save(feather(), "feather");
-        for (int g = 1; g <= 3; g++) save(shieldFace(g), "shield_face_" + g);
+        for (int g = 1; g <= 6; g++) save(shieldFace(g), "shield_face_" + g);
     }
 
     /**
@@ -170,6 +179,34 @@ public class Weapon3DGen {
             for (int i = 0; i < 260; i++) {
                 int u = r.nextInt(N), v = r.nextInt(N);
                 blend(img, u, v, Color.BLACK, 0.12);
+            }
+        } else if (grade >= 4) {
+            // IV–VI: поле цвета камня и огранённый ромб посередине — алмаз, гранёный алмаз, бриллиант.
+            Color field = grade == 4 ? new Color(0x0E4A4A) : grade == 5 ? new Color(0x10284E) : new Color(0xE8E8F2);
+            Color stone = grade == 4 ? new Color(0x5CE0D8) : grade == 5 ? new Color(0x7AC4FF) : new Color(0xC8D0FF);
+            Color rim = grade == 6 ? new Color(0xD8A830) : new Color(0xC8D0DC);
+            for (int v = 0; v < N; v++)
+                for (int u = 0; u < N; u++) {
+                    double dx = (u - N / 2.0) / N, dy = (v - N / 2.0) / N;
+                    img.setRGB(u, v, shade(field, 1.05 - Math.sqrt(dx * dx + dy * dy) * 0.5 + (r.nextDouble() - 0.5) * 0.05).getRGB());
+                }
+            int cx = N / 2, cy = (int) (N * 0.45), hw = 30, hh = 44;
+            java.awt.Polygon gemShape = new java.awt.Polygon(new int[]{cx, cx + hw, cx, cx - hw}, new int[]{cy - hh, cy, cy + hh, cy}, 4);
+            g2.setColor(rim);
+            g2.setStroke(new BasicStroke(7f));
+            g2.drawPolygon(gemShape);
+            g2.setColor(stone);
+            g2.fillPolygon(gemShape);
+            g2.setColor(stone.brighter());
+            g2.fillPolygon(new int[]{cx, cx + hw, cx}, new int[]{cy - hh, cy, cy}, 3);
+            g2.setColor(shade(stone, 0.7));
+            g2.fillPolygon(new int[]{cx, cx - hw, cx}, new int[]{cy + hh, cy, cy}, 3);
+            g2.setColor(new Color(255, 255, 255, 200));
+            g2.fillOval(cx - 12, cy - 22, 9, 9);
+            if (grade >= 5) {
+                g2.setColor(rim);
+                g2.setStroke(new BasicStroke(4f));
+                g2.drawRect(6, 6, N - 12, N - 12);
             }
         } else {
             for (int v = 0; v < N; v++)
@@ -727,6 +764,8 @@ public class Weapon3DGen {
             case "diamond" -> new S("metal_diamond", "metal_gold", "aqua", "grip_diamond", "wood");
             case "steel" -> new S("metal_steel", "metal_dark", "sapphire", "grip_steel", "wood");
             case "damascus" -> new S("metal_damascus", "metal_gold", "ruby", "grip_damascus", "dark_wood");
+            case "faceted" -> new S("metal_faceted", "metal_silver", "sapphire", "grip_faceted", "dark_wood");
+            case "brilliant" -> new S("metal_brilliant", "metal_gold", "prism", "grip_brilliant", "dark_wood");
             default -> throw new IllegalArgumentException(mat);
         };
     }
@@ -1024,8 +1063,19 @@ public class Weapon3DGen {
         box(m, 0.6, 8.6, -0.45, 1.3, 10.2, 0.45, met, "full");
         box(m, 1.3, 8.7, -0.4, 1.55, 10.1, 0.4, met, "light");
     }
-    static void musket(M m) {
-        String iron = "metal_iron", brass = "metal_brass", wood = "wood";
+    /** Ствол и замок — металл грейда, накладки — его отделка, ложе — дерево (у дамаска и выше — тёмное). */
+    static void musket(M m, String mat) {
+        String iron = switch (mat) {
+            case "iron" -> "metal_iron";
+            default -> "metal_" + mat;
+        };
+        String brass = switch (mat) {
+            case "iron" -> "metal_brass";
+            case "steel" -> "metal_dark";
+            case "faceted" -> "metal_silver";
+            default -> "metal_gold";
+        };
+        String wood = mat.equals("iron") || mat.equals("steel") ? "wood" : "dark_wood";
         rod(m, -2.2, 15.4, 0.4, iron);
         rod(m, 15.0, 15.55, 0.5, iron);
         box(m, -0.75, 14.2, -0.1, -0.38, 14.6, 0.1, brass, "full");
@@ -1065,7 +1115,10 @@ public class Weapon3DGen {
         return switch (grade) {
             case 1 -> new SH("metal_iron", "shield_face_1", "metal_iron", "wood");
             case 2 -> new SH("metal_steel", "shield_face_2", "metal_steel", "wood");
-            default -> new SH("metal_damascus", "shield_face_3", "metal_gold", "dark_wood");
+            case 3 -> new SH("metal_damascus", "shield_face_3", "metal_gold", "dark_wood");
+            case 4 -> new SH("metal_diamond", "shield_face_4", "metal_gold", "dark_wood");
+            case 5 -> new SH("metal_faceted", "shield_face_5", "metal_silver", "dark_wood");
+            default -> new SH("metal_brilliant", "shield_face_6", "metal_gold", "dark_wood");
         };
     }
 
@@ -1203,8 +1256,17 @@ public class Weapon3DGen {
     static final double[] STRING_ANGLE = {0, 22.5, 22.5, 45};
 
     static void bow(M m, boolean composite, int frame) {
-        String wood = composite ? "dark_wood" : "ranger_wood", belly = composite ? "bone" : "belly_green";
-        String grip = composite ? "grip_bow" : "grip_ranger", tip = composite ? "metal_gold" : "metal_iron";
+        if (composite) bow(m, true, frame, "dark_wood", "bone", "grip_bow", "metal_gold", "metal_gold");
+        else bow(m, false, frame, "ranger_wood", "belly_green", "grip_ranger", "metal_iron", null);
+    }
+
+    /** Луки IV–VI: изгиб составного лука, тёмное дерево, накладки и кольца из металла грейда. */
+    static void grandBow(M m, String mat, int frame) {
+        S s = style(mat);
+        bow(m, true, frame, "dark_wood", s.metal(), s.grip(), s.guard(), s.metal());
+    }
+
+    static void bow(M m, boolean composite, int frame, String wood, String belly, String grip, String tip, String rings) {
         double[] path = (composite ? COMPOSITE : LONGBOW)[frame];
         double w = composite ? 0.62 : 0.6, th = composite ? 0.62 : 0.56;
         double[] end = null;
@@ -1223,15 +1285,15 @@ public class Weapon3DGen {
                 if (i + 2 < path.length) pin(m, "xy", q2[0], q2[1], 0, 0.09, th * 0.8, belly, "full");
                 p = new double[]{p[0] + Math.cos(rad) * path[i + 1], p[1] + Math.sin(rad) * path[i + 1]};
             }
-            if (composite) {
-                // Золотые кольца на середине плеч.
+            if (rings != null) {
+                // Кольца на середине плеч.
                 double[] q = {sx, 5.7};
                 for (int i = 0; i < 4; i += 2) {
                     double ang = mir ? 180 - path[i] : path[i];
                     double rad = Math.toRadians(ang);
                     q = new double[]{q[0] + Math.cos(rad) * path[i + 1], q[1] + Math.sin(rad) * path[i + 1]};
                 }
-                boxC(m, q[0], q[1], 0, 0.85, 0.85, th + 0.14, "metal_gold", "light", 'z', 0, false);
+                boxC(m, q[0], q[1], 0, 0.85, 0.85, th + 0.14, rings, "light", 'z', 0, false);
             }
             boxC(m, end[0], end[1], 0, 0.5, 0.5, th + 0.1, tip, "light", 'y', 45, false);
             boxC(m, end[0], end[1], 0, 0.26, 0.26, th + 0.26, tip, "light", 'y', 45, false);
@@ -1276,18 +1338,16 @@ public class Weapon3DGen {
 
     /** frame: standby, pulling_0, pulling_1, pulling_2, arrow, firework. */
     static void crossbow(M m, String mat, String frame) {
-        String met = switch (mat) {
-            case "steel" -> "metal_steel";
-            case "damascus" -> "metal_damascus";
-            default -> "metal_iron";
-        };
+        String met = "metal_" + mat;
         String trim = switch (mat) {
+            case "iron" -> "metal_brass";
             case "steel" -> "metal_dark";
-            case "damascus" -> "metal_gold";
-            default -> "metal_brass";
+            case "faceted" -> "metal_silver";
+            default -> "metal_gold";
         };
-        String wood = mat.equals("damascus") ? "dark_wood" : "wood";
-        String string = mat.equals("damascus") ? "string_gold" : "string";
+        boolean fine = !mat.equals("iron") && !mat.equals("steel");
+        String wood = fine ? "dark_wood" : "wood";
+        String string = fine ? "string_gold" : "string";
         // Ложе, направляющая и приклад со спуском снизу (низ — −z).
         box(m, -0.6, -3.0, -0.45, 0.6, 6.2, 0.45, wood, "full");
         box(m, -0.28, -4.8, 0.45, 0.28, 6.4, 0.68, met, "full");
@@ -1357,6 +1417,8 @@ public class Weapon3DGen {
         return switch (tier) {
             case "apprentice" -> new Focus("wood", "metal_brass", false);
             case "rune" -> new Focus("rune_wood_" + el, "metal_gold", false);
+            case "diamond" -> new Focus("arch_wood_" + el, "metal_diamond", true);
+            case "faceted" -> new Focus("arch_wood_" + el, "metal_silver", true);
             default -> new Focus("arch_wood_" + el, "metal_gold", true);
         };
     }
@@ -1659,28 +1721,25 @@ public class Weapon3DGen {
         return "    { \"predicate\": { " + predicate + " }, \"model\": \"" + NS + ":item/" + model + "\" }";
     }
 
+    /** Материалы грейдов I–VI. */
+    static final String[] GRADES = {"iron", "steel", "damascus", "diamond", "faceted", "brilliant"};
+
     static int makeModels() throws IOException {
-        for (String mat : new String[]{"iron", "diamond", "steel", "damascus"}) {
+        for (String mat : GRADES) {
             S s = style(mat);
             one(mat + "_dagger", Kind.REAL, m -> dagger(m, s));
             one(mat + "_greatsword", Kind.REAL, m -> greatsword(m, s));
-        }
-        for (String mat : new String[]{"steel", "damascus"}) {
-            S s = style(mat);
             one(mat + "_sword", Kind.REAL, m -> sword(m, s));
-            one(mat + "_axe", Kind.REAL, m -> axe(m, s));
-        }
-        for (String mat : new String[]{"iron", "steel", "damascus"}) {
-            S s = style(mat);
+            if (!mat.equals("iron")) one(mat + "_axe", Kind.REAL, m -> axe(m, s));
             one(mat + "_rapier", Kind.REAL, m -> rapier(m, s));
             one(mat + "_spear", Kind.POLEARM, m -> spear(m, s));
             one(mat + "_flanged_mace", Kind.REAL, m -> flangedMace(m, s));
             one(mat + "_warhammer", Kind.POLEARM, m -> warhammer(m, s, mat));
+            one(mat.equals("iron") ? "musket" : mat + "_musket", Kind.MUSKET, m -> musket(m, mat));
         }
-        one("musket", Kind.MUSKET, Weapon3DGen::musket);
 
-        String[] grades = {"iron", "steel", "damascus"};
-        for (int g = 1; g <= 3; g++) {
+        String[] grades = GRADES;
+        for (int g = 1; g <= 6; g++) {
             int grade = g;
             String mat = grades[g - 1];
             one(mat + "_buckler", Kind.SHIELD, m -> { m.shift = 0; buckler(m, grade); });
@@ -1700,8 +1759,20 @@ public class Weapon3DGen {
                 one(bowName + "_pulling_" + f, Kind.BOW, m -> bow(m, comp, frame));
             }
         }
+        for (String mat : new String[]{"diamond", "faceted", "brilliant"}) {
+            String bowName = mat + "_longbow";
+            String ovs = String.join(",\n",
+                    ov("\"pulling\": 1", bowName + "_pulling_0"),
+                    ov("\"pulling\": 1, \"pull\": 0.65", bowName + "_pulling_1"),
+                    ov("\"pulling\": 1, \"pull\": 0.9", bowName + "_pulling_2"));
+            one(bowName, Kind.BOW, m -> grandBow(m, mat, 0), ovs);
+            for (int f = 0; f < 3; f++) {
+                int frame = f + 1;
+                one(bowName + "_pulling_" + f, Kind.BOW, m -> grandBow(m, mat, frame));
+            }
+        }
 
-        for (String mat : new String[]{"iron", "steel", "damascus"}) {
+        for (String mat : GRADES) {
             String base = mat.equals("iron") ? "hand_crossbow" : mat + "_hand_crossbow";
             String ovs = String.join(",\n",
                     ov("\"pulling\": 1", base + "_pulling_0"),
@@ -1717,7 +1788,7 @@ public class Weapon3DGen {
         one("apprentice_wand", Kind.HANDHELD, m -> wand(m, focus("apprentice", null), "amethyst"));
         one("apprentice_staff", Kind.STAFF, m -> staff(m, focus("apprentice", null), "amethyst"));
         for (String el : new String[]{"fire", "frost", "earth", "storm"}) {
-            for (String tier : new String[]{"rune", "archmage"}) {
+            for (String tier : new String[]{"rune", "archmage", "diamond", "faceted", "brilliant"}) {
                 Focus fc = focus(tier, el);
                 one(el + "_" + tier + "_wand", Kind.HANDHELD, m -> wand(m, fc, el));
                 one(el + "_" + tier + "_staff", Kind.STAFF, m -> staff(m, fc, el));

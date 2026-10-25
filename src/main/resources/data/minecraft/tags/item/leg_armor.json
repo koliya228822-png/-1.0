@@ -4,11 +4,20 @@
     "heroicpaths:warrior_leggings",
     "heroicpaths:warrior_iron_leggings",
     "heroicpaths:warrior_damascus_leggings",
+    "heroicpaths:warrior_diamond_leggings",
+    "heroicpaths:warrior_faceted_leggings",
+    "heroicpaths:warrior_brilliant_leggings",
     "heroicpaths:archer_leggings",
     "heroicpaths:archer_leather_leggings",
     "heroicpaths:archer_impregnated_leggings",
+    "heroicpaths:archer_diamond_leggings",
+    "heroicpaths:archer_faceted_leggings",
+    "heroicpaths:archer_brilliant_leggings",
     "heroicpaths:mage_leggings",
     "heroicpaths:mage_wool_leggings",
-    "heroicpaths:mage_astral_leggings"
+    "heroicpaths:mage_astral_leggings",
+    "heroicpaths:mage_diamond_leggings",
+    "heroicpaths:mage_faceted_leggings",
+    "heroicpaths:mage_brilliant_leggings"
   ]
 }

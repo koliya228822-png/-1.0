@@ -1,0 +1,6 @@
+{
+  "parent": "heroicpaths:item/3d/faceted_buckler",
+  "overrides": [
+    { "predicate": { "blocking": 1 }, "model": "heroicpaths:item/faceted_buckler_blocking" }
+  ]
+}
