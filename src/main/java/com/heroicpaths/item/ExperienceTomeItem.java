@@ -20,9 +20,18 @@ import java.util.List;
 /** Даёт опыт класса. Только для тестов: из лута, наград и торговли книги убраны, остались в творческой вкладке. */
 public class ExperienceTomeItem extends Item {
     private static final int XP_AMOUNT = 150;
+    private final int amount;
+    private final String descriptionKey;
 
     public ExperienceTomeItem(Properties properties) {
+        this(properties, XP_AMOUNT, "item.heroicpaths.experience_tome.desc");
+    }
+
+    /** Тот же предмет опыта с другим количеством (камень предков). */
+    public ExperienceTomeItem(Properties properties, int amount, String descriptionKey) {
         super(properties);
+        this.amount = amount;
+        this.descriptionKey = descriptionKey;
     }
 
     @Override
@@ -35,7 +44,7 @@ public class ExperienceTomeItem extends Item {
             return InteractionResultHolder.fail(stack);
         }
         if (player instanceof ServerPlayer serverPlayer) {
-            RpgManager.addXp(serverPlayer, XP_AMOUNT);
+            RpgManager.addXp(serverPlayer, amount);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 1f, 1f);
         }
@@ -45,6 +54,6 @@ public class ExperienceTomeItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.heroicpaths.experience_tome.desc", XP_AMOUNT).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(descriptionKey, amount).withStyle(ChatFormatting.GRAY));
     }
 }

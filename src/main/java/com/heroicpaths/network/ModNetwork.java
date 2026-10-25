@@ -90,6 +90,8 @@ public final class ModNetwork {
                 case ADD_STAT -> RpgManager.addStat(player, CoreStat.byOrdinal(payload.value()));
                 case RANK_UP -> RpgManager.rankUp(player, payload.text());
                 case BIND -> RpgManager.bindAbility(player, payload.text(), payload.value());
+                case CONVERT_XP -> com.heroicpaths.rpg.Experience.convertVanilla(player,
+                        payload.text().isEmpty() ? null : com.heroicpaths.craft.Profession.byId(payload.text()));
             }
         });
     }

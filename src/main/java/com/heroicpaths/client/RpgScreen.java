@@ -316,6 +316,28 @@ public class RpgScreen extends Screen {
             plus.active = points > 0 && data.getStat(stat) < CoreStat.MAX;
             addRenderableWidget(plus);
         }
+        // Перевод ванильного опыта: в опыт персонажа или любого ремесла.
+        int y = convertTop();
+        boolean hasXp = minecraft.player != null && com.heroicpaths.rpg.Experience.totalPoints(minecraft.player) > 0;
+        Button character = Button.builder(Component.translatable("screen.heroicpaths.convert.character"),
+                        b -> PacketDistributor.sendToServer(TreeActionPayload.convertXp("")))
+                .bounds(x, y + 12, 140, 18).tooltip(Tooltip.create(Component.translatable("screen.heroicpaths.convert.character_hint"))).build();
+        character.active = hasXp;
+        addRenderableWidget(character);
+        int i = 0;
+        for (com.heroicpaths.craft.Profession profession : com.heroicpaths.craft.Profession.values()) {
+            Button craft = Button.builder(profession.displayName(), b -> PacketDistributor.sendToServer(TreeActionPayload.convertXp(profession.id())))
+                    .bounds(x + (i % 2) * 71, y + 32 + (i / 2) * 20, 69, 18)
+                    .tooltip(Tooltip.create(Component.translatable("screen.heroicpaths.convert.craft_hint",
+                            com.heroicpaths.rpg.Experience.VANILLA_PER_CRAFT_XP))).build();
+            craft.active = hasXp;
+            addRenderableWidget(craft);
+            i++;
+        }
+    }
+
+    private int convertTop() {
+        return CONTENT_TOP + 20 + CoreStat.values().length * 22 + 16;
     }
 
     private static Component joinLines(List<Component> lines) {
@@ -752,6 +774,8 @@ public class RpgScreen extends Screen {
         }
         graphics.drawString(font, Component.translatable("screen.heroicpaths.stat_hint"), x,
                 CONTENT_TOP + 20 + CoreStat.values().length * 22 + 4, 0x777777, true);
+        graphics.drawString(font, Component.translatable("screen.heroicpaths.convert.title",
+                com.heroicpaths.rpg.Experience.totalPoints(minecraft.player)), x, convertTop(), 0x80FF80, true);
 
         StatBlock stats = PlayerStats.get(minecraft.player);
         List<Component> lines = new ArrayList<>();

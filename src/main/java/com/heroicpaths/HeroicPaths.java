@@ -65,6 +65,7 @@ public class HeroicPaths {
         modBus.addListener(ModEntities::registerAttributes);
 
         NeoForge.EVENT_BUS.register(RpgEvents.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.Experience.class);
         NeoForge.EVENT_BUS.register(MentorEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MentorHomes.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MerchantPosts.class);

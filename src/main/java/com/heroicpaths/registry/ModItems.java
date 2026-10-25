@@ -46,6 +46,10 @@ public final class ModItems {
             () -> new OblivionScrollItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<ExperienceTomeItem> EXPERIENCE_TOME = ITEMS.register("experience_tome",
             () -> new ExperienceTomeItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    /** Камень предков: выпадает с боссов, даёт 1500 опыта персонажа. */
+    public static final DeferredItem<ExperienceTomeItem> ANCESTOR_STONE = ITEMS.register("ancestor_stone",
+            () -> new ExperienceTomeItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC), com.heroicpaths.rpg.Experience.ANCESTOR_STONE_XP,
+                    "item.heroicpaths.ancestor_stone.desc"));
 
     public static final DeferredItem<BlockItem> WEAPON_RACK = ITEMS.registerSimpleBlockItem("weapon_rack", ModBlocks.WEAPON_RACK);
     public static final DeferredItem<BlockItem> ARCHERY_TARGET = ITEMS.registerSimpleBlockItem("archery_target", ModBlocks.ARCHERY_TARGET);
