@@ -84,6 +84,8 @@ import java.util.UUID;
  */
 public final class UniqueAbilities {
     public static final int UNLOCK_LEVEL = 30;
+    /** Поддерживаемое умение: длится, пока его не прекратят. */
+    public static final String CHANNEL_ID = "meteor_shower";
 
     private static final Set<Subclass> MAGES = EnumSet.of(Subclass.ELEMENTALIST, Subclass.SUPPORT, Subclass.SUMMONER, Subclass.BLOOD_MAGE);
     private static final Set<Subclass> WARRIORS = EnumSet.of(Subclass.GREATSWORD, Subclass.GUARDIAN, Subclass.BARBARIAN, Subclass.PALADIN);
@@ -591,7 +593,8 @@ public final class UniqueAbilities {
     // ================================================================ формы (видно другим игрокам)
 
     private static void broadcastForm(ServerPlayer player, String form, int ticks) {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new PlayerFormPayload(player.getId(), form, ticks));
+        PacketDistributor.sendToPlayersTrackingEntity(player, new PlayerFormPayload(player.getId(), form, ticks));
+        sendForm(player, player, form, ticks);
     }
 
     private static void sendForm(ServerPlayer to, ServerPlayer player, String form, int ticks) {

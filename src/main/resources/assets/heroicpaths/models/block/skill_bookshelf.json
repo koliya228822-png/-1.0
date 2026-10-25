@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "heroicpaths:block/skill_bookshelf_top",
+    "side": "heroicpaths:block/skill_bookshelf"
+  }
+}

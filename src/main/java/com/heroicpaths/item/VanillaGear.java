@@ -30,6 +30,7 @@ import java.util.Set;
  * Ванильное оружие и броня убраны из игры: мечи, вся броня (кожаная, кольчужная, железная, золотая, алмазная,
  * незеритовая, черепаший шлем), щит, арбалет, булава и трезубец. Их не скрафтить (рецепты отключены в data/minecraft/recipe),
  * нет во вкладках творческого режима, в сундуках и добыче, у торговцев, а монстры появляются без них.
+ * Зачарованные книги тоже не выпадают и не продаются: зачарования дают только крафт (ItemRarity) и камни рун.
  * Ванильный лук остаётся — это лук I грейда, а ванильные инструменты — инструменты, не оружие.
  */
 public final class VanillaGear {
@@ -85,10 +86,15 @@ public final class VanillaGear {
         filter(event.getRareTrades());
     }
 
+    /** Чего нет в добыче и у торговцев: ванильного оружия и брони, а также зачарованных книг. */
+    public static boolean isRemovedFromLoot(ItemStack stack) {
+        return isRemoved(stack) || stack.is(Items.ENCHANTED_BOOK);
+    }
+
     private static void filter(List<VillagerTrades.ItemListing> listings) {
         listings.replaceAll(listing -> (trader, random) -> {
             MerchantOffer offer = listing.getOffer(trader, random);
-            return offer == null || isRemoved(offer.getResult()) ? null : offer;
+            return offer == null || isRemovedFromLoot(offer.getResult()) ? null : offer;
         });
     }
 
@@ -102,7 +108,7 @@ public final class VanillaGear {
 
         @Override
         protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> loot, LootContext context) {
-            loot.removeIf(VanillaGear::isRemoved);
+            loot.removeIf(VanillaGear::isRemovedFromLoot);
             return loot;
         }
 

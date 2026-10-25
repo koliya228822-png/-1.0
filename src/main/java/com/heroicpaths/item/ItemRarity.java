@@ -4,6 +4,7 @@ import com.heroicpaths.HeroicPaths;
 import com.heroicpaths.registry.ModComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponents;
@@ -25,6 +26,7 @@ import net.minecraft.world.item.DiggerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
@@ -327,6 +329,27 @@ public final class ItemRarity {
     }
 
     /** Два случайных совместимых зачарования: у Легендарной — максимального уровня, у Реликвии — на уровень выше. */
+    /** Шанс, что вещь Уникальной редкости и выше выйдет из крафта с одним ванильным зачарованием. */
+    public static final float CRAFT_ENCHANT_CHANCE = 0.1f;
+    /** Эти чары крафт не даёт: прочность, починка, скорость души (и все проклятия). */
+    private static final Set<ResourceKey<Enchantment>> CRAFT_EXCLUDED = Set.of(Enchantments.UNBREAKING, Enchantments.MENDING, Enchantments.SOUL_SPEED);
+
+    /** Одно случайное полезное зачарование случайного уровня, совместимое с уже наложенными. */
+    public static boolean addCraftEnchantment(ItemStack stack, RandomSource random, RegistryAccess registries) {
+        Registry<Enchantment> registry = registries.registryOrThrow(Registries.ENCHANTMENT);
+        ItemEnchantments existing = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        List<Holder<Enchantment>> candidates = new ArrayList<>();
+        registry.holders().forEach(holder -> {
+            if (holder.is(EnchantmentTags.CURSE) || CRAFT_EXCLUDED.stream().anyMatch(holder::is) || !holder.value().isSupportedItem(stack)) return;
+            if (existing.keySet().stream().allMatch(other -> Enchantment.areCompatible(other, holder))) candidates.add(holder);
+        });
+        if (candidates.isEmpty()) return false;
+        Holder<Enchantment> chosen = candidates.get(random.nextInt(candidates.size()));
+        int max = chosen.value().getMaxLevel();
+        stack.enchant(chosen, Math.max(existing.getLevel(chosen), 1 + random.nextInt(max)));
+        return true;
+    }
+
     private static int addEnchantments(ItemStack stack, Tier tier, RandomSource random, RegistryAccess registries) {
         Registry<Enchantment> registry = registries.registryOrThrow(Registries.ENCHANTMENT);
         List<Holder<Enchantment>> candidates = new ArrayList<>();
@@ -357,6 +380,10 @@ public final class ItemRarity {
         com.heroicpaths.craft.SoulStones.Payment payment = com.heroicpaths.craft.SoulStones.settle(player, roll(player.getRandom(), rank));
         Tier tier = payment.tier();
         apply(target, tier, player.getRandom(), player.level().registryAccess());
+        if (tier.ordinal() >= Tier.UNIQUE.ordinal() && player.getRandom().nextFloat() < CRAFT_ENCHANT_CHANCE
+                && addCraftEnchantment(target, player.getRandom(), player.level().registryAccess()) && player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(Component.translatable("message.heroicpaths.crafted_enchanted").withStyle(ChatFormatting.LIGHT_PURPLE));
+        }
         com.heroicpaths.gear.GearSet set = com.heroicpaths.gear.GearSets.roll(target, player.getRandom());
         if (set != null && player instanceof ServerPlayer serverPlayer) {
             serverPlayer.sendSystemMessage(Component.translatable("message.heroicpaths.crafted_set", set.displayName()).withStyle(ChatFormatting.GOLD));

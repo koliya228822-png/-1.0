@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "PPP",
+    "BBB",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "B": {
+      "item": "heroicpaths:ability_book"
+    }
+  },
+  "result": {
+    "id": "heroicpaths:skill_bookshelf",
+    "count": 1
+  }
+}

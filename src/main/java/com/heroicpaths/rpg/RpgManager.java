@@ -309,7 +309,8 @@ public final class RpgManager {
         }
         // Повторное нажатие поддерживаемого умения (метеоритный дождь) прекращает его.
         if (com.heroicpaths.rpg.ability.UniqueAbilities.channeling(player)) {
-            com.heroicpaths.rpg.ability.UniqueAbilities.stopChannel(player);
+            if (def.id().equals(com.heroicpaths.rpg.ability.UniqueAbilities.CHANNEL_ID)) com.heroicpaths.rpg.ability.UniqueAbilities.stopChannel(player);
+            else player.displayClientMessage(Component.translatable("message.heroicpaths.already_casting").withStyle(ChatFormatting.GRAY), true);
             return;
         }
         if (com.heroicpaths.rpg.ability.Casting.isCasting(player)) {

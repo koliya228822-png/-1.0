@@ -12,6 +12,10 @@ public final class ClientHooks {
 
     private ClientHooks() {}
 
+    public static void openSkillTable(net.minecraft.core.BlockPos pos, int shelves) {
+        net.minecraft.client.Minecraft.getInstance().setScreen(new SkillTableScreen(pos, shelves));
+    }
+
     public static void openQuestBoard() {
         Minecraft.getInstance().setScreen(new QuestBoardScreen());
     }

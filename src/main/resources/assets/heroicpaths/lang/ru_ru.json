@@ -1473,5 +1473,20 @@
   "ability.heroicpaths.true_stealth.desc": "10 секунд невидимости: враги теряют вас из виду. Враги в 5 блоках получают «Страх» на 10 секунд — колющие удары и снаряды наносят им втрое больше урона.",
   "ability.heroicpaths.cutthroat": "Ловкость головореза",
   "ability.heroicpaths.cutthroat.desc": "Пассивно: +15% к шансу крита, колющее оружие и снаряды полностью игнорируют броню, а убийство с шансом 20% обращает врагов в 8 блоках в бегство.",
-  "ability.heroicpaths.passive": "Пассивное умение"
+  "ability.heroicpaths.passive": "(пассивное)",
+  "block.heroicpaths.skill_bookshelf": "Полка умений",
+  "screen.heroicpaths.skill_table": "Стол умений",
+  "screen.heroicpaths.skill_table_book": "Создать книгу умения",
+  "screen.heroicpaths.skill_table_book_cost": "Книга + %s лазурита + %s уровней опыта. Случайное умение, которое может выучить ваш подкласс.",
+  "screen.heroicpaths.skill_table_unique_cost": "Цена: книга + %s лазурита + %s алмаз + %s уровней опыта. Выучить можно с 30-го уровня за очко умений.",
+  "screen.heroicpaths.skill_table_shelves": "Полки умений вокруг: %s из %s — стол %s-го уровня",
+  "screen.heroicpaths.skill_table_have": "У вас: книг %s, лазурита %s, алмазов %s, уровней опыта %s",
+  "screen.heroicpaths.skill_table_uniques": "Уникальные умения",
+  "screen.heroicpaths.skill_table_need_shelves": "Поставьте вокруг стола %s полок умений, чтобы создавать уникальные книги",
+  "message.heroicpaths.skill_table_tier": "Нужен стол 2-го уровня: 6 полок умений вокруг",
+  "message.heroicpaths.skill_table_nothing": "Вашему подклассу пока нечего изучать из книг",
+  "message.heroicpaths.skill_table_cost": "Нужны книга, 8 лазурита и 5 уровней опыта",
+  "message.heroicpaths.skill_table_cost_unique": "Нужны книга, 32 лазурита, алмаз и 30 уровней опыта",
+  "message.heroicpaths.skill_table_done": "Создана книга: %s",
+  "message.heroicpaths.crafted_enchanted": "Вещь вышла из крафта зачарованной!"
 }

@@ -239,6 +239,8 @@ public class RpgScreen extends Screen {
             MutableComponent label;
             if (!known) {
                 label = Component.translatable("screen.heroicpaths.book_ability", def.name(), def.unlockLevel()).withStyle(ChatFormatting.DARK_GRAY);
+            } else if (def.passive()) {
+                label = def.name().copy().append(" ").append(Component.translatable("ability.heroicpaths.passive").withStyle(ChatFormatting.DARK_PURPLE));
             } else {
                 label = def.name().copy().append(" ").append(Component.translatable("screen.heroicpaths.rank", data.getRank(def.id())));
                 if (def.id().equals(selectedAbility)) label = Component.literal("» ").append(label).append(" «").withStyle(ChatFormatting.YELLOW);
@@ -249,9 +251,9 @@ public class RpgScreen extends Screen {
                     })
                     .bounds(left, y, listWidth, rowHeight - 2)
                     .tooltip(Tooltip.create(abilityTooltip(data, def, known))).build();
-            button.active = known;
+            button.active = known && !def.passive();
             addRenderableWidget(button);
-            if (known && data.getRank(def.id()) < AbilityDef.MAX_RANK) {
+            if (known && !def.passive() && data.getRank(def.id()) < AbilityDef.MAX_RANK) {
                 Button rank = Button.builder(Component.literal("+"), b -> PacketDistributor.sendToServer(TreeActionPayload.rankUp(def.id())))
                         .bounds(left + listWidth + 2, y, 20, rowHeight - 2)
                         .tooltip(Tooltip.create(Component.translatable("screen.heroicpaths.rank_up_hint", data.getRank(def.id()) + 1))).build();

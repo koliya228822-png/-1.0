@@ -71,6 +71,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MerchantPosts.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.GuardPosts.class);
         NeoForge.EVENT_BUS.register(ItemRarity.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.item.SkillTable.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.CraftEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.craft.SoulStones.class);
         NeoForge.EVENT_BUS.register(DungeonManager.class);

@@ -1473,5 +1473,20 @@
   "ability.heroicpaths.true_stealth.desc": "10 seconds of invisibility: enemies lose track of you. Enemies within 5 blocks get Fear for 10 seconds — piercing hits and projectiles deal triple damage to them.",
   "ability.heroicpaths.cutthroat": "Cutthroat Finesse",
   "ability.heroicpaths.cutthroat.desc": "Passive: +15% crit chance, piercing weapons and projectiles fully ignore armor, and a kill has a 20% chance to send enemies within 8 blocks fleeing.",
-  "ability.heroicpaths.passive": "Passive ability"
+  "ability.heroicpaths.passive": "(passive)",
+  "block.heroicpaths.skill_bookshelf": "Skill Bookshelf",
+  "screen.heroicpaths.skill_table": "Skill Table",
+  "screen.heroicpaths.skill_table_book": "Create an ability book",
+  "screen.heroicpaths.skill_table_book_cost": "Book + %s lapis + %s experience levels. A random ability your subclass can learn.",
+  "screen.heroicpaths.skill_table_unique_cost": "Cost: book + %s lapis + %s diamond + %s experience levels. Learnable from level 30 for an ability point.",
+  "screen.heroicpaths.skill_table_shelves": "Skill bookshelves around: %s of %s — tier %s table",
+  "screen.heroicpaths.skill_table_have": "You have: %s books, %s lapis, %s diamonds, %s experience levels",
+  "screen.heroicpaths.skill_table_uniques": "Unique abilities",
+  "screen.heroicpaths.skill_table_need_shelves": "Place %s skill bookshelves around the table to create unique books",
+  "message.heroicpaths.skill_table_tier": "Needs a tier 2 table: 6 skill bookshelves around it",
+  "message.heroicpaths.skill_table_nothing": "Your subclass has nothing to learn from books yet",
+  "message.heroicpaths.skill_table_cost": "Needs a book, 8 lapis and 5 experience levels",
+  "message.heroicpaths.skill_table_cost_unique": "Needs a book, 32 lapis, a diamond and 30 experience levels",
+  "message.heroicpaths.skill_table_done": "Book created: %s",
+  "message.heroicpaths.crafted_enchanted": "The item came out of crafting enchanted!"
 }
