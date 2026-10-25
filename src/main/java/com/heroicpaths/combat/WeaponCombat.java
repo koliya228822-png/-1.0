@@ -94,6 +94,10 @@ public final class WeaponCombat {
         }
         // Стрелы и болты: пробивание брони из дерева.
         if (source.getEntity() instanceof ServerPlayer shooter && source.getDirectEntity() instanceof Projectile && shooter != target) {
+            if (com.heroicpaths.rpg.ability.UniqueAbilities.ignoresArmor(shooter)) {
+                event.addReductionModifier(DamageContainer.Reduction.ARMOR, (container, reduction) -> 0f);
+                return;
+            }
             pierceArmor(event, PlayerStats.get(shooter).get(Stat.ARMOR_PIERCE) / 100f, PlayerStats.get(shooter).get(Stat.FLAT_ARMOR_PIERCE));
             return;
         }
@@ -121,7 +125,13 @@ public final class WeaponCombat {
         }
         event.setAmount(amount);
         boolean piercing = mainType == WeaponType.PIERCING || offType == WeaponType.PIERCING;
-        pierceArmor(event, (piercing ? PIERCING_ARMOR_IGNORED : 0f) + PlayerStats.get(player).get(Stat.ARMOR_PIERCE) / 100f,
+        // «Ловкость головореза»: колющее оружие броню не учитывает вовсе.
+        if (piercing && !ability && com.heroicpaths.rpg.ability.UniqueAbilities.ignoresArmor(player)) {
+            event.addReductionModifier(DamageContainer.Reduction.ARMOR, (container, reduction) -> 0f);
+            return;
+        }
+        float pierce = piercing ? PIERCING_ARMOR_IGNORED * (PowerAttack.isPowerHit() ? 2f : 1f) : 0f;
+        pierceArmor(event, pierce + PlayerStats.get(player).get(Stat.ARMOR_PIERCE) / 100f,
                 PlayerStats.get(player).get(Stat.FLAT_ARMOR_PIERCE));
     }
 
@@ -158,14 +168,16 @@ public final class WeaponCombat {
         ServerPlayer player = meleeAttacker(event.getSource(), target);
         if (player == null) return;
         boolean ability = AbilityLogic.isAbilityDamage();
-        if (!ability && strength(player) < STRONG_HIT) return;
+        if (!ability && strength(player) < STRONG_HIT && !PowerAttack.isPowerHit()) return;
         rollEffect(player, target, WeaponType.of(player.getMainHandItem()));
         if (!ability && isDualWielding(player)) rollEffect(player, target, WeaponType.of(secondWeapon(player)));
     }
 
     private static void rollEffect(ServerPlayer player, LivingEntity target, @Nullable WeaponType type) {
-        if (type == WeaponType.SLASHING && player.getRandom().nextFloat() < bleedChance(player)) applyBleeding(player, target);
-        if (type == WeaponType.CRUSHING && player.getRandom().nextFloat() < stunChance(player)) applyStun(player, target);
+        // Силовая атака вызывает особый эффект оружия с удвоенным шансом.
+        float boost = PowerAttack.isPowerHit() ? 2f : 1f;
+        if (type == WeaponType.SLASHING && player.getRandom().nextFloat() < bleedChance(player) * boost) applyBleeding(player, target);
+        if (type == WeaponType.CRUSHING && player.getRandom().nextFloat() < stunChance(player) * boost) applyStun(player, target);
     }
 
     /** Удар оружием из руки игрока: обычный удар или удар умения ближнего боя. */

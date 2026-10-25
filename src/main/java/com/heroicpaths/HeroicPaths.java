@@ -100,6 +100,9 @@ public class HeroicPaths {
         // Касты сильных умений и метки ударов по площади.
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Casting::onServerTick);
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Casting::onServerStopped);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.ability.UniqueAbilities.class);
+        NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.UniqueAbilities::onServerTick);
+        NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.UniqueAbilities::onServerStopped);
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Zones::onServerTick);
         NeoForge.EVENT_BUS.addListener(com.heroicpaths.rpg.ability.Zones::onServerStopped);
         NeoForge.EVENT_BUS.addListener(AbilityLogic::onProjectileImpact);

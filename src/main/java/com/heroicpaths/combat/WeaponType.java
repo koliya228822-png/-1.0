@@ -92,5 +92,7 @@ public enum WeaponType {
         String grip = isTwoHanded(stack) ? "two_handed" : isPaired(stack) ? "paired" : "one_handed";
         tooltip.add(index + 1, Component.translatable("tooltip.heroicpaths." + grip)
                 .withStyle(ChatFormatting.DARK_GRAY));
+        Component power = com.heroicpaths.combat.PowerAttack.describe(stack);
+        if (power != null) tooltip.add(index + 2, power.copy().withStyle(ChatFormatting.DARK_GRAY));
     }
 }

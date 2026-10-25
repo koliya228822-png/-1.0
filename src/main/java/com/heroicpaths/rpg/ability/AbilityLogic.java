@@ -116,7 +116,7 @@ public final class AbilityLogic {
             case "earthquake" -> earthquake(player, def);
             case "chain_lightning" -> chainLightning(player, def);
             case "tornado" -> tornado(player, def);
-            default -> SubclassAbilities.cast(player, def);
+            default -> def.unique() ? UniqueAbilities.cast(player, def) : SubclassAbilities.cast(player, def);
         };
     }
 
@@ -932,7 +932,7 @@ public final class AbilityLogic {
         return false;
     }
 
-    static Vec3 horizontalLook(Player player) {
+    public static Vec3 horizontalLook(Player player) {
         Vec3 look = player.getLookAngle();
         Vec3 flat = new Vec3(look.x, 0, look.z);
         return flat.lengthSqr() < 1.0E-4 ? Vec3.directionFromRotation(0, player.getYRot()) : flat.normalize();

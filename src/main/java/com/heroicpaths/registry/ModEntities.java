@@ -234,6 +234,11 @@ public final class ModEntities {
             ENTITY_TYPES.register("summoned_golem", () -> EntityType.Builder
                     .<SummonedGolem>of(SummonedGolem::new, MobCategory.MISC)
                     .sized(1.4f, 2.7f).clientTrackingRange(10).build("summoned_golem"));
+    /** Драколич призывателя: огромный костяной фантом. */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.Dracolich>> DRACOLICH =
+            ENTITY_TYPES.register("dracolich", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.Dracolich>of(com.heroicpaths.entity.Dracolich::new, MobCategory.MISC)
+                    .sized(0.9f, 0.5f).eyeHeight(0.175f).clientTrackingRange(12).build("dracolich"));
     /** Пуля мушкета. */
     public static final DeferredHolder<EntityType<?>, EntityType<MusketBall>> MUSKET_BALL =
             ENTITY_TYPES.register("musket_ball", () -> EntityType.Builder
@@ -297,5 +302,6 @@ public final class ModEntities {
         event.put(COMPANION_OWLBEAR.get(), PolarBear.createAttributes().build());
         event.put(SUMMONED_SKELETON.get(), AbstractSkeleton.createAttributes().build());
         event.put(SUMMONED_GOLEM.get(), IronGolem.createAttributes().build());
+        event.put(DRACOLICH.get(), com.heroicpaths.entity.Dracolich.createAttributes().build());
     }
 }

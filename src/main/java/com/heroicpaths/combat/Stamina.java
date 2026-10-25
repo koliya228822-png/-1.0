@@ -104,6 +104,7 @@ public final class Stamina {
      */
     public static boolean spend(ServerPlayer player, float cost) {
         if (!uses(player) || cost <= 0) return true;
+        if (com.heroicpaths.rpg.ability.UniqueAbilities.freeStamina(player)) return true;
         RpgData data = RpgManager.get(player);
         float stamina = current(player);
         boolean enough = stamina >= cost;
@@ -146,7 +147,9 @@ public final class Stamina {
     }
 
     public static float regenPerTick(Player player) {
-        return REGEN_PER_TICK * max(player) / MAX + PlayerStats.get(player).get(Stat.RESOURCE_REGEN) / 20f;
+        float regen = REGEN_PER_TICK * max(player) / MAX + PlayerStats.get(player).get(Stat.RESOURCE_REGEN) / 20f;
+        // «Да я только начал»: чем меньше здоровья, тем быстрее восстанавливается выносливость.
+        return regen * (1f + com.heroicpaths.rpg.ability.UniqueAbilities.justStartedBonus(player));
     }
 
     /** Удар по существу оружием ближнего боя. Голые руки стамину не тратят. */

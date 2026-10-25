@@ -19,7 +19,7 @@ public final class ModCreativeTabs {
                     .icon(() -> ModItems.EXPERIENCE_TOME.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         ModItems.ITEMS.getEntries().forEach(item -> {
-                            if (item.get() != ModItems.ABILITY_BOOK.get() && !(item.get() instanceof com.heroicpaths.item.ProfessionManualItem)) {
+                            if (item.get() != ModItems.ABILITY_BOOK.get() && item.get() != ModItems.UNIQUE_ABILITY_BOOK.get() && !(item.get() instanceof com.heroicpaths.item.ProfessionManualItem)) {
                                 output.accept(item.get());
                             }
                         });
@@ -36,6 +36,9 @@ public final class ModCreativeTabs {
                         // По книге на каждое умение, которое учат по книгам.
                         for (var def : com.heroicpaths.rpg.ability.AbilityRegistry.bookAbilities(100)) {
                             output.accept(com.heroicpaths.item.AbilityBookItem.create(ModItems.ABILITY_BOOK.get(), def));
+                        }
+                        for (var def : com.heroicpaths.rpg.ability.AbilityRegistry.uniques()) {
+                            output.accept(com.heroicpaths.item.AbilityBookItem.create(ModItems.UNIQUE_ABILITY_BOOK.get(), def));
                         }
                     })
                     .build());

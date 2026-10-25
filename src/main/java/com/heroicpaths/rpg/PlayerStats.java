@@ -163,7 +163,8 @@ public final class PlayerStats {
     }
 
     public static float critChance(Player player) {
-        return Math.min(MAX_CRIT_CHANCE, 5f + get(player).get(Stat.CRIT_CHANCE) + ClassTraits.critBonus(player));
+        return Math.min(MAX_CRIT_CHANCE, 5f + get(player).get(Stat.CRIT_CHANCE) + ClassTraits.critBonus(player)
+                + com.heroicpaths.rpg.ability.UniqueAbilities.critBonus(player));
     }
 
     public static float critMultiplier(Player player) {

@@ -72,12 +72,22 @@ public final class ModNetwork {
                 com.heroicpaths.combat.Stamina.set(context.player(), payload.stamina()));
         registrar.playToClient(CastBarPayload.TYPE, CastBarPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.CastBarLayer.set(payload.ability(), payload.ticks()));
+        registrar.playToClient(PlayerFormPayload.TYPE, PlayerFormPayload.STREAM_CODEC, (payload, context) ->
+                com.heroicpaths.client.PlayerForms.set(payload.entityId(), payload.form(), payload.ticks()));
         registrar.playToClient(MobLevelPayload.TYPE, MobLevelPayload.STREAM_CODEC, (payload, context) -> {
             net.minecraft.world.entity.Entity entity = context.player().level().getEntity(payload.entityId());
             if (entity != null) com.heroicpaths.combat.MobLevels.applyOnClient(entity, payload);
         });
         registrar.playToClient(PartySyncPayload.TYPE, PartySyncPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.ClientHooks.setParty(payload.members()));
+        registrar.playToServer(CombatInputPayload.TYPE, CombatInputPayload.STREAM_CODEC, (payload, context) -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
+            switch (payload.kind()) {
+                case POWER_ATTACK -> com.heroicpaths.combat.PowerAttack.perform(player, payload.value());
+                case CANCEL_CAST -> com.heroicpaths.rpg.ability.Casting.cancel(player);
+                case QUICK_SHOT -> com.heroicpaths.rpg.ability.UniqueAbilities.quickShot(player);
+            }
+        });
         registrar.playToServer(TreeActionPayload.TYPE, TreeActionPayload.STREAM_CODEC, (payload, context) -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             switch (payload.action()) {

@@ -146,6 +146,9 @@ public final class ModItems {
     // Книги умений и оружие подклассов
     public static final DeferredItem<AbilityBookItem> ABILITY_BOOK = ITEMS.register("ability_book",
             () -> new AbilityBookItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    /** Книга уникального умения: только со стола зачарований 2-го уровня. */
+    public static final DeferredItem<AbilityBookItem> UNIQUE_ABILITY_BOOK = ITEMS.register("unique_ability_book",
+            () -> new AbilityBookItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<DaggerItem> IRON_DAGGER = ITEMS.register("iron_dagger",
             () -> new DaggerItem(Tiers.IRON, new Item.Properties()));
     public static final DeferredItem<DaggerItem> DIAMOND_DAGGER = ITEMS.register("diamond_dagger",
