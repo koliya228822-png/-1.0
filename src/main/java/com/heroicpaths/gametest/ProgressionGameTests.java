@@ -110,6 +110,8 @@ public class ProgressionGameTests {
     @GameTest(template = ARENA)
     public static void cancelledCastHasNoCooldown(GameTestHelper helper) {
         ServerPlayer player = hero(helper, PlayerClass.MAGE, Subclass.ELEMENTALIST, 10);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.APPRENTICE_WAND.get()));
+        helper.assertTrue(RpgManager.learnAbility(player, AbilityRegistry.get("meteor")), "Метеор не выучен");
         RpgData data = RpgManager.get(player);
         data.setResource(1000);
         RpgManager.useAbility(player, RpgGameTests.slotOf(data, "meteor"));
