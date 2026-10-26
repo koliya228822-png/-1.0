@@ -1,11 +1,11 @@
 package com.heroicpaths.rpg.ability;
 
+import com.heroicpaths.combat.WeaponType;
 import com.heroicpaths.item.DaggerItem;
 import com.heroicpaths.item.MusketItem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.Item;
@@ -25,7 +25,7 @@ public enum WeaponReq {
     TWO_HANDED,
     /** Щит в любой руке. */
     SHIELD,
-    /** Топор в основной руке. */
+    /** Боевой топор в основной руке (ванильный топор — инструмент и не подходит). */
     AXE,
     /** Кинжал в основной руке. */
     DAGGER,
@@ -46,7 +46,7 @@ public enum WeaponReq {
             case MELEE -> isMeleeWeapon(main);
             case TWO_HANDED -> com.heroicpaths.combat.WeaponType.isTwoHanded(player.getMainHandItem()) && player.getOffhandItem().isEmpty();
             case SHIELD -> main instanceof ShieldItem || off instanceof ShieldItem;
-            case AXE -> main instanceof AxeItem;
+            case AXE -> WeaponType.isWeaponAxe(main);
             case DAGGER -> main instanceof DaggerItem;
             case BOW -> main instanceof BowItem || off instanceof BowItem;
             case CROSSBOW -> main instanceof CrossbowItem || off instanceof CrossbowItem;
@@ -56,7 +56,7 @@ public enum WeaponReq {
     }
 
     public static boolean isMeleeWeapon(Item item) {
-        return item instanceof SwordItem || item instanceof AxeItem || item instanceof MaceItem || item instanceof TridentItem;
+        return item instanceof SwordItem || WeaponType.isWeaponAxe(item) || item instanceof MaceItem || item instanceof TridentItem;
     }
 
     public MutableComponent displayName() {

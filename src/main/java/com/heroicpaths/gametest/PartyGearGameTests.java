@@ -281,12 +281,12 @@ public class PartyGearGameTests {
 
     @GameTest(template = ARENA)
     public static void gearIsWeaponsAndArmorOnly(GameTestHelper helper) {
-        for (ItemStack gear : List.of(new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.IRON_AXE), new ItemStack(Items.BOW),
+        for (ItemStack gear : List.of(new ItemStack(Items.DIAMOND_SWORD), new ItemStack(ModItems.STEEL_AXE.get()), new ItemStack(Items.BOW),
                 new ItemStack(Items.CROSSBOW), new ItemStack(Items.SHIELD), new ItemStack(Items.TRIDENT), new ItemStack(Items.IRON_CHESTPLATE),
                 new ItemStack(ModItems.MAGE_HELMET.get()))) {
             helper.assertTrue(GearRules.isGear(gear), gear + " must count as gear");
         }
-        for (ItemStack other : List.of(new ItemStack(Items.DIAMOND_PICKAXE), new ItemStack(Items.SHEARS), new ItemStack(Items.FISHING_ROD),
+        for (ItemStack other : List.of(new ItemStack(Items.DIAMOND_PICKAXE), new ItemStack(Items.IRON_AXE), new ItemStack(Items.SHEARS), new ItemStack(Items.FISHING_ROD),
                 new ItemStack(Items.ELYTRA), new ItemStack(Items.DIRT))) {
             helper.assertTrue(!GearRules.isGear(other), other + " must not count as gear");
         }

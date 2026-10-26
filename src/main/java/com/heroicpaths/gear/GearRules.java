@@ -4,7 +4,6 @@ import com.heroicpaths.HeroicPaths;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MaceItem;
@@ -15,7 +14,7 @@ import net.minecraft.world.item.TridentItem;
 
 /**
  * Что считается оружием и бронёй. Оно не изнашивается в бою, не выпадает при смерти, а теряет прочность, и его нельзя чинить.
- * Мечи, топоры, луки, арбалеты, трезубцы, булавы, щиты, жезлы и посохи и любая броня, плюс всё из тега {@code heroicpaths:gear}
+ * Мечи, боевые топоры мода (ванильный топор — инструмент), луки, арбалеты, трезубцы, булавы, щиты, жезлы и посохи и любая броня, плюс всё из тега {@code heroicpaths:gear}
  * (туда модпак может добавить оружие других модов).
  */
 public final class GearRules {
@@ -28,7 +27,7 @@ public final class GearRules {
     public static boolean isGear(ItemStack stack) {
         if (stack.isEmpty()) return false;
         Item item = stack.getItem();
-        return item instanceof ArmorItem || item instanceof SwordItem || item instanceof AxeItem
+        return item instanceof ArmorItem || item instanceof SwordItem || com.heroicpaths.combat.WeaponType.isWeaponAxe(item)
                 || item instanceof ProjectileWeaponItem || item instanceof TridentItem || item instanceof MaceItem
                 || item instanceof ShieldItem || item instanceof com.heroicpaths.item.MusketItem
                 || item instanceof com.heroicpaths.item.FocusItem || stack.is(GEAR);

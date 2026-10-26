@@ -39,7 +39,7 @@ public final class Grades {
         if (item instanceof com.heroicpaths.accessory.AccessoryItem) return com.heroicpaths.accessory.AccessoryItem.grade(stack);
         if (item == Items.BOW) return 1;
         if (item instanceof SwordItem sword) return ofTier(sword.getTier());
-        if (item instanceof AxeItem axe) return ofTier(axe.getTier());
+        if (item instanceof AxeItem axe && !com.heroicpaths.combat.WeaponType.isToolAxe(axe)) return ofTier(axe.getTier());
         return 0;
     }
 

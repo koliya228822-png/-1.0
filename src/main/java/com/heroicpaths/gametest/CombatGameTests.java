@@ -59,8 +59,9 @@ public class CombatGameTests {
     @GameTest(template = ARENA)
     public static void weaponTypesAndGrips(GameTestHelper helper) {
         helper.assertTrue(WeaponType.of(new ItemStack(Items.IRON_SWORD)) == WeaponType.SLASHING
-                && WeaponType.of(new ItemStack(Items.IRON_AXE)) == WeaponType.SLASHING
-                && WeaponType.of(new ItemStack(ModItems.IRON_GREATSWORD.get())) == WeaponType.SLASHING, "swords and axes slash");
+                && WeaponType.of(new ItemStack(ModItems.STEEL_AXE.get())) == WeaponType.SLASHING
+                && WeaponType.of(new ItemStack(ModItems.IRON_GREATSWORD.get())) == WeaponType.SLASHING, "swords and battle axes slash");
+        helper.assertTrue(WeaponType.of(new ItemStack(Items.IRON_AXE)) == null, "a vanilla axe is a tool, not a weapon");
         helper.assertTrue(WeaponType.of(new ItemStack(ModItems.IRON_DAGGER.get())) == WeaponType.PIERCING
                 && WeaponType.of(new ItemStack(ModItems.STEEL_RAPIER.get())) == WeaponType.PIERCING
                 && WeaponType.of(new ItemStack(ModItems.IRON_SPEAR.get())) == WeaponType.PIERCING

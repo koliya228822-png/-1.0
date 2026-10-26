@@ -3,6 +3,7 @@ package com.heroicpaths.combat;
 import com.heroicpaths.HeroicPaths;
 import com.heroicpaths.item.MeleeWeaponItem;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -58,8 +59,22 @@ public enum WeaponType {
         if (item instanceof MeleeWeaponItem weapon) return weapon.weaponType();
         if (item instanceof MaceItem) return CRUSHING;
         if (item instanceof TridentItem) return PIERCING;
-        if (item instanceof SwordItem || item instanceof AxeItem) return SLASHING;
+        if (item instanceof SwordItem || isWeaponAxe(item)) return SLASHING;
         return null;
+    }
+
+    /**
+     * Ванильный топор (предмет из {@code minecraft}) — инструмент, как кирка и лопата, а не оружие: бьёт с уроном кирки
+     * того же материала ({@link com.heroicpaths.item.ToolAxes}), не получает бонусов топора и не подходит для умений
+     * с оружием. Боевые топоры мода остаются оружием.
+     */
+    public static boolean isToolAxe(Item item) {
+        return item instanceof AxeItem && BuiltInRegistries.ITEM.getKey(item).getNamespace().equals("minecraft");
+    }
+
+    /** Топор-оружие: любой топор, кроме ванильного. */
+    public static boolean isWeaponAxe(Item item) {
+        return item instanceof AxeItem && !isToolAxe(item);
     }
 
     /** Двуручное оружие: двуручный меч, копьё, боевой молот (и всё из тега двуручного оружия). */

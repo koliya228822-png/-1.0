@@ -61,6 +61,7 @@ public class HeroicPaths {
         ModLoot.FUNCTIONS.register(modBus);
         ModLoot.LOOT_MODIFIERS.register(modBus);
         modBus.addListener(com.heroicpaths.item.VanillaGear::onBuildCreativeTabs);
+        modBus.addListener(com.heroicpaths.item.ToolAxes::onModifyDefaultComponents);
         modBus.addListener(ModNetwork::registerPayloads);
         modBus.addListener(ModEntities::registerAttributes);
 
@@ -81,6 +82,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(com.heroicpaths.gear.GearSets.class);
         NeoForge.EVENT_BUS.register(WeaponCombat.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.Stamina.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.combat.ShieldBlock.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.MobLevels.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.combat.TwoHandedGrip.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.rpg.ClassTraits.class);

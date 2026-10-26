@@ -89,7 +89,8 @@ public final class RpgEvents {
                 bonus += stats.get(Stat.SWORD_DAMAGE);
                 flat += stats.get(Stat.FLAT_SWORD_DAMAGE);
             }
-            if (weapon.is(ItemTags.AXES)) {
+            // Ванильный топор — инструмент: бонусы топора из дерева и подкласса ему не достаются.
+            if (weapon.is(ItemTags.AXES) && !com.heroicpaths.combat.WeaponType.isToolAxe(weapon.getItem())) {
                 bonus += stats.get(Stat.AXE_DAMAGE);
                 flat += stats.get(Stat.FLAT_AXE_DAMAGE);
             }
