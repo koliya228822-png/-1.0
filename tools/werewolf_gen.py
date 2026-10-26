@@ -119,21 +119,31 @@ def model():
     for side, sx in (("right", -1), ("left", 1)):
         part("arm_" + side, "torso", 7.5 * sx, -11, -0.5, -0.55, 0, 0.12 * sx) \
             .box(-3.5, -2.5, -3.5, 7, 5, 7, "mane", "shag", 0.2) \
-            .box(-2.5, 0, -2.5, 5, 9, 5, "grey", "scars")
-        part("forearm_" + side, "arm_" + side, 0, 8.5, 0, -0.3) \
-            .box(-2.5, 0, -2.5, 5, 8, 5, "grey", "scars") \
+            .box(-2.5, 0, -2.5, 5, 8, 5, "grey", "scars")
+        part("forearm_" + side, "arm_" + side, 0, 7.5, 0, -0.3) \
+            .box(-2.5, 0, -2.5, 5, 7, 5, "grey", "scars") \
             .box(-3, -0.5, 1, 6, 4, 2, "mid", "shag")
-        hand = part("hand_" + side, "forearm_" + side, 0, 8, 0, -0.15).box(-2.5, 0, -2, 5, 4, 4, "hand")
+        # Кисть: тёмная ладонь, четыре согнутых пальца из двух фаланг и большой палец; когти короткие, светлые.
+        part("hand_" + side, "forearm_" + side, 0, 6.5, 0, -0.15).box(-3, 0, -2.5, 6, 3, 5, "hand")
         for i in range(4):
-            hand.box(-2.4 + i * 1.3, 3.5, -2.3, 1, 4, 1, "bone", "claw")
-        hand.box(1.6 * sx, 1, -2.6, 1, 3, 1, "bone", "claw")
+            name = f"finger_{side}_{i}"
+            part(name, "hand_" + side, -2.5 + i * 1.67, 2.5, -1.5, 0.05 - 0.08 * (i % 2), 0, 0).box(-0.5, 0, -0.5, 1, 4, 1, "hand")
+            part(name + "_tip", name, 0, 3.8, 0, -0.35).box(-0.5, 0, -0.5, 1, 2, 1, "hand") \
+                .box(-0.5, 1.7, -0.5, 1, 2, 1, "bone", "claw")
+        inner = -sx
+        part(f"thumb_{side}", "hand_" + side, 2.7 * inner, 1.2, -1.8, -0.2, 0, 0.3 * inner).box(-0.5, 0, -0.5, 1, 3, 1, "hand") \
+            .box(-0.5, 2.7, -0.5, 1, 2, 1, "bone", "claw")
     # Ноги: бедро вперёд, голень назад, широкая лапа с когтями.
     for side, sx in (("right", -1), ("left", 1)):
         part("leg_" + side, "root", 3.2 * sx, 9, 2, -0.35).box(-2.5, -1, -3, 5, 9, 6, "mid", "shag")
-        part("shin_" + side, "leg_" + side, 0, 7.5, -0.5, 0.75).box(-2, -0.5, -2, 4, 7, 4, "grey")
-        foot = part("foot_" + side, "shin_" + side, 0, 6.5, 0, -0.4).box(-2.5, 0, -4.5, 5, 2, 6, "hand")
-        for i in range(3):
-            foot.box(-2.2 + i * 1.7, 1, -6, 1, 1, 2, "bone", "claw")
+        part("shin_" + side, "leg_" + side, 0, 7.5, -0.5, 0.75).box(-2.5, -0.5, -2.5, 5, 7, 5, "grey")
+        # Широкая волчья лапа: подушка, четыре пальца и светлые когти, загнутые вниз.
+        foot = part("foot_" + side, "shin_" + side, 0, 6.5, 0, -0.4).box(-3, 0, -3, 6, 2, 5, "hand") \
+            .box(-2.5, -1.5, -1.5, 5, 2, 4, "grey")
+        for i in range(4):
+            x = -3 + i * 1.67
+            foot.box(x, 0, -5, 1, 2, 2, "hand").box(x, 1, -6.5, 1, 1, 2, "bone", "clawh")
+        foot.box(-0.5, 0.5, 1.6, 1, 1, 1, "bone", "clawh")
     # Пушистый хвост из трёх звеньев, висит назад и вниз.
     part("tail", "hips", 0, -1, 3.5, -0.7).box(-2, -2, 0, 4, 4, 5, "mane", "shag", 0.2)
     part("tail2", "tail", 0, 0, 4.5, -0.25).box(-2.5, -2.5, 0, 5, 5, 5, "mane", "shag", 0.3)
@@ -164,15 +174,19 @@ def model():
     for side in ("right", "left"):
         outer, inner = side, ("left" if side == "right" else "right")
         a, f = by["arm_" + side], by["forearm_" + side]
-        shoulder, upper, fore = (-3.5, -2.5, -3.5, 7, 5, 7), (-2.5, 0, -2.5, 5, 9, 5), (-2.5, 0, -2.5, 5, 8, 5)
+        shoulder, upper, fore = (-3.5, -2.5, -3.5, 7, 5, 7), (-2.5, 0, -2.5, 5, 8, 5), (-2.5, 0, -2.5, 5, 7, 5)
         a.fur(rnd, shoulder, "top", 10, "mane", (1, 3)).fur(rnd, shoulder, outer, 8, "mane").fur(rnd, shoulder, "back", 6, "mane")
         a.fur(rnd, shoulder, "bottom", 6, "mane", (1, 2))
         a.fur(rnd, upper, outer, 9, "grey", (1, 2)).fur(rnd, upper, "back", 7, "mid", (1, 2)).fur(rnd, upper, "front", 4, "grey", (1, 1))
         f.fur(rnd, fore, outer, 7, "grey", (1, 2)).fur(rnd, fore, "back", 7, "mid", (1, 2)).fur(rnd, fore, inner, 3, "grey", (1, 1))
         l, sh = by["leg_" + side], by["shin_" + side]
-        thigh, shin = (-2.5, -1, -3, 5, 9, 6), (-2, -0.5, -2, 4, 7, 4)
+        thigh, shin = (-2.5, -1, -3, 5, 9, 6), (-2.5, -0.5, -2.5, 5, 7, 5)
         l.fur(rnd, thigh, outer, 7, "mid", (1, 2)).fur(rnd, thigh, "back", 9, "dark", (1, 3)).fur(rnd, thigh, "front", 5, "mid", (1, 2))
         l.fur(rnd, thigh, inner, 3, "mid", (1, 1))
+        sh.fur(rnd, shin, "bottom", 6, "grey", (1, 2), where=lambda u, v: v < 0.5)
+        by["hand_" + side].fur(rnd, (-3, 0, -2.5, 6, 3, 5), "back", 5, "hand", (1, 2), hang=(1, 2))
+        by["hand_" + side].fur(rnd, (-3, 0, -2.5, 6, 3, 5), outer, 3, "hand", (1, 1), hang=(1, 2))
+        f.fur(rnd, fore, "bottom", 7, "mid", (1, 2))
         sh.fur(rnd, shin, "back", 6, "grey", (1, 2)).fur(rnd, shin, outer, 4, "grey", (1, 1)).fur(rnd, shin, "front", 3, "grey", (1, 1))
     for name, region in (("tail", (-2, -2, 0, 4, 4, 5)), ("tail2", (-2.5, -2.5, 0, 5, 5, 5)), ("tail3", (-2, -2, 0, 4, 4, 4))):
         tp = by[name]
@@ -343,14 +357,21 @@ def face(bp, gp, b, kind, x0, y0, pw, ph, rnd):
                 for y in range(0, 2):
                     if x % 3 != 2:
                         bp[x0 + x, y0 + y] = (*mix(PAL["bone"], 0.55 + rnd.uniform(-0.15, 0.1)), 255)
-    if f in ("claw", "fang") and side:
-        # Коготь темнеет к основанию и светлеет к кончику.
+    if f in ("claw", "clawh"):
+        # Коготь темнеет к основанию и светлеет к кончику (claw — смотрит вниз, clawh — вперёд).
         for x in range(pw):
             for y in range(ph):
-                t = y / max(1, ph - 1)
-                if f == "claw" and kind in ("right", "left") and pw > ph:
-                    t = (x if kind == "left" else pw - 1 - x) / max(1, pw - 1)
-                bp[x0 + x, y0 + y] = (*lerp(PAL["hand"][1], PAL["bone"][1], min(1.0, t * 1.4)), 255) if f == "claw" else bp[x0 + x, y0 + y]
+                if f == "claw":
+                    t = 1.0 if kind == "bottom" else 0.0 if kind == "top" else y / max(1, ph - 1)
+                elif kind == "left":
+                    t = 1 - x / max(1, pw - 1)
+                elif kind == "right":
+                    t = x / max(1, pw - 1)
+                elif kind in ("top", "bottom"):
+                    t = y / max(1, ph - 1)
+                else:
+                    t = 1.0 if kind == "front" else 0.0
+                bp[x0 + x, y0 + y] = (*lerp(PAL["hand"][1], PAL["bone"][2], min(1.0, t * 1.2)), 255)
 
 
 def lerp(a, b, k):
