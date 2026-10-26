@@ -28,7 +28,8 @@ import net.minecraft.world.level.Level;
  * загрызая жертву — восстанавливает здоровье. Сам в мире не появляется: только из яйца призыва.
  */
 public class Werewolf extends Monster {
-    public static final float MODEL_SCALE = 1.2f;
+    /** Модель в 2 раза подробнее обычной (мелкие воксели шерсти), поэтому рисуется уменьшенной. */
+    public static final float MODEL_SCALE = 0.6f;
 
     public Werewolf(EntityType<? extends Werewolf> type, Level level) {
         super(type, level);

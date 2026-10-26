@@ -12,8 +12,13 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-R = 2
-TEX_W = 128
+R = 1
+TEX_W = 256
+# Модель задана в «крупных» единицах, а строится в G раз подробнее: вокселей-шерстинок вдвое мельче,
+# в игре рендерер уменьшает её обратно (Werewolf.MODEL_SCALE). Земля остаётся на y = 24.
+G = 2
+# Во сколько раз больше клочьев шерсти, чем задано в model() (их размеры — в мелких единицах).
+FUR = 3
 
 # Палитры: тень, основа, светлый ворс.
 PAL = {
@@ -32,9 +37,10 @@ SCAR = (120, 22, 24)
 
 
 class Box:
-    def __init__(self, x, y, z, w, h, d, mat, feature="", inflate=0.0):
-        self.x, self.y, self.z, self.w, self.h, self.d = x, y, z, w, h, d
-        self.mat, self.feature, self.inflate = mat, feature, inflate
+    def __init__(self, x, y, z, w, h, d, mat, feature="", inflate=0.0, fine=False):
+        k = 1 if fine else G
+        self.x, self.y, self.z, self.w, self.h, self.d = x * k, y * k, z * k, w * k, h * k, d * k
+        self.mat, self.feature, self.inflate = mat, feature, inflate * k
         self.u = self.v = 0
         self.shift = 0.0
 
@@ -42,7 +48,11 @@ class Box:
 class Part:
     def __init__(self, name, parent, px, py, pz, rx=0.0, ry=0.0, rz=0.0):
         self.name, self.parent = name, parent
-        self.px, self.py, self.pz, self.rx, self.ry, self.rz = px, py, pz, rx, ry, rz
+        if parent == "root":
+            py = 24 + (py - 24) * G
+        else:
+            py *= G
+        self.px, self.py, self.pz, self.rx, self.ry, self.rz = px * G, py, pz * G, rx, ry, rz
         self.boxes = []
 
     def box(self, *args, **kw):
@@ -52,29 +62,31 @@ class Part:
     def fur(self, rnd, region, face, n, mat="mane", length=(1, 3), size=(1, 2), hang=(1, 3), where=None):
         """Клочья шерсти: n кубиков-прядей торчат из грани face кубоида region (x, y, z, w, h, d) —
         воксельный лохматый силуэт, как на эталоне. where(u, v) в долях грани отбирает места."""
-        x, y, z, w, h, d = region
+        x, y, z, w, h, d = (c * G for c in region)
+        n *= FUR
         placed = 0
         tries = 0
         while placed < n and tries < n * 20:
             tries += 1
-            L = rnd.randint(*length)
-            s1 = rnd.randint(*size)
-            s2 = rnd.randint(*hang) if face not in ("top", "bottom") else rnd.randint(*size)
+            # Размеры заданы в крупных единицах — пряди бывают и тоньше, и короче их.
+            L = rnd.randint(max(1, length[0] * G - 1), length[1] * G)
+            s1 = rnd.randint(1, max(1, size[1] * G - 1))
+            s2 = rnd.randint(1, hang[1] * G) if face not in ("top", "bottom") else rnd.randint(1, max(1, size[1] * G - 1))
             fu, fv = rnd.random(), rnd.random()
             if where is not None and not where(fu, fv):
                 continue
             if face in ("back", "front"):
                 bx, by = x + fu * max(0, w - s1), y + fv * max(0, h - s2)
                 bz = z + d - 0.5 if face == "back" else z - L + 0.5
-                b = Box(bx, by, bz, s1, s2, L, mat, "tuft")
+                b = Box(bx, by, bz, s1, s2, L, mat, "tuft", fine=True)
             elif face in ("left", "right"):
                 bz, by = z + fu * max(0, d - s1), y + fv * max(0, h - s2)
                 bx = x + w - 0.5 if face == "left" else x - L + 0.5
-                b = Box(bx, by, bz, L, s2, s1, mat, "tuft")
+                b = Box(bx, by, bz, L, s2, s1, mat, "tuft", fine=True)
             else:
                 bx, bz = x + fu * max(0, w - s1), z + fv * max(0, d - s2)
                 by = y - L + 0.5 if face == "top" else y + h - 0.5
-                b = Box(bx, by, bz, s1, L, s2, mat, "tuft")
+                b = Box(bx, by, bz, s1, L, s2, mat, "tuft", fine=True)
             b.shift = rnd.uniform(-0.22, 0.22)
             self.boxes.append(b)
             placed += 1
@@ -461,7 +473,7 @@ def preview(parts, base, path):
     tr = transforms(parts)
     px = base.load()
     views = [("перед", 0), ("три четверти", math.pi * 0.3), ("бок", math.pi / 2), ("сзади", math.pi)]
-    S, cw = 18, 520
+    S, cw = 9, 520
     img = Image.new("RGB", (cw * len(views), 720), (235, 235, 232))
     draw = ImageDraw.Draw(img)
     for vi, (_, yaw) in enumerate(views):

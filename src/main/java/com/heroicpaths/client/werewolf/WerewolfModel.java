@@ -53,7 +53,7 @@ public class WerewolfModel extends HierarchicalModel<Werewolf> {
         legLeft.xRot += Mth.cos(walk + Mth.PI) * 0.8f * amount;
         shinRight.xRot += Math.max(0f, Mth.sin(walk)) * 0.6f * amount;
         shinLeft.xRot += Math.max(0f, Mth.sin(walk + Mth.PI)) * 0.6f * amount;
-        root.y = -Math.abs(Mth.cos(walk)) * 0.8f * amount;
+        root.y = -Math.abs(Mth.cos(walk)) * 1.6f * amount;
 
         // Руки болтаются в такт шагам и чуть покачиваются на месте.
         armRight.xRot += Mth.cos(walk + Mth.PI) * 0.6f * amount + 0.03f * breath;
