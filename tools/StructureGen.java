@@ -2073,7 +2073,9 @@ public class StructureGen {
             write(structures.resolve(b.name() + "/windmill.nbt"), windmill(b).toNbt());
             write(structures.resolve(b.name() + "/bank.nbt"), bank(b).toNbt());
             write(structures.resolve(b.name() + "/armory.nbt"), armory(b).toNbt());
-            count += 4;
+            write(structures.resolve(b.name() + "/bookshop.nbt"), bookshop(b).toNbt());
+            write(structures.resolve(b.name() + "/pawnshop.nbt"), pawnshop(b).toNbt());
+            count += 6;
         }
         return count;
     }
@@ -3024,6 +3026,94 @@ public class StructureGen {
         for (int dz : new int[]{-3, 0, 3}) t.set(0, 7, door + dz, "minecraft:red_wall_banner[facing=west]");
         shopSign(t, s, door, "Оружейная");
         t.entities.add(villager(b, "arms_dealer", 7, COUNTER_WINDOW));
+        return t;
+    }
+
+    /**
+     * Книжная лавка: прилавок с конторкой книжника в окошке, за ним — стеллажи до потолка, кафедра и кровать книжника.
+     * В зале — полки вдоль стены, ковёр и свечи; наверху — читальня с полками, столом и кафедрой.
+     * Снаружи коричневые знамёна и вывеска «Книги».
+     */
+    static Template bookshop(Biome b) {
+        HallStyle s = hallStyle(b);
+        int door = 5;
+        String fence = "minecraft:" + s.wood() + "_fence[east=false,north=true,south=true,waterlogged=false,west=false]";
+        Template t = counterShop(b, s, MODID + ":bookseller_desk", fence, "minecraft:" + s.wood() + "_planks");
+        String woodStairs = "minecraft:" + s.wood() + "_stairs";
+        // За прилавком: стеллажи вдоль задней стены, кафедра, кровать, бочка.
+        for (int z = 2; z <= 5; z++) for (int y = 1; y <= 3; y++) t.set(8, y, z, "minecraft:bookshelf");
+        t.set(7, 1, 2, "minecraft:bookshelf");
+        t.set(8, 1, 7, "minecraft:lectern[facing=west,has_book=false,powered=false]");
+        t.set(8, 1, 6, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        bed(t, 8, 1, 9, "south", "brown");
+        t.set(7, 1, 10, "minecraft:barrel[facing=up,open=false]");
+        // Зал: полки у стены, ковёр к окошку, скамья, свечи на прилавке.
+        for (int z : new int[]{2, 3, 7, 8}) for (int y = 1; y <= 2; y++) t.set(3, y, z, "minecraft:bookshelf");
+        for (int x = 4; x <= 5; x++) for (int z = 3; z <= 8; z++) t.set(x, 1, z, "minecraft:brown_carpet");
+        t.set(5, 1, 10, st(woodStairs, "north", false));
+        t.set(4, 1, 10, st(woodStairs, "north", false));
+        t.set(COUNTER_X, 2, 4, "minecraft:candle[candles=3,lit=true,waterlogged=false]");
+        t.set(COUNTER_X, 2, 8, "minecraft:candle[candles=2,lit=true,waterlogged=false]");
+        // Наверху — читальня.
+        for (int x = 4; x <= 7; x++) for (int y = 6; y <= 7; y++) t.set(x, y, 11, "minecraft:bookshelf");
+        for (int z = 3; z <= 6; z++) t.set(8, 6, z, "minecraft:bookshelf");
+        t.set(8, 6, 8, "minecraft:lectern[facing=west,has_book=false,powered=false]");
+        t.set(8, 6, 10, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        for (int z = 4; z <= 6; z++) {
+            t.set(5, 6, z, "minecraft:" + s.wood() + "_slab[type=top,waterlogged=false]");
+            t.set(4, 6, z, st(woodStairs, "east", false));
+        }
+        t.set(5, 7, 5, "minecraft:candle[candles=1,lit=true,waterlogged=false]");
+        // Снаружи: знамёна и вывеска.
+        for (int dz : new int[]{-3, 0, 3}) t.set(0, 7, door + dz, "minecraft:brown_wall_banner[facing=west]");
+        shopSign(t, s, door, "Книги");
+        t.entities.add(villager(b, "bookseller", 7, COUNTER_WINDOW));
+        return t;
+    }
+
+    /**
+     * Лавка скупщика: прилавок под решёткой с весами оценщика в окошке, за ним — скупленное добро в рамках на стене,
+     * сундуки, наковальня и кровать скупщика. В зале — скамья и фонарь; наверху — кладовая.
+     * Снаружи серые знамёна и вывеска «Скупка».
+     */
+    static Template pawnshop(Biome b) {
+        HallStyle s = hallStyle(b);
+        int door = 5;
+        Template t = counterShop(b, s, MODID + ":appraisal_scales", pane("iron_bars", false), "minecraft:spruce_planks");
+        String woodStairs = "minecraft:" + s.wood() + "_stairs";
+        // За прилавком: скупленное добро в рамках на задней стене, сундуки, наковальня, кровать.
+        String[] goods = {"minecraft:clock", "minecraft:compass", "minecraft:gold_ingot", "minecraft:spyglass", "minecraft:amethyst_shard"};
+        int[] zs = {4, 5, 6, 7, 8};
+        for (int i = 0; i < goods.length; i++) {
+            for (int y = 2; y <= 3; y++) {
+                if (y == 3 && i % 2 == 1) continue;
+                String item = y == 2 ? goods[i] : goods[(i + 2) % goods.length];
+                t.entities.add(map("blockPos", List.of(8, y, zs[i]), "pos", List.of(8.96875, y + 0.5, zs[i] + 0.5),
+                        "nbt", map("id", "minecraft:item_frame", "Facing", (byte) 4, "TileX", 8, "TileY", y, "TileZ", zs[i],
+                                "Item", map("id", item, "count", 1), "Fixed", (byte) 1, "Invisible", (byte) 0)));
+            }
+        }
+        t.set(8, 1, 2, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        t.set(8, 1, 3, "minecraft:barrel[facing=up,open=false]");
+        t.set(8, 2, 3, "minecraft:decorated_pot[cracked=false,facing=west,waterlogged=false]");
+        t.set(7, 1, 2, "minecraft:anvil[facing=north]");
+        bed(t, 8, 1, 9, "south", "gray");
+        t.set(7, 1, 10, "minecraft:barrel[facing=up,open=false]");
+        // Зал: ковёр, скамья у стены, фонари на прилавке.
+        for (int x = 3; x <= 5; x++) for (int z = 3; z <= 8; z++) t.set(x, 1, z, "minecraft:gray_carpet");
+        for (int z = 2; z <= 3; z++) t.set(3, 1, z, st(woodStairs, "east", false));
+        t.set(5, 1, 10, "minecraft:barrel[facing=up,open=false]");
+        t.set(COUNTER_X, 2, 3, "minecraft:lantern[hanging=false,waterlogged=false]");
+        t.set(COUNTER_X, 2, 9, "minecraft:lantern[hanging=false,waterlogged=false]");
+        // Наверху: кладовая.
+        for (int z = 7; z <= 10; z++) t.set(8, 6, z, z % 2 == 0 ? "minecraft:chest[facing=west,type=single,waterlogged=false]" : "minecraft:barrel[facing=west,open=false]");
+        t.set(4, 6, 10, "minecraft:barrel[facing=up,open=false]");
+        t.set(5, 6, 10, "minecraft:barrel[facing=up,open=false]");
+        t.set(4, 6, 4, "minecraft:crafting_table");
+        // Снаружи: знамёна и вывеска.
+        for (int dz : new int[]{-3, 0, 3}) t.set(0, 7, door + dz, "minecraft:gray_wall_banner[facing=west]");
+        shopSign(t, s, door, "Скупка");
+        t.entities.add(villager(b, "pawnbroker", 7, COUNTER_WINDOW));
         return t;
     }
 

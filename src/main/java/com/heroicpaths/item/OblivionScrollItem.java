@@ -27,24 +27,6 @@ public class OblivionScrollItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        // Shift: забыть мастерство ремесла (класс остаётся).
-        if (player.isShiftKeyDown()) {
-            if (RpgManager.get(player).professions().mastery() == null) {
-                if (!level.isClientSide) player.displayClientMessage(Component.translatable("message.heroicpaths.no_mastery"), true);
-                return InteractionResultHolder.fail(stack);
-            }
-            if (player instanceof ServerPlayer serverPlayer) {
-                var mastery = RpgManager.get(player).professions().mastery();
-                RpgManager.get(player).professions().resetMastery();
-                RpgManager.sync(serverPlayer);
-                serverPlayer.sendSystemMessage(Component.translatable("message.heroicpaths.mastery_reset", mastery.displayName())
-                        .withStyle(ChatFormatting.LIGHT_PURPLE));
-                level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                        SoundEvents.ZOMBIE_VILLAGER_CURE, SoundSource.PLAYERS, 0.6f, 1.4f);
-            }
-            stack.consume(1, player);
-            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
-        }
         if (RpgManager.get(player).getPlayerClass() == PlayerClass.NONE) {
             if (!level.isClientSide) {
                 player.displayClientMessage(Component.translatable("message.heroicpaths.no_class"), true);
@@ -67,6 +49,5 @@ public class OblivionScrollItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.heroicpaths.oblivion_scroll.desc").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("item.heroicpaths.oblivion_scroll.mastery").withStyle(ChatFormatting.DARK_GRAY));
     }
 }

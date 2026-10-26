@@ -35,6 +35,10 @@ public final class ModVillagers {
             POI_TYPES.register("banker", () -> workstation(ModBlocks.BANK_COUNTER.get()));
     public static final DeferredHolder<PoiType, PoiType> ARMS_DEALER_POI =
             POI_TYPES.register("arms_dealer", () -> workstation(ModBlocks.ARMS_DISPLAY.get()));
+    public static final DeferredHolder<PoiType, PoiType> BOOKSELLER_POI =
+            POI_TYPES.register("bookseller", () -> workstation(ModBlocks.BOOKSELLER_DESK.get()));
+    public static final DeferredHolder<PoiType, PoiType> PAWNBROKER_POI =
+            POI_TYPES.register("pawnbroker", () -> workstation(ModBlocks.APPRAISAL_SCALES.get()));
 
     public static final DeferredHolder<VillagerProfession, VillagerProfession> SWORDMASTER =
             PROFESSIONS.register("swordmaster", () -> profession("swordmaster", SWORDMASTER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
@@ -54,6 +58,12 @@ public final class ModVillagers {
     /** Мастер-оружейник: каждый день выставляет десять мечей и луков, бывают и редкие. */
     public static final DeferredHolder<VillagerProfession, VillagerProfession> ARMS_DEALER =
             PROFESSIONS.register("arms_dealer", () -> profession("arms_dealer", ARMS_DEALER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
+    /** Книжник: продаёт трактаты всех ремёсел и всех ступеней. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> BOOKSELLER =
+            PROFESSIONS.register("bookseller", () -> profession("bookseller", BOOKSELLER_POI.getKey(), SoundEvents.VILLAGER_WORK_LIBRARIAN));
+    /** Скупщик: за изумруды покупает у игрока его вещи — в пять раз дешевле их цены. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> PAWNBROKER =
+            PROFESSIONS.register("pawnbroker", () -> profession("pawnbroker", PAWNBROKER_POI.getKey(), SoundEvents.VILLAGER_WORK_CARTOGRAPHER));
 
     private ModVillagers() {}
 

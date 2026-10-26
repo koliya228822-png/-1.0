@@ -35,7 +35,6 @@ public final class ProfessionProgress {
             case NEED_PREVIOUS -> Component.translatable("message.heroicpaths.manual_previous", Professions.rankName(rank - 1));
             case NEED_XP -> Component.translatable("message.heroicpaths.manual_need_xp", professions.xp(profession),
                     Professions.xpForRank(rank), profession.displayName());
-            case MASTERY_TAKEN -> Component.translatable("message.heroicpaths.manual_mastery_taken", professions.mastery().displayName());
             case OK -> null;
         };
         if (message != null) {
@@ -43,9 +42,7 @@ public final class ProfessionProgress {
             return false;
         }
         professions.rankUp(profession);
-        player.sendSystemMessage(Component.translatable(rank > Professions.MAX_SECONDARY_RANK
-                        ? "message.heroicpaths.craft_mastery" : "message.heroicpaths.craft_rank_up",
-                profession.displayName(), Professions.rankName(rank)).withStyle(ChatFormatting.GOLD));
+        player.sendSystemMessage(Component.translatable("message.heroicpaths.craft_rank_up", profession.displayName(), Professions.rankName(rank)).withStyle(ChatFormatting.GOLD));
         player.serverLevel().sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1, player.getZ(), 40, 0.5, 0.8, 0.5, 0.4);
         player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_LEVELUP,
                 SoundSource.PLAYERS, 0.7f, 1.1f);

@@ -6,7 +6,8 @@ import java.nio.file.Path;
 
 /**
  * Наряды банкира и мастера-оружейника (слой профессии жителя 64×64) и их рабочие места 16×16:
- * конторка банкира (зелёное сукно, столбики монет, весы) и оружейный стенд (клинки и лук на досках).
+ * конторка банкира (зелёное сукно, столбики монет, весы) и оружейный стенд (клинки и лук на досках);
+ * наряды книжника и скупщика, конторка книжника (раскрытая книга, чернильница) и весы оценщика.
  *
  * Запуск из корня проекта: java tools/MerchantGen.java src/main/resources
  */
@@ -24,6 +25,12 @@ public class MerchantGen {
         write(counterSide(), blocks.resolve("bank_counter_side.png"));
         write(displayTop(), blocks.resolve("arms_display_top.png"));
         write(displaySide(), blocks.resolve("arms_display_side.png"));
+        write(bookseller(), profession.resolve("bookseller.png"));
+        write(pawnbroker(), profession.resolve("pawnbroker.png"));
+        write(deskTop(), blocks.resolve("bookseller_desk_top.png"));
+        write(deskSide(), blocks.resolve("bookseller_desk_side.png"));
+        write(scalesTop(), blocks.resolve("appraisal_scales_top.png"));
+        write(scalesSide(), blocks.resolve("appraisal_scales_side.png"));
     }
 
     /** Банкир: тёмно-зелёный кафтан с золотыми пуговицами, золотая цепь, кошель на поясе, чёрный берет с золотой лентой. */
@@ -210,6 +217,129 @@ public class MerchantGen {
         img.setRGB(14, 10, GOLD_DARK);
         img.setRGB(13, 11, grip);
         img.setRGB(13, 12, grip);
+        return img;
+    }
+
+    /** Книжник: тёмно-синяя мантия с медными застёжками, сумка с книгами через плечо, бордовая шапочка с пером. */
+    static BufferedImage bookseller() {
+        int robe = 0xFF1E2E5A, robeDark = 0xFF152142, copper = 0xFFB8733A, strap = 0xFF5A3A20, cap = 0xFF6E1B2A, quill = 0xFFEDEDE0;
+        BufferedImage img = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+        box(img, 0, 38, 8, 20, 6, robe);
+        for (int v = 44; v < 64; v++) for (int u = 0; u < 28; u++) if ((u * 2 + v) % 9 == 0) img.setRGB(u, v, robeDark);
+        for (int v = 46; v < 62; v += 3) img.setRGB(10, v, copper);
+        // Ремень сумки наискось и сама сумка с корешками книг.
+        for (int i = 0; i < 12; i++) img.setRGB(6 + i * 7 / 12, 44 + i, strap);
+        for (int u = 11; u <= 14; u++) for (int v = 55; v <= 59; v++) img.setRGB(u, v, strap);
+        img.setRGB(12, 55, 0xFF8A1C1C);
+        img.setRGB(13, 55, 0xFF2A6A3A);
+        img.setRGB(14, 55, 0xFFE0C060);
+        for (int u = 0; u < 28; u++) img.setRGB(u, 63, robeDark);
+        box(img, 16, 20, 8, 12, 6, robe);
+        box(img, 44, 22, 4, 8, 4, robe);
+        for (int u = 44; u < 60; u++) img.setRGB(u, 33, copper);
+        box(img, 40, 38, 8, 4, 4, robe);
+        // Шапочка с пером.
+        for (int u = 40; u < 48; u++) for (int v = 0; v < 8; v++) img.setRGB(u, v, (u + v) % 5 == 0 ? 0xFF54141F : cap);
+        for (int u = 32; u < 64; u++) {
+            img.setRGB(u, 8, cap);
+            img.setRGB(u, 9, 0xFF54141F);
+        }
+        for (int v = 2; v <= 7; v++) img.setRGB(46 - v / 3, v, quill);
+        return img;
+    }
+
+    /** Скупщик: серый сюртук, коричневый жилет с цепочкой часов, кожаные нарукавники, тёмный цилиндр. */
+    static BufferedImage pawnbroker() {
+        int coat = 0xFF55585E, coatDark = 0xFF3E4146, vest = 0xFF6B4528, vestDark = 0xFF4A2E1A, hat = 0xFF222226;
+        BufferedImage img = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+        box(img, 0, 38, 8, 20, 6, coat);
+        for (int v = 44; v < 64; v++) for (int u = 0; u < 28; u++) if ((u + v * 3) % 8 == 0) img.setRGB(u, v, coatDark);
+        // Жилет спереди с пуговицами и цепочкой часов.
+        for (int u = 7; u <= 12; u++) for (int v = 44; v < 55; v++) img.setRGB(u, v, (u + v) % 6 == 0 ? vestDark : vest);
+        for (int v = 46; v < 55; v += 2) img.setRGB(10, v, GOLD);
+        int[][] chain = {{8, 50}, {9, 51}, {10, 51}, {11, 51}, {12, 50}};
+        for (int[] p : chain) img.setRGB(p[0], p[1], GOLD_LIGHT);
+        img.setRGB(12, 51, GOLD);
+        for (int u = 0; u < 28; u++) img.setRGB(u, 55, coatDark);
+        box(img, 16, 20, 8, 12, 6, coat);
+        box(img, 44, 22, 4, 8, 4, coat);
+        for (int u = 44; u < 60; u++) for (int v = 29; v < 34; v++) img.setRGB(u, v, vest);
+        box(img, 40, 38, 8, 4, 4, coat);
+        // Цилиндр.
+        for (int u = 40; u < 48; u++) for (int v = 0; v < 8; v++) img.setRGB(u, v, hat);
+        for (int u = 32; u < 64; u++) {
+            img.setRGB(u, 8, hat);
+            img.setRGB(u, 9, 0xFF8A1C1C);
+            img.setRGB(u, 10, hat);
+        }
+        return img;
+    }
+
+    /** Верх конторки книжника: доски, раскрытая книга и чернильница с пером. */
+    static BufferedImage deskTop() {
+        int plank = 0xFF6B4A2E, plankDark = 0xFF52361F, page = 0xFFEDE3C6, pageDark = 0xFFC9BC98, ink = 0xFF1A1A2A;
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < 16; x++) for (int y = 0; y < 16; y++) img.setRGB(x, y, y % 5 == 4 ? plankDark : plank);
+        for (int x = 2; x <= 11; x++) for (int y = 3; y <= 10; y++) img.setRGB(x, y, x == 6 || x == 7 ? pageDark : page);
+        for (int y = 4; y <= 9; y += 2) {
+            for (int x = 3; x <= 5; x++) img.setRGB(x, y, pageDark);
+            for (int x = 8; x <= 10; x++) img.setRGB(x, y, pageDark);
+        }
+        for (int x = 12; x <= 13; x++) for (int y = 11; y <= 12; y++) img.setRGB(x, y, ink);
+        for (int i = 0; i < 4; i++) img.setRGB(13 - i, 10 - i, 0xFFEDEDE0);
+        return img;
+    }
+
+    /** Бок конторки книжника: корешки книг на полке. */
+    static BufferedImage deskSide() {
+        int frame = 0xFF52361F;
+        int[] spines = {0xFF8A1C1C, 0xFF2A4A8A, 0xFF2A6A3A, 0xFF7A5A1A, 0xFF5A2A6A, 0xFF8A1C1C, 0xFF2A4A8A};
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 16; y++) {
+                boolean edge = x == 0 || x == 15 || y <= 1 || y >= 14 || y == 7 || y == 8;
+                img.setRGB(x, y, edge ? frame : spines[(x - 1) / 2 % spines.length]);
+            }
+        }
+        for (int x = 1; x < 15; x += 2) {
+            img.setRGB(x, 4, GOLD);
+            img.setRGB(x, 11, GOLD);
+        }
+        return img;
+    }
+
+    /** Верх весов оценщика: тёмные доски, медные весы и лупа. */
+    static BufferedImage scalesTop() {
+        int wood = 0xFF3A2414, woodLight = 0xFF4A2E1A, copper = 0xFFB8733A, glass = 0xFFA8D8E8;
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < 16; x++) for (int y = 0; y < 16; y++) img.setRGB(x, y, (x * 3 + y) % 7 == 0 ? woodLight : wood);
+        for (int x = 2; x <= 13; x++) img.setRGB(x, 5, copper);
+        for (int y = 5; y <= 11; y++) img.setRGB(7, y, copper);
+        for (int x = 2; x <= 4; x++) for (int y = 6; y <= 7; y++) img.setRGB(x, y, GOLD);
+        for (int x = 11; x <= 13; x++) for (int y = 6; y <= 7; y++) img.setRGB(x, y, GOLD);
+        int[][] lens = {{11, 10}, {12, 10}, {10, 11}, {13, 11}, {10, 12}, {13, 12}, {11, 13}, {12, 13}};
+        for (int[] p : lens) img.setRGB(p[0], p[1], copper);
+        img.setRGB(11, 11, glass);
+        img.setRGB(12, 12, glass);
+        img.setRGB(14, 14, woodLight);
+        return img;
+    }
+
+    /** Бок весов оценщика: тёмные филёнки и медный замок. */
+    static BufferedImage scalesSide() {
+        int wood = 0xFF3A2414, woodLight = 0xFF4A2E1A, woodDark = 0xFF2A180C, copper = 0xFFB8733A;
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < 16; x++) {
+            for (int y = 0; y < 16; y++) {
+                int c = (y * 5 + x) % 11 == 0 ? woodLight : wood;
+                if (y <= 1) c = copper;
+                else if (y >= 14 || x == 0 || x == 15) c = woodDark;
+                img.setRGB(x, y, c);
+            }
+        }
+        for (int x = 6; x <= 9; x++) for (int y = 6; y <= 9; y++) img.setRGB(x, y, x == 6 || x == 9 || y == 6 || y == 9 ? copper : woodDark);
+        img.setRGB(7, 7, GOLD);
+        img.setRGB(8, 8, GOLD);
         return img;
     }
 

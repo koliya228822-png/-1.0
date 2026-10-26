@@ -64,7 +64,7 @@ public final class MentorHomes {
     public static boolean isKeeper(Villager villager) {
         VillagerProfession p = villager.getVillagerData().getProfession();
         return Set.of(ModVillagers.SWORDMASTER.get(), ModVillagers.MASTER_ARCHER.get(), ModVillagers.ARCHMAGE.get(),
-                ModVillagers.GUILDMASTER.get(), ModVillagers.BOUNTY_HERALD.get(), ModVillagers.BANKER.get(), ModVillagers.ARMS_DEALER.get()).contains(p);
+                ModVillagers.GUILDMASTER.get(), ModVillagers.BOUNTY_HERALD.get()).contains(p) || MerchantPosts.isPost(p);
     }
 
     @Nullable
@@ -81,7 +81,7 @@ public final class MentorHomes {
     @SubscribeEvent
     public static void onVillagerTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) return;
-        // Банкир и оружейник стоят на посту строже наставников (см. MerchantPosts).
+        // Банкир, оружейник, книжник и скупщик стоят на посту строже наставников (см. MerchantPosts).
         if (!villager.isBaby() && MerchantPosts.isPost(villager)) {
             if (villager.tickCount % MerchantPosts.CHECK_TICKS == 0) MerchantPosts.keepPost(level, villager);
             if (villager.tickCount % CHECK_TICKS == 0) MerchantPosts.stock(level, villager);
@@ -231,8 +231,8 @@ public final class MentorHomes {
     private static Villager spawn(ServerLevel level, Grave grave, VillagerProfession profession) {
         Villager villager = EntityType.VILLAGER.create(level);
         if (villager == null) return null;
-        boolean post = profession == ModVillagers.BANKER.get() || profession == ModVillagers.ARMS_DEALER.get();
-        // Банкир и оружейник встают ровно на пост за прилавком, наставники — рядом с рабочим местом.
+        boolean post = MerchantPosts.isPost(profession);
+        // Банкир, оружейник, книжник и скупщик встают ровно на пост за прилавком, наставники — рядом с рабочим местом.
         BlockPos spot = post ? grave.home() : standingSpot(level, grave.home());
         if (spot == null) spot = grave.home().above();
         VillagerType type = BuiltInRegistries.VILLAGER_TYPE.getOptional(grave.type()).orElse(VillagerType.PLAINS);

@@ -74,6 +74,10 @@ public final class ModNetwork {
                 com.heroicpaths.client.CastBarLayer.set(payload.ability(), payload.ticks()));
         registrar.playToClient(PlayerFormPayload.TYPE, PlayerFormPayload.STREAM_CODEC, (payload, context) ->
                 com.heroicpaths.client.PlayerForms.set(payload.entityId(), payload.form(), payload.ticks()));
+        registrar.playBidirectional(TradeRerollPayload.TYPE, TradeRerollPayload.STREAM_CODEC, (payload, context) -> {
+            if (context.player() instanceof ServerPlayer player) com.heroicpaths.village.TradeReroll.reroll(player);
+            else com.heroicpaths.client.TradeRerollButton.setPrice(payload.price());
+        });
         registrar.playBidirectional(SkillTablePayload.TYPE, SkillTablePayload.STREAM_CODEC, (payload, context) -> {
             if (context.player() instanceof ServerPlayer player) com.heroicpaths.item.SkillTable.craft(player, payload.pos(), payload.ability());
             else com.heroicpaths.client.ClientHooks.openSkillTable(payload.pos(), payload.value());

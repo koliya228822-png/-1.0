@@ -23,10 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Раскладка особых зданий деревни. Оружейная, банк, дома наставников и казармы не выпадают из пула случайно: после того как
+ * Раскладка особых зданий деревни. Оружейная, банк, книжная лавка, лавка скупщика, дома наставников и казармы не выпадают из пула случайно: после того как
  * jigsaw разложил улицы и дома, часть больших домов (12x13, тот же вход, что у этих зданий) заменяется ими.
  * В каждой деревне все три наставника — мечник, лучник и маг,
- * и две-три казармы стражи. Оружейная и банк есть в каждой деревне: без участка для них деревня не ставится.
+ * и две-три казармы стражи. Четыре лавки (оружейная, банк, книги, скупка) есть в каждой деревне: без участка для них
+ * деревня не ставится.
  */
 public final class VillageLayout {
 
@@ -43,7 +44,7 @@ public final class VillageLayout {
 
     private VillageLayout() {}
 
-    /** @return false, если для банка или оружейной не нашлось участка — тогда деревня здесь не ставится. */
+    /** @return false, если для какой-то из лавок не нашлось участка — тогда деревня здесь не ставится. */
     public static boolean arrange(List<StructurePiece> pieces, Structure.GenerationContext context, String biome, RandomSource random) {
         // Участки — все дома деревни в нашем стиле; большие (той же формы, что дома наставников) — в первую очередь.
         List<PoolElementStructurePiece> big = new ArrayList<>(), other = new ArrayList<>();
@@ -58,10 +59,12 @@ public final class VillageLayout {
         List<PoolElementStructurePiece> lots = new ArrayList<>(big);
         lots.addAll(other);
 
-        // Оружейная и банк есть в каждой деревне: они встают первыми, на лучшие участки.
+        // Лавки есть в каждой деревне: они встают первыми, на лучшие участки.
         String prefix = HeroicPaths.MODID + ":village/" + biome + "/";
         if (build(pieces, lots, context, prefix + "armory", BARRACKS_DOOR) == null) return false;
         if (build(pieces, lots, context, prefix + "bank", BARRACKS_DOOR) == null) return false;
+        if (build(pieces, lots, context, prefix + "bookshop", BARRACKS_DOOR) == null) return false;
+        if (build(pieces, lots, context, prefix + "pawnshop", BARRACKS_DOOR) == null) return false;
 
         List<Mentor> order = new ArrayList<>(MENTORS);
         shuffle(order, random);

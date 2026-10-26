@@ -84,6 +84,9 @@ public class HeroicPathsClient {
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onRenderHand);
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onScreenRender);
         NeoForge.EVENT_BUS.addListener(WeaponPoses::onMouseClick);
+        NeoForge.EVENT_BUS.addListener(TradeRerollButton::onOpening);
+        NeoForge.EVENT_BUS.addListener(TradeRerollButton::onInit);
+        NeoForge.EVENT_BUS.addListener(TradeRerollButton::onRender);
         NeoForge.EVENT_BUS.addListener(HeroicPathsClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(PlayerForms::onRenderPlayer);
         NeoForge.EVENT_BUS.addListener(PlayerForms::onClientTick);

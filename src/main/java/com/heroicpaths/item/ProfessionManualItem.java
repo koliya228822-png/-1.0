@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Трактат ремесла: поднимает ремесло до своей ступени (подмастерье … мастер), если опыта ремесла уже хватает.
  * Продают жители-мастера: кузнецы — трактаты кузнеца, лучники, кожевники и пастухи — плотника,
- * библиотекари и священники — рунного мастера.
+ * библиотекари и священники — рунного мастера; книжник в лавке деревни продаёт все трактаты.
  */
 public class ProfessionManualItem extends Item {
     private final Profession profession;
@@ -67,9 +67,6 @@ public class ProfessionManualItem extends Item {
         tooltip.add(Component.translatable("item.heroicpaths.profession_manual.desc", profession.displayName(), Professions.rankName(rank))
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("item.heroicpaths.profession_manual.xp", Professions.xpForRank(rank)).withStyle(ChatFormatting.GRAY));
-        if (rank > Professions.MAX_SECONDARY_RANK) {
-            tooltip.add(Component.translatable("item.heroicpaths.profession_manual.mastery").withStyle(ChatFormatting.GOLD));
-        }
         Player player = net.neoforged.fml.loading.FMLEnvironment.dist.isClient() ? ClientAccess.player() : null;
         if (player != null) {
             Professions professions = RpgManager.get(player).professions();

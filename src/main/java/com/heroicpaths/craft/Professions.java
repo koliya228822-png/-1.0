@@ -4,25 +4,20 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Ремёсла игрока: опыт и ступень каждого. Ступени: новичок → подмастерье → мастер-ремесленник → гроссмейстер → легендарный мастер.
  * Опыт даёт крафт, а следующую ступень открывает трактат от жителей-мастеров, когда опыта хватает.
- * Выше мастера-ремесленника можно подняться только в одном ремесле — оно становится мастерством игрока.
+ * Каждое ремесло можно поднять до легендарного мастера.
  */
 public final class Professions {
     public static final int MIN_RANK = 1;
     public static final int MAX_RANK = 5;
-    /** Потолок для всех ремёсел, кроме выбранного мастерства. */
-    public static final int MAX_SECONDARY_RANK = 3;
     /** Сколько всего опыта ремесла нужно для ступени (индекс — ступень). */
     private static final int[] XP_FOR_RANK = {0, 0, 100, 400, 1000, 2000};
 
     private final int[] xp = new int[Profession.values().length];
     private final int[] ranks = new int[Profession.values().length];
-    @Nullable
-    private Profession mastery;
 
     public Professions() {
         java.util.Arrays.fill(ranks, MIN_RANK);
@@ -44,14 +39,9 @@ public final class Professions {
         return xp[profession.ordinal()];
     }
 
-    @Nullable
-    public Profession mastery() {
-        return mastery;
-    }
-
-    /** Самая высокая ступень, доступная в ремесле: мастер для выбранного мастерства (или пока оно не выбрано). */
+    /** Самая высокая ступень ремесла: любое ремесло растёт до легендарного мастера. */
     public int maxRank(Profession profession) {
-        return mastery == null || mastery == profession ? MAX_RANK : MAX_SECONDARY_RANK;
+        return MAX_RANK;
     }
 
     /** Добавляет опыт. Возвращает true, если опыта впервые хватило на следующую ступень. */
@@ -62,23 +52,20 @@ public final class Professions {
         return next <= maxRank(profession) && before < xpForRank(next) && xp[profession.ordinal()] >= xpForRank(next);
     }
 
-    public enum Check { OK, ALREADY_KNOWN, NEED_PREVIOUS, NEED_XP, MASTERY_TAKEN }
+    public enum Check { OK, ALREADY_KNOWN, NEED_PREVIOUS, NEED_XP }
 
     /** Можно ли подняться в ремесле до ступени target по трактату. */
     public Check check(Profession profession, int target) {
         int rank = rank(profession);
         if (rank >= target) return Check.ALREADY_KNOWN;
         if (rank + 1 < target) return Check.NEED_PREVIOUS;
-        if (target > maxRank(profession)) return Check.MASTERY_TAKEN;
+        if (target > maxRank(profession)) return Check.ALREADY_KNOWN;
         if (xp(profession) < xpForRank(target)) return Check.NEED_XP;
         return Check.OK;
     }
 
-    /** Следующая ступень. Ступень выше мастера-ремесленника закрепляет мастерство за этим ремеслом. */
     public void rankUp(Profession profession) {
-        int rank = Math.min(MAX_RANK, rank(profession) + 1);
-        ranks[profession.ordinal()] = rank;
-        if (rank > MAX_SECONDARY_RANK) mastery = profession;
+        ranks[profession.ordinal()] = Math.min(MAX_RANK, rank(profession) + 1);
     }
 
     /** Для тестов и команд: ставит ступень напрямую (опыт подтягивается до её порога). */
@@ -86,16 +73,6 @@ public final class Professions {
         rank = Math.max(MIN_RANK, Math.min(MAX_RANK, rank));
         ranks[profession.ordinal()] = rank;
         xp[profession.ordinal()] = Math.max(xp[profession.ordinal()], xpForRank(rank));
-        if (rank > MAX_SECONDARY_RANK) mastery = profession;
-        else if (mastery == profession) mastery = null;
-    }
-
-    /** Свиток забвения: мастерство снимается, ремесло опускается до мастера-ремесленника. */
-    public boolean resetMastery() {
-        if (mastery == null) return false;
-        ranks[mastery.ordinal()] = Math.min(ranks[mastery.ordinal()], MAX_SECONDARY_RANK);
-        mastery = null;
-        return true;
     }
 
     /** «Кузнец: подмастерье» в цвете ремесла. */
@@ -108,7 +85,6 @@ public final class Professions {
         CompoundTag tag = new CompoundTag();
         tag.putIntArray("xp", xp.clone());
         tag.putIntArray("ranks", ranks.clone());
-        if (mastery != null) tag.putString("mastery", mastery.id());
         return tag;
     }
 
@@ -121,6 +97,5 @@ public final class Professions {
             if (i < savedXp.length) xp[i] = Math.max(0, savedXp[i]);
             if (i < savedRanks.length) ranks[i] = Math.max(MIN_RANK, Math.min(MAX_RANK, savedRanks[i]));
         }
-        mastery = Profession.byId(tag.getString("mastery"));
     }
 }

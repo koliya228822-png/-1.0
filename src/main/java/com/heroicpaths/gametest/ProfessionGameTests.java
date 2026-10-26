@@ -66,7 +66,7 @@ public class ProfessionGameTests {
     public static void manualsRaiseCraftRanks(GameTestHelper helper) {
         ServerPlayer player = survivor(helper);
         Professions professions = RpgManager.get(player).professions();
-        helper.assertTrue(professions.rank(Profession.BLACKSMITH) == 1 && professions.mastery() == null, "crafts must start at novice");
+        helper.assertTrue(professions.rank(Profession.BLACKSMITH) == 1, "crafts must start at novice");
 
         // Без опыта трактат не читается и не тратится.
         ItemStack apprentice = ProfessionManualItem.create(ModItems.BLACKSMITH_MANUAL.get(), 2);
@@ -78,28 +78,21 @@ public class ProfessionGameTests {
         apprentice.getItem().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
         helper.assertTrue(professions.rank(Profession.BLACKSMITH) == 2 && apprentice.isEmpty(), "apprentice manual must raise the rank and be used up");
 
-        // Ступени идут по порядку; четвёртая закрепляет мастерство.
+        // Ступени идут по порядку.
         professions.addXp(Profession.BLACKSMITH, 5000);
         helper.assertTrue(professions.check(Profession.BLACKSMITH, 4) == Professions.Check.NEED_PREVIOUS, "rank 4 must need rank 3 first");
-        helper.assertTrue(ProfessionProgress.readManual(player, Profession.BLACKSMITH, 3), "artisan manual failed");
-        helper.assertTrue(ProfessionProgress.readManual(player, Profession.BLACKSMITH, 4), "expert manual failed");
-        helper.assertTrue(professions.mastery() == Profession.BLACKSMITH, "expert rank must pick the mastery");
+        for (int rank = 3; rank <= Professions.MAX_RANK; rank++) {
+            helper.assertTrue(ProfessionProgress.readManual(player, Profession.BLACKSMITH, rank), "blacksmith manual " + rank + " failed");
+        }
 
-        // Другое ремесло растёт только до мастера-ремесленника.
-        professions.addXp(Profession.CARPENTER, 5000);
-        helper.assertTrue(ProfessionProgress.readManual(player, Profession.CARPENTER, 2)
-                && ProfessionProgress.readManual(player, Profession.CARPENTER, 3), "carpenter must reach artisan");
-        helper.assertTrue(!ProfessionProgress.readManual(player, Profession.CARPENTER, 4)
-                && professions.check(Profession.CARPENTER, 4) == Professions.Check.MASTERY_TAKEN, "a second mastery must be refused");
-
-        // Свиток забвения (Shift) снимает мастерство.
-        ItemStack scroll = new ItemStack(ModItems.OBLIVION_SCROLL.get());
-        player.setItemInHand(InteractionHand.MAIN_HAND, scroll);
-        player.setShiftKeyDown(true);
-        scroll.getItem().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
-        player.setShiftKeyDown(false);
-        helper.assertTrue(professions.mastery() == null && professions.rank(Profession.BLACKSMITH) == 3, "oblivion scroll must reset mastery");
-        helper.assertTrue(ProfessionProgress.readManual(player, Profession.CARPENTER, 4), "after the reset another craft can become the mastery");
+        // Любое ремесло, не только первое, растёт до легендарного мастера.
+        for (Profession craft : Profession.values()) {
+            professions.addXp(craft, Professions.xpForRank(Professions.MAX_RANK));
+            for (int rank = professions.rank(craft) + 1; rank <= Professions.MAX_RANK; rank++) {
+                helper.assertTrue(ProfessionProgress.readManual(player, craft, rank), craft + " manual " + rank + " failed");
+            }
+            helper.assertTrue(professions.rank(craft) == Professions.MAX_RANK, craft + " stopped at rank " + professions.rank(craft));
+        }
         helper.succeed();
     }
 

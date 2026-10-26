@@ -435,11 +435,7 @@ public class RpgScreen extends Screen {
         int columnWidth = Math.min(428, width - 2 * x);
         int y = CONTENT_TOP + 6;
         Component hoveredStations = null;
-        com.heroicpaths.craft.Profession mastery = professions.mastery();
-        Component masteryLine = mastery == null
-                ? Component.translatable("screen.heroicpaths.craft.no_mastery")
-                : Component.translatable("screen.heroicpaths.craft.mastery", mastery.displayName());
-        for (FormattedCharSequence line : font.split(masteryLine, columnWidth)) {
+        for (FormattedCharSequence line : font.split(Component.translatable("screen.heroicpaths.craft.all_ranks"), columnWidth)) {
             graphics.drawString(font, line, x, y, 0xD0D0D0, true);
             y += 10;
         }
@@ -448,7 +444,6 @@ public class RpgScreen extends Screen {
             int rank = professions.rank(profession);
             int xp = professions.xp(profession);
             MutableComponent title = professions.describe(profession);
-            if (profession == mastery) title.append(Component.literal(" ★").withStyle(ChatFormatting.GOLD));
             graphics.drawString(font, title, x, y, 0xFFFFFF, true);
             if (mouseX >= x && mouseX < x + font.width(title) && mouseY >= y - 1 && mouseY < y + 9) {
                 hoveredStations = Component.translatable("screen.heroicpaths.craft.stations." + profession.id());

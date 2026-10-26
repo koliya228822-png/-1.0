@@ -35,6 +35,12 @@ public final class ModBlocks {
     /** Оружейный стенд — рабочее место мастера-оружейника. */
     public static final DeferredBlock<Block> ARMS_DISPLAY = BLOCKS.registerSimpleBlock("arms_display",
             BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS).strength(2.5f));
+    /** Конторка книжника — его рабочее место в книжной лавке. */
+    public static final DeferredBlock<Block> BOOKSELLER_DESK = BLOCKS.registerSimpleBlock("bookseller_desk",
+            BlockBehaviour.Properties.ofFullCopy(Blocks.SPRUCE_PLANKS).strength(2.5f));
+    /** Весы оценщика — рабочее место скупщика в лавке скупщика. */
+    public static final DeferredBlock<Block> APPRAISAL_SCALES = BLOCKS.registerSimpleBlock("appraisal_scales",
+            BlockBehaviour.Properties.ofFullCopy(Blocks.DARK_OAK_PLANKS).strength(2.5f));
 
     /** Алтарь врат на площади деревни: открывает портал в данж Камнем врат. */
     public static final DeferredBlock<GateAltarBlock> GATE_ALTAR = BLOCKS.register("gate_altar",

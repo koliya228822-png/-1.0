@@ -32,11 +32,13 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Банкир и мастер-оружейник стоят за своими прилавками и не покидают их: «дом» каждого — клетка, где он появился
+ * Банкир, мастер-оружейник, книжник и скупщик стоят за своими прилавками и не покидают их: «дом» каждого — клетка, где он появился
  * в своём доме, отойти от неё он может на пару шагов, а сдвинутого (толпой, мобом, игроком, лодкой) сразу ставит
  * обратно. Товары обоих задаются здесь, а не обычными уровнями жителя:
  * банкир всегда скупает добычу из данжей за изумруды, оружейник каждый игровой день выставляет десять новых
  * мечей и луков (с шансом редких, с бонусами и чарами) за большие деньги; купленное до конца дня не возвращается.
+ * Книжник всегда продаёт все трактаты ремёсел ({@link Bookseller}), скупщик каждый раз заново оценивает инвентарь
+ * подошедшего игрока ({@link Pawnbroker}).
  */
 public final class MerchantPosts {
     private static final String STOCK = HeroicPaths.MODID + ".stock";
@@ -45,6 +47,8 @@ public final class MerchantPosts {
     private static final String STOCK_LEVEL = HeroicPaths.MODID + ".stock_level";
     /** Версия списка банкира: при изменении цен старые банкиры получают новый список. */
     private static final long BANK_STOCK = 2;
+    /** Версия списка книжника. */
+    private static final long BOOK_STOCK = 1;
     /** Насколько далеко от своей клетки торговец может отойти. */
     public static final int POST_LEASH = 2;
     private static final double MAX_AWAY = 2.5;
@@ -55,7 +59,12 @@ public final class MerchantPosts {
 
     public static boolean isPost(Villager villager) {
         var p = villager.getVillagerData().getProfession();
-        return p == ModVillagers.BANKER.get() || p == ModVillagers.ARMS_DEALER.get();
+        return isPost(p);
+    }
+
+    public static boolean isPost(net.minecraft.world.entity.npc.VillagerProfession p) {
+        return p == ModVillagers.BANKER.get() || p == ModVillagers.ARMS_DEALER.get()
+                || p == ModVillagers.BOOKSELLER.get() || p == ModVillagers.PAWNBROKER.get();
     }
 
     // ---------------------------------------------------------------- пост
@@ -110,6 +119,14 @@ public final class MerchantPosts {
     public static void onInteract(PlayerInteractEvent.EntityInteract event) {
         if (event.getTarget() instanceof Villager villager && villager.level() instanceof ServerLevel level && isPost(villager)) {
             stock(level, villager);
+            if (villager.getVillagerData().getProfession() == ModVillagers.PAWNBROKER.get() && !villager.isBaby()
+                    && villager.getTradingPlayer() == null) {
+                villager.getOffers().clear();
+                villager.getOffers().addAll(Pawnbroker.offersFor(event.getEntity()));
+                if (villager.getOffers().isEmpty()) {
+                    event.getEntity().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.heroicpaths.pawnbroker_nothing"), true);
+                }
+            }
         }
     }
 
@@ -135,6 +152,15 @@ public final class MerchantPosts {
             offers.clear();
             offers.addAll(bankOffers());
             data.putLong(STOCK, BANK_STOCK);
+        } else if (profession == ModVillagers.BOOKSELLER.get()) {
+            if (data.getLong(STOCK) != BOOK_STOCK || offers.isEmpty()) {
+                if (villager.getTradingPlayer() != null) return;
+                offers.clear();
+                offers.addAll(Bookseller.offers());
+                data.putLong(STOCK, BOOK_STOCK);
+            }
+            // Товар книжника не кончается.
+            if (villager.getTradingPlayer() == null) for (MerchantOffer offer : offers) offer.resetUses();
         } else if (profession == ModVillagers.ARMS_DEALER.get()) {
             long day = day(level);
             int merchantLevel = villager.getVillagerData().getLevel();
