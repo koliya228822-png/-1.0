@@ -119,6 +119,8 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.BANSHEE, 0xB0E4F0, 0xFFFFFF, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> ABOMINATION_SPAWN_EGG = ITEMS.register("abomination_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.ABOMINATION, 0xBC7A74, 0x962C36, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> WEREWOLF_SPAWN_EGG = ITEMS.register("werewolf_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.WEREWOLF, 0x2A2826, 0xE8B83A, new Item.Properties()));
     // Глиняные копи: колосс и его големы
     public static final DeferredItem<DeferredSpawnEggItem> CLAY_COLOSSUS_SPAWN_EGG = ITEMS.register("clay_colossus_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.CLAY_COLOSSUS, 0x8A4A2A, 0xFFB040, new Item.Properties()));

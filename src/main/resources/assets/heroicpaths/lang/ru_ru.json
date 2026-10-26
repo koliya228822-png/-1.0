@@ -1205,6 +1205,8 @@
   "entity.heroicpaths.abomination": "Лоскут плоти",
   "item.heroicpaths.undead_zombie_spawn_egg": "Яйцо призыва чумного зомби",
   "item.heroicpaths.ghoul_spawn_egg": "Яйцо призыва вурдалака",
+  "entity.heroicpaths.werewolf": "Оборотень",
+  "item.heroicpaths.werewolf_spawn_egg": "Яйцо призыва оборотня",
   "item.heroicpaths.banshee_spawn_egg": "Яйцо призыва банши",
   "item.heroicpaths.abomination_spawn_egg": "Яйцо призыва лоскута плоти",
   "entity.heroicpaths.brood_spider": "Паук выводка",

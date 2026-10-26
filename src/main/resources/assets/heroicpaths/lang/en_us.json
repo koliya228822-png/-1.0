@@ -1205,6 +1205,8 @@
   "entity.heroicpaths.abomination": "Abomination",
   "item.heroicpaths.undead_zombie_spawn_egg": "Plague Zombie Spawn Egg",
   "item.heroicpaths.ghoul_spawn_egg": "Ghoul Spawn Egg",
+  "entity.heroicpaths.werewolf": "Werewolf",
+  "item.heroicpaths.werewolf_spawn_egg": "Werewolf Spawn Egg",
   "item.heroicpaths.banshee_spawn_egg": "Banshee Spawn Egg",
   "item.heroicpaths.abomination_spawn_egg": "Abomination Spawn Egg",
   "entity.heroicpaths.brood_spider": "Brood Spider",

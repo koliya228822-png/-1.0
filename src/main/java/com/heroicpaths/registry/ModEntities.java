@@ -151,6 +151,12 @@ public final class ModEntities {
                     .<com.heroicpaths.entity.Abomination>of(com.heroicpaths.entity.Abomination::new, MobCategory.MONSTER)
                     .sized(1.6f, 2.4f).eyeHeight(2.0f).clientTrackingRange(8).build("abomination"));
 
+    // Оборотень: только из яйца призыва, в мире сам не появляется.
+    public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.Werewolf>> WEREWOLF =
+            ENTITY_TYPES.register("werewolf", () -> EntityType.Builder
+                    .<com.heroicpaths.entity.Werewolf>of(com.heroicpaths.entity.Werewolf::new, MobCategory.MONSTER)
+                    .sized(1.0f, 2.4f).eyeHeight(2.1f).clientTrackingRange(10).build("werewolf"));
+
     // Ледяные слуги Лича: ледяной голем, замороженный лучник, снеговик-громила.
     public static final DeferredHolder<EntityType<?>, EntityType<com.heroicpaths.entity.IceGolem>> ICE_GOLEM =
             ENTITY_TYPES.register("ice_golem", () -> EntityType.Builder
@@ -282,6 +288,7 @@ public final class ModEntities {
         event.put(FROST_LICH.get(), com.heroicpaths.entity.FrostLich.createAttributes().build());
         event.put(UNDEAD_ZOMBIE.get(), com.heroicpaths.entity.UndeadZombie.createAttributes().build());
         event.put(GHOUL.get(), com.heroicpaths.entity.Ghoul.createAttributes().build());
+        event.put(WEREWOLF.get(), com.heroicpaths.entity.Werewolf.createAttributes().build());
         event.put(BANSHEE.get(), com.heroicpaths.entity.Banshee.createAttributes().build());
         event.put(ABOMINATION.get(), com.heroicpaths.entity.Abomination.createAttributes().build());
         event.put(ICE_GOLEM.get(), com.heroicpaths.entity.IceGolem.createAttributes().build());

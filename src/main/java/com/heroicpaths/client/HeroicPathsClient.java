@@ -62,6 +62,8 @@ public class HeroicPathsClient {
         modBus.addListener(com.heroicpaths.client.clay.ClayRenderers::registerRenderers);
         modBus.addListener(com.heroicpaths.client.spider.SpiderRenderers::registerLayers);
         modBus.addListener(com.heroicpaths.client.spider.SpiderRenderers::registerRenderers);
+        modBus.addListener(com.heroicpaths.client.werewolf.WerewolfRenderer::registerLayers);
+        modBus.addListener(com.heroicpaths.client.werewolf.WerewolfRenderer::registerRenderers);
         modBus.addListener(GuardRenderer::registerLayers);
         modBus.addListener(GuardRenderer::registerRenderers);
         modBus.addListener(com.heroicpaths.client.armor.ArmorModels::registerExtensions);
