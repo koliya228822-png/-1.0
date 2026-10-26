@@ -36,6 +36,7 @@ class Box:
         self.x, self.y, self.z, self.w, self.h, self.d = x, y, z, w, h, d
         self.mat, self.feature, self.inflate = mat, feature, inflate
         self.u = self.v = 0
+        self.shift = 0.0
 
 
 class Part:
@@ -46,6 +47,37 @@ class Part:
 
     def box(self, *args, **kw):
         self.boxes.append(Box(*args, **kw))
+        return self
+
+    def fur(self, rnd, region, face, n, mat="mane", length=(1, 3), size=(1, 2), hang=(1, 3), where=None):
+        """Клочья шерсти: n кубиков-прядей торчат из грани face кубоида region (x, y, z, w, h, d) —
+        воксельный лохматый силуэт, как на эталоне. where(u, v) в долях грани отбирает места."""
+        x, y, z, w, h, d = region
+        placed = 0
+        tries = 0
+        while placed < n and tries < n * 20:
+            tries += 1
+            L = rnd.randint(*length)
+            s1 = rnd.randint(*size)
+            s2 = rnd.randint(*hang) if face not in ("top", "bottom") else rnd.randint(*size)
+            fu, fv = rnd.random(), rnd.random()
+            if where is not None and not where(fu, fv):
+                continue
+            if face in ("back", "front"):
+                bx, by = x + fu * max(0, w - s1), y + fv * max(0, h - s2)
+                bz = z + d - 0.5 if face == "back" else z - L + 0.5
+                b = Box(bx, by, bz, s1, s2, L, mat, "tuft")
+            elif face in ("left", "right"):
+                bz, by = z + fu * max(0, d - s1), y + fv * max(0, h - s2)
+                bx = x + w - 0.5 if face == "left" else x - L + 0.5
+                b = Box(bx, by, bz, L, s2, s1, mat, "tuft")
+            else:
+                bx, bz = x + fu * max(0, w - s1), z + fv * max(0, d - s2)
+                by = y - L + 0.5 if face == "top" else y + h - 0.5
+                b = Box(bx, by, bz, s1, L, s2, mat, "tuft")
+            b.shift = rnd.uniform(-0.22, 0.22)
+            self.boxes.append(b)
+            placed += 1
         return self
 
 
@@ -107,6 +139,46 @@ def model():
     part("tail2", "tail", 0, 0, 4.5, -0.25).box(-2.5, -2.5, 0, 5, 5, 5, "mane", "shag", 0.3)
     part("tail3", "tail2", 0, 0, 4.5, -0.2).box(-2, -2, 0, 4, 4, 4, "mane", "shag", 0.2) \
         .box(-1, -1, 3.5, 2, 2, 3, "dark", "shag")
+
+    # Воксельная шерсть: клочья-кубики по гриве, спине, бокам, рукам, ногам и хвосту.
+    rnd = random.Random(4242)
+    by = {p.name: p for p in parts}
+    mane, chest = (-7, -15, -1.5, 14, 6, 8), (-6, -13, -4, 12, 13, 8)
+    t = by["torso"]
+    t.fur(rnd, mane, "top", 34, "mane", (1, 4)).fur(rnd, mane, "back", 22, "mane", (1, 3))
+    t.fur(rnd, mane, "left", 9, "mane").fur(rnd, mane, "right", 9, "mane")
+    t.fur(rnd, chest, "back", 32, "dark", (1, 3)).fur(rnd, chest, "left", 12, "dark", (1, 2)).fur(rnd, chest, "right", 12, "dark", (1, 2))
+    t.fur(rnd, chest, "front", 22, "chest", (1, 2), where=lambda u, v: abs(u - 0.5) < 0.35 and v > 0.15)
+    t.fur(rnd, chest, "front", 10, "dark", (1, 2), where=lambda u, v: abs(u - 0.5) >= 0.35)
+    hips = (-5, -3, -3.5, 10, 5, 7)
+    h = by["hips"]
+    h.fur(rnd, hips, "back", 10, "dark").fur(rnd, hips, "left", 5, "dark").fur(rnd, hips, "right", 5, "dark")
+    h.fur(rnd, hips, "bottom", 10, "dark", (1, 3))
+    hd = by["head"]
+    ruff, skull = (-5, -3, -2.5, 10, 6, 5), (-4, -7, -7, 8, 8, 7)
+    hd.fur(rnd, ruff, "left", 9, "mane", (1, 3)).fur(rnd, ruff, "right", 9, "mane", (1, 3))
+    hd.fur(rnd, ruff, "bottom", 8, "mane", (1, 3)).fur(rnd, ruff, "back", 8, "mane")
+    hd.fur(rnd, skull, "top", 14, "mane", (1, 3), where=lambda u, v: v < 0.6)
+    hd.fur(rnd, skull, "back", 6, "mane").fur(rnd, skull, "left", 4, "dark", (1, 1), where=lambda u, v: u < 0.5 and v > 0.4)
+    hd.fur(rnd, skull, "right", 4, "dark", (1, 1), where=lambda u, v: u < 0.5 and v > 0.4)
+    for side in ("right", "left"):
+        outer, inner = side, ("left" if side == "right" else "right")
+        a, f = by["arm_" + side], by["forearm_" + side]
+        shoulder, upper, fore = (-3.5, -2.5, -3.5, 7, 5, 7), (-2.5, 0, -2.5, 5, 9, 5), (-2.5, 0, -2.5, 5, 8, 5)
+        a.fur(rnd, shoulder, "top", 10, "mane", (1, 3)).fur(rnd, shoulder, outer, 8, "mane").fur(rnd, shoulder, "back", 6, "mane")
+        a.fur(rnd, shoulder, "bottom", 6, "mane", (1, 2))
+        a.fur(rnd, upper, outer, 9, "grey", (1, 2)).fur(rnd, upper, "back", 7, "mid", (1, 2)).fur(rnd, upper, "front", 4, "grey", (1, 1))
+        f.fur(rnd, fore, outer, 7, "grey", (1, 2)).fur(rnd, fore, "back", 7, "mid", (1, 2)).fur(rnd, fore, inner, 3, "grey", (1, 1))
+        l, sh = by["leg_" + side], by["shin_" + side]
+        thigh, shin = (-2.5, -1, -3, 5, 9, 6), (-2, -0.5, -2, 4, 7, 4)
+        l.fur(rnd, thigh, outer, 7, "mid", (1, 2)).fur(rnd, thigh, "back", 9, "dark", (1, 3)).fur(rnd, thigh, "front", 5, "mid", (1, 2))
+        l.fur(rnd, thigh, inner, 3, "mid", (1, 1))
+        sh.fur(rnd, shin, "back", 6, "grey", (1, 2)).fur(rnd, shin, outer, 4, "grey", (1, 1)).fur(rnd, shin, "front", 3, "grey", (1, 1))
+    for name, region in (("tail", (-2, -2, 0, 4, 4, 5)), ("tail2", (-2.5, -2.5, 0, 5, 5, 5)), ("tail3", (-2, -2, 0, 4, 4, 4))):
+        tp = by[name]
+        for face in ("top", "bottom", "left", "right"):
+            tp.fur(rnd, region, face, 7, "mane", (1, 3), size=(1, 2))
+    by["tail3"].fur(rnd, (-2, -2, 0, 4, 4, 4), "back", 6, "mane", (1, 3))
     return parts
 
 
@@ -173,11 +245,11 @@ def face(bp, gp, b, kind, x0, y0, pw, ph, rnd):
             if c not in cells:
                 cells[c] = rnd.uniform(-0.2, 0.2)
             shade = {"top": 0.08, "bottom": -0.18}.get(kind, 0.06 - 0.16 * y / ph)
-            tone[x][y] = 0.5 + cells[c] + (streak if side and b.mat not in ("bone", "nose", "mouth") else streak * 0.3) + shade
+            tone[x][y] = 0.5 + b.shift + cells[c] + (streak if side and b.mat not in ("bone", "nose", "mouth") else streak * 0.3) + shade
     # Края граней темнее — кубики читаются, как на эталоне.
     for x in range(pw):
         for y in range(ph):
-            if min(x, pw - 1 - x, y, ph - 1 - y) == 0:
+            if min(pw, ph) > 4 and min(x, pw - 1 - x, y, ph - 1 - y) == 0:
                 tone[x][y] -= 0.12
     f = b.feature
     if f == "chest" and kind == "front":
