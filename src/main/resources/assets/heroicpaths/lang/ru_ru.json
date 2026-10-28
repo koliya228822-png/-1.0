@@ -1510,6 +1510,7 @@
   "message.heroicpaths.resurrect.you": "Вы снова в строю!",
   "block.heroicpaths.waystone": "Камень перемещения",
   "block.heroicpaths.waystone.default_name": "Точка (%s, %s)",
+  "block.heroicpaths.waystone.guild_name": "Гильдия (%s, %s)",
   "item.heroicpaths.teleport_scroll": "Свиток перемещения",
   "item.heroicpaths.teleport_scroll.desc": "Переносит к любому известному камню перемещения (тратится при перемещении)",
   "key.heroicpaths.map": "Карта и метки",

@@ -1220,6 +1220,10 @@ public class StructureGen {
             t.set(HX2 - 1, 4, z, "minecraft:wall_torch[facing=west]");
         }
 
+        // Камень перемещения у входа: точка быстрого перемещения этой деревни.
+        t.set(GX - 3, 1, 23, MODID + ":waystone");
+        t.set(GX - 3, 2, 23, "minecraft:candle[candles=4,lit=true,waterlogged=false]");
+
         // Распорядитель и глашатай стоят у своих досок.
         t.entities.add(villager(b, "guildmaster", ex - 1, 22));
         t.entities.add(villager(b, "bounty_herald", wx + 1, 22));

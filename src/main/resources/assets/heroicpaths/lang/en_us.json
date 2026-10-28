@@ -1510,6 +1510,7 @@
   "message.heroicpaths.resurrect.you": "You are back on your feet!",
   "block.heroicpaths.waystone": "Waystone",
   "block.heroicpaths.waystone.default_name": "Point (%s, %s)",
+  "block.heroicpaths.waystone.guild_name": "Guild (%s, %s)",
   "item.heroicpaths.teleport_scroll": "Teleport Scroll",
   "item.heroicpaths.teleport_scroll.desc": "Takes you to any known waystone (used up on travel)",
   "key.heroicpaths.map": "Map and markers",

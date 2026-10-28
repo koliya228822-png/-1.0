@@ -129,7 +129,11 @@ public final class Waystones extends SavedData {
         ServerLevel level = player.serverLevel();
         Waystones data = get(level.getServer());
         Entry entry = data.at(level.dimension(), pos);
-        if (entry == null) entry = data.add(level, pos, null, ItemStack.EMPTY);
+        if (entry == null) {
+            // Камень из постройки (зал гильдии): никто его не ставил, название — по деревне.
+            entry = data.add(level, pos, null, ItemStack.EMPTY);
+            entry.name = Component.translatable("block.heroicpaths.waystone.guild_name", pos.getX(), pos.getZ()).getString();
+        }
         if (entry.known.add(player.getUUID())) {
             data.setDirty();
             player.displayClientMessage(Component.translatable("message.heroicpaths.waystone_discovered", entry.name).withStyle(ChatFormatting.GREEN), true);
