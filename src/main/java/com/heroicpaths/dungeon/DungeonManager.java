@@ -318,26 +318,57 @@ public final class DungeonManager {
         return new BlockPos(box.getCenter().getX(), box.minY(), box.getCenter().getZ());
     }
 
+    /** Кольцо клеток вокруг опоры винтовой лестницы по часовой стрелке (если смотреть сверху): так по ней спускаются. */
+    static final int[][] SPIRAL = {{0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}};
+
     /**
-     * Шахта между этажами: лестница от проёма в полу зала спуска (top) до якоря нижнего этажа (bottom) на опоре с севера.
-     * Выше потолка нижнего зала шахта обложена кладкой со всех сторон, чтобы в пустоте не было дыр.
+     * Шахта между этажами: винтовая лестница из ступенек вокруг опоры от проёма в полу зала спуска (top) до якоря нижнего
+     * этажа (bottom). Каждая ступенька на блок ниже предыдущей, полный виток — 8 блоков, так что над головой всегда
+     * хватает места, а упасть мимо ступенек некуда. Выше потолка нижнего зала шахта обложена кладкой со всех сторон.
      */
     public static void carveShaft(ServerLevel level, BlockPos top, BlockPos bottom) {
         BlockState wall = level.getBlockState(top.east());
         if (wall.isAir()) wall = Blocks.STONE_BRICKS.defaultBlockState();
-        BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(net.minecraft.world.level.block.LadderBlock.FACING, Direction.SOUTH);
-        for (int y = bottom.getY(); y <= top.getY(); y++) {
-            BlockPos at = new BlockPos(bottom.getX(), y, bottom.getZ());
-            level.setBlock(at.north(), wall, Block.UPDATE_CLIENTS);
-            level.setBlock(at, ladder, Block.UPDATE_CLIENTS);
-            if (y < bottom.getY() + 6) continue;
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    BlockPos side = at.offset(dx, 0, dz);
-                    if ((dx != 0 || dz != 0) && level.getBlockState(side).isAir()) level.setBlock(side, wall, Block.UPDATE_CLIENTS);
+        Block stairs = stairsFor(level.getBlockState(top.east(2)).getBlock());
+        int cx = bottom.getX(), cz = bottom.getZ();
+        int steps = top.getY() - bottom.getY() + 1;
+        // Опора посередине до пола зала спуска.
+        for (int y = bottom.getY(); y <= top.getY(); y++) level.setBlock(new BlockPos(cx, y, cz), wall, Block.UPDATE_CLIENTS);
+        // Кладка вокруг шахты выше потолка нижнего зала.
+        for (int y = bottom.getY() + 6; y < top.getY(); y++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    BlockPos side = new BlockPos(cx + dx, y, cz + dz);
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) == 2 && level.getBlockState(side).isAir()) level.setBlock(side, wall, Block.UPDATE_CLIENTS);
                 }
             }
         }
+        // Кольцо вокруг опоры пустое; в полу зала спуска открыты только первые клетки, над которыми идут вниз.
+        for (int i = 0; i < SPIRAL.length; i++) {
+            for (int y = bottom.getY(); y <= top.getY(); y++) {
+                if (y == top.getY() && i >= 4) continue;
+                level.setBlock(new BlockPos(cx + SPIRAL[i][0], y, cz + SPIRAL[i][1]), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+            }
+        }
+        for (int k = 0; k < steps; k++) {
+            int[] at = SPIRAL[k % SPIRAL.length], below = SPIRAL[(k + 1) % SPIRAL.length];
+            // Ступенька смотрит туда, куда по ней поднимаются: от следующей (нижней) клетки к этой.
+            Direction up = Direction.fromDelta(at[0] - below[0], 0, at[1] - below[1]);
+            level.setBlock(new BlockPos(cx + at[0], top.getY() - k, cz + at[1]),
+                    stairs.defaultBlockState().setValue(net.minecraft.world.level.block.StairBlock.FACING, up), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Ступеньки из того же камня, что пол зала: «cracked_stone_bricks» → «stone_brick_stairs»; иначе каменные кирпичи. */
+    static Block stairsFor(Block floor) {
+        ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(floor);
+        String name = id.getPath().replaceFirst("^(cracked|chiseled|mossy_cracked)_", "");
+        for (String candidate : new String[]{name + "_stairs", name.replaceFirst("s$", "") + "_stairs",
+                name.replaceFirst("_block$", "") + "_stairs", name.replaceFirst("_planks$", "") + "_stairs"}) {
+            Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath(id.getNamespace(), candidate));
+            if (block instanceof net.minecraft.world.level.block.StairBlock) return block;
+        }
+        return Blocks.STONE_BRICK_STAIRS;
     }
 
     /** Строит первый этаж данжа (как генератор jigsaw-структур) и возвращает его комнаты. */
@@ -607,6 +638,7 @@ public final class DungeonManager {
         } else if (generating != null && generating.index() == indexAt(mob.blockPosition())) {
             applyScaling(mob, generating.type(), generating.partySize());
             generating.monsters().add(java.util.Map.entry(mob.getUUID(), mob.getBlockY()));
+            if (!(mob instanceof DungeonBoss)) FloorLeash.bind(mob);
         } else {
             return;
         }

@@ -361,8 +361,6 @@ public class StructureGen {
         t.set(1, 1, 1, "minecraft:bone_block[axis=y]");
         t.set(9, 1, 9, "minecraft:bone_block[axis=y]");
         t.set(1, 2, 1, "minecraft:skeleton_skull[powered=false,rotation=6]");
-        t.set(2, 1, 9, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
-        t.set(8, 1, 9, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
 
         // Колодец: столб-опора у (8, 1) и лестница у (8, 2) от пола зала до поверхности.
         String ladder = "minecraft:ladder[facing=south,waterlogged=false]";
@@ -414,19 +412,16 @@ public class StructureGen {
 
     /**
      * Площадка спуска (этажи 2–5): сюда спускается лестница с этажа выше. Якорь в центре — низ шахты,
-     * колонна к северу от него держит лестницу. Выход в центральный зал этажа на юг.
+     * вокруг него винтовая лестница из ступенек вокруг опоры. Выход в центральный зал этажа на юг.
      */
     static Template floorLanding() {
         Random r = new Random(12);
         Template t = new Template(9, 7, 9);
         room(t, 0, 0, 8, 8, 6, r);
         t.set(4, 1, 4, "minecraft:jigsaw[orientation=up_north]", cryptJigsaw(FLOOR_ANCHOR, FLOOR_ANCHOR, "minecraft:empty", 0));
-        for (int y = 1; y <= 5; y++) t.set(4, y, 3, "minecraft:chiseled_stone_bricks");
         for (int[] p : new int[][]{{1, 1}, {7, 1}, {1, 7}, {7, 7}}) t.fill(p[0], 1, p[1], p[0], 5, p[1], "minecraft:chiseled_stone_bricks");
         t.set(2, 5, 6, SOUL_LANTERN);
         t.set(6, 5, 6, SOUL_LANTERN);
-        t.set(2, 1, 1, "minecraft:soul_campfire[facing=south,lit=true,signal_fire=false,waterlogged=false]");
-        t.set(6, 1, 1, "minecraft:soul_campfire[facing=south,lit=true,signal_fire=false,waterlogged=false]");
         t.set(1, 5, 4, COBWEB);
         doorway(t, 4, 8, "south", cryptJigsaw(MODID + ":crypt_entrance", MODID + ":crypt_hub", CRYPT + "floor_hub", 0));
         return t;
@@ -505,7 +500,6 @@ public class StructureGen {
                 }
             }
             t.set(px, 1, pz + (pz > c ? -2 : 2), "minecraft:soul_lantern[hanging=false,waterlogged=false]");
-            t.set(px + (px > c ? -2 : 2), 1, pz, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
         }
         // Висячие фонари двумя кольцами.
         for (int i = 0; i < 12; i++) {
@@ -532,7 +526,7 @@ public class StructureGen {
                 for (int y = 1; y <= 5; y++) t.set(x, y, z, wall ? blackBrick(r) : AIR);
             }
         }
-        // Зал спуска 11×11 (z = ante..ante+10): якорь шахты в центре, колонна-опора лестницы к северу от него,
+        // Зал спуска 11×11 (z = ante..ante+10): якорь шахты в центре, вокруг него винтовая лестница,
         // запечатанные врата домой в 4 блоках к югу.
         int az = ante + 5;
         for (int x = c - 5; x <= c + 5; x++) {
@@ -545,7 +539,6 @@ public class StructureGen {
         }
         for (int x = c - 2; x <= c + 2; x++) for (int y = 1; y <= 5; y++) t.set(x, y, ante, AIR);
         t.set(c, 1, az, "minecraft:jigsaw[orientation=up_north]", cryptJigsaw(FLOOR_ANCHOR, FLOOR_ANCHOR, "minecraft:empty", 0));
-        for (int y = 1; y <= 6; y++) t.set(c, y, az - 1, "minecraft:chiseled_stone_bricks");
         for (int x = c - 2; x <= c + 2; x++) {
             for (int y = 1; y <= 5; y++) {
                 boolean frame = x == c - 2 || x == c + 2 || y == 5;
@@ -553,8 +546,6 @@ public class StructureGen {
             }
         }
         for (int[] p : new int[][]{{c - 3, az - 3}, {c + 3, az - 3}, {c - 3, az + 2}, {c + 3, az + 2}}) t.set(p[0], 6, p[1], SOUL_LANTERN);
-        t.set(c - 4, 1, az + 4, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
-        t.set(c + 4, 1, az + 4, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
         return t;
     }
 
@@ -1360,7 +1351,6 @@ public class StructureGen {
         Template t = new Template(13, 7, 13);
         room(t, 0, 0, 12, 12, 6, r);
         for (int[] p : new int[][]{{3, 3}, {9, 3}, {3, 9}, {9, 9}}) t.fill(p[0], 1, p[1], p[0], 5, p[1], "minecraft:chiseled_stone_bricks");
-        t.set(6, 1, 6, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
         spawner(t, 2, 1, 10, "minecraft:zombie");
         spawner(t, 10, 1, 2, "minecraft:skeleton");
         chest(t, 10, 1, 10, "west", "crypt");
@@ -1413,8 +1403,6 @@ public class StructureGen {
         t.fill(8, 3, 16, 8, 5, 16, "minecraft:gilded_blackstone");
         chest(t, 5, 1, 15, "north", "crypt_treasure");
         chest(t, 11, 1, 15, "north", "crypt_treasure");
-        t.set(2, 1, 14, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
-        t.set(14, 1, 14, "minecraft:soul_campfire[facing=north,lit=true,signal_fire=false,waterlogged=false]");
         for (int[] p : new int[][]{{1, 1}, {15, 1}, {1, 2}, {15, 2}, {2, 1}, {14, 1}}) t.set(p[0], 1, p[1], "minecraft:bone_block[axis=y]");
         t.entities.add(map("blockPos", List.of(8, 1, 9), "pos", List.of(8.5, 1.0, 9.5),
                 "nbt", map("id", MODID + ":crypt_king", "PersistenceRequired", (byte) 1)));

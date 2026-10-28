@@ -141,11 +141,12 @@ public class DungeonPortalGameTests {
                 int open = DungeonManager.sealOpenings(level, floorPieces);
                 helper.assertTrue(open == 0, type.id() + " has " + open + " doorways open to the void");
             }
-            // Шахта: лестница доходит до низа каждой площадки спуска и до зала у арены.
-            helper.assertTrue(level.getBlockState(built.bossArrival()).is(net.minecraft.world.level.block.Blocks.LADDER),
-                    type.id() + " shaft does not reach the arena");
-            helper.assertTrue(level.getBlockState(built.bossArrival().above(20)).is(net.minecraft.world.level.block.Blocks.LADDER),
-                    type.id() + " shaft to the arena is broken");
+            // Шахта: винтовая лестница из ступенек доходит до зала у арены, без приставных лестниц.
+            helper.assertTrue(stairStep(level, built.bossArrival()), type.id() + " shaft does not reach the arena");
+            helper.assertTrue(stairStep(level, built.bossArrival().above(20)), type.id() + " shaft to the arena is broken");
+            helper.assertTrue(stairStep(level, built.bossArrival().above(39)), type.id() + " shaft does not start at the floor above");
+            helper.assertTrue(BlockPos.betweenClosedStream(built.bossArrival().offset(-1, 0, -1), built.bossArrival().offset(1, 39, 1))
+                    .noneMatch(p -> level.getBlockState(p).is(net.minecraft.world.level.block.Blocks.LADDER)), type.id() + " shaft still has ladders");
             BoundingBox hall = built.floors().get(0).get(0).getBoundingBox();
             helper.assertTrue(countBlocks(level, hall, ModBlocks.DUNGEON_PORTAL.get()) == 0, type.id() + " arrival hall must not have a way back");
             // Босс посреди арены.
@@ -458,6 +459,12 @@ public class DungeonPortalGameTests {
             for (var villager : villagers) villager.discard();
         }
         helper.runAfterDelay(40, helper::succeed);
+    }
+
+    /** На этой высоте вокруг опоры шахты есть ступенька. */
+    private static boolean stairStep(ServerLevel level, BlockPos center) {
+        return BlockPos.betweenClosedStream(center.offset(-1, 0, -1), center.offset(1, 0, 1))
+                .anyMatch(p -> level.getBlockState(p).getBlock() instanceof net.minecraft.world.level.block.StairBlock);
     }
 
     private static int count(List<String> names, String piece) {

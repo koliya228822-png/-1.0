@@ -200,4 +200,43 @@ public class DungeonRevivalGameTests {
         helper.assertTrue(recipe.get().value().getIngredients().size() == 9, "the recipe must take 9 ingredients");
         helper.succeed();
     }
+
+    /**
+     * Монстры данжа привязаны к этажу: при постройке все получают метку, нераненый монстр не уходит с высоты своего
+     * этажа (его возвращают), а после урона ходит где угодно.
+     */
+    @GameTest(template = ARENA, batch = "dungeon_floor_leash", timeoutTicks = 400)
+    public static void unhurtMonstersStayOnTheirFloor(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = player(helper);
+        DungeonManager.testLevel = level;
+        DungeonInstance instance = DungeonManager.create(level, DungeonType.CRYPT, List.of(player.getUUID()), null,
+                level.dimension(), helper.absolutePos(new BlockPos(1, 2, 1)));
+        helper.assertTrue(instance != null, "instance was not created");
+        for (UUID guard : instance.exitGuards()) {
+            helper.assertTrue(level.getEntity(guard) instanceof net.minecraft.world.entity.Mob mob && com.heroicpaths.dungeon.FloorLeash.isBound(mob),
+                    "a dungeon monster is not bound to its floor");
+        }
+        net.minecraft.world.entity.monster.Zombie zombie = helper.spawn(net.minecraft.world.entity.EntityType.ZOMBIE, new BlockPos(4, 2, 4));
+        zombie.setNoAi(true);
+        com.heroicpaths.dungeon.FloorLeash.bind(zombie);
+        double home = zombie.getY();
+        helper.runAfterDelay(5, () -> zombie.setPos(zombie.getX(), home + 3, zombie.getZ()));
+        helper.runAfterDelay(7, () -> {
+            try {
+                helper.assertTrue(zombie.getY() < home + 1.3, "an unhurt monster left its floor: y " + zombie.getY() + " home " + home);
+                zombie.hurt(level.damageSources().generic(), 1);
+                helper.assertTrue(!com.heroicpaths.dungeon.FloorLeash.isBound(zombie), "a hurt monster stays bound");
+                zombie.setPos(zombie.getX(), home + 3, zombie.getZ());
+            } catch (RuntimeException e) {
+                DungeonManager.testLevel = null;
+                throw e;
+            }
+        });
+        helper.runAfterDelay(8, () -> {
+            DungeonManager.testLevel = null;
+            helper.assertTrue(zombie.getY() > home + 1.5, "a hurt monster must be free to leave its floor");
+            helper.succeed();
+        });
+    }
 }

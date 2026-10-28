@@ -80,6 +80,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(DungeonManager.class);
         NeoForge.EVENT_BUS.register(DungeonRules.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.dungeon.DungeonRevival.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.dungeon.FloorLeash.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.dungeon.PersonalLoot.class);
         NeoForge.EVENT_BUS.register(PartyManager.class);
         NeoForge.EVENT_BUS.register(GearEvents.class);
