@@ -103,7 +103,7 @@ public final class DungeonManager {
     }
 
     /** Данж, который строится прямо сейчас: мобы из шаблонов комнат появляются раньше, чем он зарегистрирован. */
-    private record Pending(int index, DungeonType type, int partySize) {}
+    private record Pending(int index, DungeonType type, int partySize, List<java.util.Map.Entry<UUID, Integer>> monsters) {}
 
     @Nullable
     private static Pending generating;
@@ -173,7 +173,8 @@ public final class DungeonManager {
         int party = Math.max(1, Math.min(DungeonType.MAX_PARTY, roster.size()));
         BlockPos origin = new BlockPos(index * SPACING, TOP_Y, 0);
         Built built;
-        generating = new Pending(index, type, party);
+        Pending pending = new Pending(index, type, party, new ArrayList<>());
+        generating = pending;
         try {
             built = build(level, type, origin, party);
         } catch (RuntimeException e) {
@@ -186,11 +187,32 @@ public final class DungeonManager {
         DungeonInstance instance = new DungeonInstance(index, type, roster, partyId, origin, built.arrival(), built.bossArrival(),
                 returnLevel, returnPos);
         data.put(instance);
+        trackExitGuards(instance, pending.monsters());
         // Сохраняем сразу: после сбоя игры номер прохода не должен выдаться повторно поверх уже построенного данжа.
         level.getServer().overworld().getDataStorage().save();
         HeroicPaths.LOGGER.info("Dungeon {} #{} built: {} floors, {} pieces, {} monsters at {} for {} players", type.id(), index,
                 built.floors().size(), built.pieces().size(), built.monsters(), origin, party);
         return instance;
+    }
+
+    /**
+     * Запоминает монстров предпоследнего этажа: когда все они погибнут, у входа откроются врата домой.
+     * У данжа из одного этажа раннего выхода нет.
+     */
+    static void trackExitGuards(DungeonInstance instance, List<java.util.Map.Entry<UUID, Integer>> monsters) {
+        int exitFloor = exitFloor(instance);
+        if (exitFloor < 1 || instance.bossArrival.equals(instance.arrival)) {
+            instance.setExit(DungeonInstance.ExitState.CLOSED);
+            return;
+        }
+        for (var monster : monsters) {
+            if (floorAt(instance, monster.getValue()) == exitFloor) instance.exitGuards().add(monster.getKey());
+        }
+    }
+
+    /** Этаж, после зачистки которого можно вернуться через врата у входа: предпоследний (4-й из 5). */
+    public static int exitFloor(DungeonInstance instance) {
+        return instance.type.floors() - 1;
     }
 
     /**
@@ -397,9 +419,10 @@ public final class DungeonManager {
         if (server == null) return;
 
         if (isDungeonLevel(player.level())) {
-            // Внутри данжа порталы есть только на месте гибели босса: выйти можно лишь так или умерев.
+            // Внутри данжа врата домой открываются после победы над боссом, а у входа — ещё и после зачистки предпоследнего этажа.
             DungeonInstance instance = instanceAt(server, portalPos);
-            if (instance != null && instance.isCompleted()) leave(player, instance);
+            if (instance != null && !player.isSpectator()
+                    && (instance.isCompleted() || instance.exit() == DungeonInstance.ExitState.OPEN)) leave(player, instance);
             return;
         }
         GateAltarBlockEntity altar = GateAltarBlockEntity.findNear(player.serverLevel(), portalPos);
@@ -512,10 +535,58 @@ public final class DungeonManager {
         DungeonInstance instance = instanceAt(player.server, player.blockPosition());
         if (instance == null || instance.bossArrival.equals(instance.arrival)) return;
         int floor = floorAt(instance, player.getBlockY());
+        if (!player.isSpectator() && !instance.isCompleted()) updateExit(player.serverLevel(), instance, floor);
         if (player.getPersistentData().getInt(LAST_FLOOR) == floor) return;
         player.getPersistentData().putInt(LAST_FLOOR, floor);
         player.displayClientMessage(Component.translatable("message.heroicpaths.dungeon_floor", floor, instance.type.floors() + 1)
                 .withStyle(floor > instance.type.floors() ? ChatFormatting.RED : ChatFormatting.GOLD), true);
+    }
+
+    /**
+     * Врата у входа: открываются, когда на предпоследнем этаже не осталось монстров и группа там (на случай этажа без
+     * монстров), и закладываются насовсем, как только кто-то живой спустится на последний этаж.
+     */
+    static void updateExit(ServerLevel level, DungeonInstance instance, int floor) {
+        if (instance.exit() == DungeonInstance.ExitState.WAITING && instance.exitGuards().isEmpty() && floor == exitFloor(instance)) {
+            openExit(level, instance);
+        } else if (instance.exit() == DungeonInstance.ExitState.OPEN && floor > exitFloor(instance)) {
+            closeExit(level, instance);
+        }
+    }
+
+    /** Предпоследний этаж зачищен: врата у входа ведут домой. */
+    public static void openExit(ServerLevel level, DungeonInstance instance) {
+        Block seal = openGate(level, instance.arrival);
+        instance.setExit(seal == null ? DungeonInstance.ExitState.CLOSED : DungeonInstance.ExitState.OPEN);
+        if (seal != null) instance.setExitSeal(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(seal).toString());
+        DungeonData.get(level.getServer()).setDirty();
+        if (seal == null) return;
+        for (ServerPlayer player : membersInside(level, instance)) {
+            player.sendSystemMessage(Component.translatable("message.heroicpaths.dungeon_exit_opened", exitFloor(instance),
+                    instance.type.floors()).withStyle(ChatFormatting.LIGHT_PURPLE));
+        }
+    }
+
+    /** Группа спустилась на последний этаж: врата у входа снова заложены, домой — только через босса. */
+    public static void closeExit(ServerLevel level, DungeonInstance instance) {
+        Block seal = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(ResourceLocation.tryParse(instance.exitSeal()));
+        if (seal == Blocks.AIR) seal = Blocks.STONE_BRICKS;
+        closeGate(level, instance.arrival, seal);
+        instance.setExit(DungeonInstance.ExitState.CLOSED);
+        DungeonData.get(level.getServer()).setDirty();
+        for (ServerPlayer player : membersInside(level, instance)) {
+            player.sendSystemMessage(Component.translatable("message.heroicpaths.dungeon_exit_closed").withStyle(ChatFormatting.DARK_RED));
+        }
+    }
+
+    /** Участники прохода, которые сейчас в нём (живые и павшие). */
+    public static List<ServerPlayer> membersInside(ServerLevel level, DungeonInstance instance) {
+        List<ServerPlayer> inside = new ArrayList<>();
+        for (UUID uuid : instance.roster()) {
+            ServerPlayer player = level.getServer().getPlayerList().getPlayer(uuid);
+            if (player != null && player.level() == level && indexAt(player.blockPosition()) == instance.index) inside.add(player);
+        }
+        return inside;
     }
 
     /** Номер этажа по высоте: этажи 1–5 через FLOOR_STEP от верхнего, ниже пятого — арена. */
@@ -535,6 +606,7 @@ public final class DungeonManager {
             applyScaling(mob, instance.type, instance.partySize);
         } else if (generating != null && generating.index() == indexAt(mob.blockPosition())) {
             applyScaling(mob, generating.type(), generating.partySize());
+            generating.monsters().add(java.util.Map.entry(mob.getUUID(), mob.getBlockY()));
         } else {
             return;
         }
@@ -563,16 +635,23 @@ public final class DungeonManager {
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
-        if (!(entity instanceof DungeonBoss) || !(entity.level() instanceof ServerLevel level) || !isDungeonLevel(level)) return;
+        if (entity instanceof net.minecraft.world.entity.player.Player || !(entity.level() instanceof ServerLevel level) || !isDungeonLevel(level)) return;
         DungeonInstance instance = instanceAt(level.getServer(), entity.blockPosition());
         if (instance == null || instance.isCompleted()) return;
-        completeInstance(level, instance, entity.blockPosition());
+        if (entity instanceof DungeonBoss) {
+            completeInstance(level, instance, entity.blockPosition());
+        } else if (instance.exitGuards().remove(entity.getUUID())) {
+            DungeonData.get(level.getServer()).setDirty();
+            if (instance.exitGuards().isEmpty() && instance.exit() == DungeonInstance.ExitState.WAITING) openExit(level, instance);
+        }
     }
 
     /** Босс повержен: награды и трофей всем вошедшим, выполнение контрактов и открытие врат у входа. */
     public static void completeInstance(ServerLevel level, DungeonInstance instance, BlockPos bossPos) {
         instance.complete();
         DungeonData.get(level.getServer()).setDirty();
+        // Павшие соратники встают у врат домой и получают награду вместе со всеми.
+        DungeonRevival.reviveAll(level, instance);
         java.util.List<ServerPlayer> cleared = new java.util.ArrayList<>();
         for (UUID uuid : instance.entered()) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(uuid);
@@ -619,6 +698,26 @@ public final class DungeonManager {
      * поэтому проверяются все четыре стороны: подходит та, где однородная заливка обрамлена обсидианом.
      */
     public static boolean openEntranceGate(ServerLevel level, BlockPos arrival) {
+        return openGate(level, arrival) != null;
+    }
+
+    /** Открывает врата у точки arrival (см. {@link #openEntranceGate}) и возвращает блок, которым они были заложены; null — врат нет. */
+    @Nullable
+    public static Block openGate(ServerLevel level, BlockPos arrival) {
+        return gate(level, arrival, null);
+    }
+
+    /** Закладывает открытые врата у точки arrival блоком seal. */
+    public static boolean closeGate(ServerLevel level, BlockPos arrival, Block seal) {
+        return gate(level, arrival, seal) != null;
+    }
+
+    /**
+     * Ищет врата в 4 блоках от arrival. Без closeWith открывает заложенные (заливка → портал), с closeWith —
+     * закладывает открытые (портал → closeWith). Возвращает блок заливки, которая была в проёме; null — врата не нашлись.
+     */
+    @Nullable
+    private static Block gate(ServerLevel level, BlockPos arrival, @Nullable Block closeWith) {
         int[][] sides = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
         for (int[] side : sides) {
             // Проём тянется поперёк направления на врата.
@@ -631,7 +730,9 @@ public final class DungeonManager {
                 for (int y = 0; y <= 3 && ok; y++) {
                     BlockPos pos = center.offset(ax * i, y, az * i);
                     BlockState state = level.getBlockState(pos);
-                    if (state.isAir() || state.is(Blocks.OBSIDIAN) || (seal != null && !state.is(seal))) ok = false;
+                    // Открываем только заложенные врата, закладываем только открытые.
+                    if (state.isAir() || state.is(Blocks.OBSIDIAN) || (seal != null && !state.is(seal))
+                            || state.is(ModBlocks.DUNGEON_PORTAL.get()) != (closeWith != null)) ok = false;
                     else {
                         seal = state.getBlock();
                         inside.add(pos.immutable());
@@ -642,13 +743,18 @@ public final class DungeonManager {
                         && level.getBlockState(center.offset(ax * 2, y, az * 2)).is(Blocks.OBSIDIAN);
             for (int i = -1; i <= 1 && ok; i++) ok = level.getBlockState(center.offset(ax * i, 4, az * i)).is(Blocks.OBSIDIAN);
             if (!ok) continue;
-            DungeonPortalBlock.fill(level, inside, ax == 1 ? Direction.Axis.X : Direction.Axis.Z);
             BlockPos middle = center.above(2);
+            if (closeWith != null) {
+                for (BlockPos pos : inside) level.setBlock(pos, closeWith.defaultBlockState(), Block.UPDATE_ALL);
+                level.playSound(null, middle, SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.BLOCKS, 1f, 0.6f);
+                return seal;
+            }
+            DungeonPortalBlock.fill(level, inside, ax == 1 ? Direction.Axis.X : Direction.Axis.Z);
             level.sendParticles(ParticleTypes.REVERSE_PORTAL, middle.getX() + 0.5, middle.getY(), middle.getZ() + 0.5, 80, 1.2, 1.2, 1.2, 0.1);
             level.playSound(null, middle, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 1f, 1.2f);
-            return true;
+            return seal;
         }
-        return false;
+        return null;
     }
 
     static void give(ServerPlayer player, ItemStack stack) {

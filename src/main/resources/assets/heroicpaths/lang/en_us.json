@@ -450,7 +450,7 @@
   "message.heroicpaths.access.level": "%s requires an average party level of %s. Your party average: %s.",
   "message.heroicpaths.access.not_party": "This gate is open for another party.",
   "message.heroicpaths.access.scroll": "You need a scroll to enter: %s.",
-  "message.heroicpaths.dungeon_rules": "The only ways out are defeating the boss (the entrance gate then opens) or dying. Dungeon walls cannot be broken.",
+  "message.heroicpaths.dungeon_rules": "You can leave through the entrance gate once the second-to-last floor is cleared (until the party goes deeper), or by defeating the boss. A Scroll of Resurrection raises a fallen ally; if the whole party falls, death is final. Dungeon walls cannot be broken.",
   "message.heroicpaths.gate_items_returned": "Nobody entered the gate: the gate stone and scroll were returned.",
   "message.heroicpaths.contract_needs_scroll": "To enter you will need a %s. It is crafted from the previous dungeon boss's trophies.",
   "item.heroicpaths.crypt_crown_shard": "Crypt King Crown Shard",
@@ -1495,5 +1495,17 @@
   "message.heroicpaths.skill_table_cost": "Needs a book, 8 lapis and 5 experience levels",
   "message.heroicpaths.skill_table_cost_unique": "Needs a book, 32 lapis, a diamond and 30 experience levels",
   "message.heroicpaths.skill_table_done": "Book created: %s",
-  "message.heroicpaths.crafted_enchanted": "The item came out of crafting enchanted!"
+  "message.heroicpaths.crafted_enchanted": "The item came out of crafting enchanted!",
+  "item.heroicpaths.resurrection_scroll": "Scroll of Resurrection",
+  "item.heroicpaths.resurrection_scroll.desc": "In a dungeon, raises a fallen ally next to you",
+  "container.heroicpaths.personal_chest": "%s (personal loot)",
+  "message.heroicpaths.dungeon_exit_opened": "Floor %s of %s cleared: the gate at the dungeon entrance is open and leads home. Go deeper and it will close.",
+  "message.heroicpaths.dungeon_exit_closed": "The entrance gate has closed. The only way home is through the boss.",
+  "message.heroicpaths.fallen.you": "You have fallen. An ally can raise you with a Scroll of Resurrection; defeating the boss raises everyone. If the whole party falls, death is final.",
+  "message.heroicpaths.fallen.ally": "%s has fallen! Raise them with a Scroll of Resurrection.",
+  "message.heroicpaths.fallen.final": "The party has fallen. Death is final: your items stay in the dungeon.",
+  "message.heroicpaths.resurrect.not_dungeon": "The Scroll of Resurrection only works in a dungeon.",
+  "message.heroicpaths.resurrect.nobody": "There is nobody to resurrect.",
+  "message.heroicpaths.resurrect.done": "%s raises %s with a Scroll of Resurrection!",
+  "message.heroicpaths.resurrect.you": "You are back on your feet!"
 }

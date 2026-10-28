@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:poppy" },
+    { "item": "minecraft:dandelion" },
+    { "item": "minecraft:cornflower" },
+    { "item": "minecraft:bone" },
+    { "item": "minecraft:bone" },
+    { "item": "minecraft:bone" },
+    { "item": "minecraft:bone" },
+    { "item": "minecraft:totem_of_undying" },
+    { "item": "minecraft:paper" }
+  ],
+  "result": { "id": "heroicpaths:resurrection_scroll", "count": 1 }
+}

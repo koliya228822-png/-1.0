@@ -22,11 +22,14 @@ public class SpiderModel<T extends Mob> extends HierarchicalModel<T> {
     private final ModelPart eggsA, eggsB, shellTop, core, sac;
     /** Во сколько раз шаг чаще (мелкие пауки семенят, матерь ступает тяжело). */
     private final float stride;
+    /** Все части модели: сбрасываются каждый кадр, поэтому список собран один раз. */
+    private final ModelPart[] allParts;
 
     public SpiderModel(ModelPart root, float stride) {
         super(net.minecraft.client.renderer.RenderType::entityCutoutNoCull);
         this.root = root;
         this.stride = stride;
+        this.allParts = root.getAllParts().toArray(ModelPart[]::new);
         this.body = root.getChild("body");
         this.head = body.getChild("head");
         this.abdomen = body.getChild("abdomen");
@@ -57,7 +60,7 @@ public class SpiderModel<T extends Mob> extends HierarchicalModel<T> {
 
     @Override
     public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        root.getAllParts().forEach(ModelPart::resetPose);
+        for (ModelPart part : allParts) part.resetPose();
         head.yRot = Mth.clamp(netHeadYaw, -40f, 40f) * Mth.DEG_TO_RAD * 0.6f;
         head.xRot = headPitch * Mth.DEG_TO_RAD * 0.4f;
         float walk = limbSwing * stride;

@@ -22,6 +22,11 @@ import java.util.Random;
 public class SpiderGen {
     /** Пикселей текстуры на единицу модели. */
     static final int R = 2;
+    /**
+     * Облегчённые модели: без мохнатых накидок поверх кубоидов, пушистых колец на суставах и мелких глазок.
+     * Пауков в логове много, и полные модели (130–250 кубоидов) просаживали кадры.
+     */
+    static final boolean LITE = true;
 
     record Box(double x, double y, double z, int w, int h, int d, double inflate, String mat) {}
 
@@ -47,6 +52,7 @@ public class SpiderGen {
         }
 
         Part box(double x, double y, double z, int w, int h, int d, double inflate, String mat) {
+            if (LITE && mat.endsWith("shag")) return this;
             boxes.add(new Box(x, y, z, w, h, d, inflate, mat));
             return this;
         }
@@ -184,9 +190,8 @@ public class SpiderGen {
         double tarsusRel = -(l.tarsusDown - beta);
         for (int s : new int[]{-1, 1}) {
             String id = (s < 0 ? "r" : "l") + index;
-            m.part("leg_" + id, parent, s * side, y, l.z, 0, s * l.spread, 0)
-                    .centered(0, 0, 0, l.cuff, l.cuff, l.cuff, 0.2, "cuff")
-                    .centered(0, 0, 0, l.cuff, l.cuff, l.cuff, 0.7, "cuff_shag");
+            Part leg = m.part("leg_" + id, parent, s * side, y, l.z, 0, s * l.spread, 0);
+            if (!LITE) leg.centered(0, 0, 0, l.cuff, l.cuff, l.cuff, 0.2, "cuff").centered(0, 0, 0, l.cuff, l.cuff, l.cuff, 0.7, "cuff_shag");
             // Бедро — золотисто-бежевое, лохматое; голень — тёмно-синий мех; лапка тёмная с красным когтем.
             Part femur = m.part("femur_" + id, "leg_" + id, 0, 0, 0, 0, 0, -s * l.lift);
             segment(femur, s, l.femur, l.thickF, "mane", shaggy ? 0.6 : 0.35);
@@ -201,7 +206,7 @@ public class SpiderGen {
             tarsus.box(s < 0 ? -(len - claw) : 0, -t / 2, -t / 2, len - claw, l.thickTar, l.thickTar, 0, "fur_short");
             // Переливчатый красный коготь.
             tarsus.box(s < 0 ? -len : len - claw, -t / 2, -t / 2, claw, l.thickTar, l.thickTar, -0.12, "tip");
-            tarsus.centered(s * (len + 0.3), 0.2, 0, 1, 1, 1, -0.2, "tip");
+            if (!LITE) tarsus.centered(s * (len + 0.3), 0.2, 0, 1, 1, 1, -0.2, "tip");
         }
     }
 
@@ -214,11 +219,16 @@ public class SpiderGen {
 
     /** Пушистая бежевая манжета вокруг сустава: кольцо шириной w в точке at вдоль лапы. */
     static void ring(Part p, int s, double at, int w, int size, double shag) {
+        if (LITE) return;
         p.centered(s * at, 0, 0, w, size, size, 0.1, "cuff").centered(s * at, 0, 0, w, size, size, shag + 0.1, "cuff_shag");
     }
 
     /** Круглое яйцо из трёх кубоидов (без острых углов). */
     static void egg(Part p, double cx, double cy, double cz, int size, String mat) {
+        if (LITE) {
+            p.centered(cx, cy, cz, size - 1, size - 1, size - 1, 0, mat);
+            return;
+        }
         p.centered(cx, cy, cz, size, size - 2, size - 2, 0, mat)
                 .centered(cx, cy, cz, size - 2, size, size - 2, 0, mat)
                 .centered(cx, cy, cz, size - 2, size - 2, size, 0, mat)
@@ -227,6 +237,11 @@ public class SpiderGen {
 
     /** Паучонок, сидящий на яйце (в точке x, y — низ брюшка, z). */
     static void spiderling(Part p, double x, double y, double z, double turn) {
+        if (LITE) {
+            p.centered(x, y - 0.6, z + 0.6, 2, 1, 2, 0.05, "spiderling");
+            p.centered(x, y - 0.3, z + 0.3, 4, 1, 1, -0.32, "spiderling");
+            return;
+        }
         p.centered(x, y - 0.6, z + 0.6, 2, 1, 2, 0.05, "spiderling");
         p.centered(x, y - 0.6, z - 0.9, 1, 1, 1, 0.1, "spiderling");
         p.centered(x, y - 0.3, z - 0.2, 4, 1, 1, -0.32, "spiderling");
@@ -238,6 +253,7 @@ public class SpiderGen {
     static void eyes(Part head, double front, double top, int big, int small, double spread) {
         for (int s : new int[]{-1, 1}) {
             head.centered(s * spread, top + 2.2, front - 0.15, big, big, 1, -0.05, "eye");
+            if (LITE) continue;
             head.centered(s * (spread + big * 0.9), top + 1.0, front + 0.4, small, small, 1, -0.1, "eye");
             head.centered(s * spread * 0.45, top + 0.7, front + 0.2, small, small, 1, -0.1, "eye");
             head.centered(s * (spread + 0.6), top + 0.2, front + 1.6, small, small, 1, -0.15, "eye");

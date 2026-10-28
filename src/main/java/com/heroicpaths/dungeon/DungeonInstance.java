@@ -38,6 +38,16 @@ public final class DungeonInstance {
     /** Кто может войти: состав группы на момент открытия врат. */
     private final Set<UUID> roster = new LinkedHashSet<>();
     private final Set<UUID> entered = new HashSet<>();
+    /** Павшие: лежат духами (в режиме наблюдателя) и ждут свитка воскрешения или победы над боссом. */
+    private final Set<UUID> fallen = new LinkedHashSet<>();
+    /** Павшие, чья смерть стала окончательной, пока они были не в сети: умрут по-настоящему при входе. */
+    private final Set<UUID> lost = new HashSet<>();
+    /** Монстры предпоследнего этажа: когда их не останется, у входа откроются врата домой. */
+    private final Set<UUID> exitGuards = new HashSet<>();
+    /** Врата у входа: ещё закрыты, открыты (предпоследний этаж зачищен) или закрыты насовсем (группа спустилась ниже). */
+    private ExitState exit = ExitState.WAITING;
+    /** Блок, которым были заложены врата у входа: им же они закладываются снова. */
+    private String exitSeal = "";
     private boolean completed;
     /** Свиток доступа потрачен: группа уже вошла. */
     private boolean scrollPaid;
@@ -82,6 +92,44 @@ public final class DungeonInstance {
         completed = true;
     }
 
+    public Set<UUID> fallen() {
+        return fallen;
+    }
+
+    public Set<UUID> lost() {
+        return lost;
+    }
+
+    public Set<UUID> exitGuards() {
+        return exitGuards;
+    }
+
+    public ExitState exit() {
+        return exit;
+    }
+
+    public void setExit(ExitState exit) {
+        this.exit = exit;
+    }
+
+    public String exitSeal() {
+        return exitSeal;
+    }
+
+    public void setExitSeal(String exitSeal) {
+        this.exitSeal = exitSeal;
+    }
+
+    /** Врата у входа в данж: до зачистки предпоследнего этажа заложены, потом открыты, пока группа не спустится ниже. */
+    public enum ExitState {
+        WAITING, OPEN, CLOSED;
+
+        static ExitState byName(String name) {
+            for (ExitState state : values()) if (state.name().equals(name)) return state;
+            return CLOSED;
+        }
+    }
+
     public boolean isScrollPaid() {
         return scrollPaid;
     }
@@ -104,6 +152,11 @@ public final class DungeonInstance {
         tag.put("entered", uuids(entered));
         tag.putBoolean("completed", completed);
         tag.putBoolean("scrollPaid", scrollPaid);
+        tag.put("fallen", uuids(fallen));
+        tag.put("lost", uuids(lost));
+        tag.put("exitGuards", uuids(exitGuards));
+        tag.putString("exit", exit.name());
+        tag.putString("exitSeal", exitSeal);
         return tag;
     }
 
@@ -125,6 +178,12 @@ public final class DungeonInstance {
         instance.entered.addAll(entered);
         instance.completed = tag.getBoolean("completed");
         instance.scrollPaid = tag.getBoolean("scrollPaid");
+        instance.fallen.addAll(readUuids(tag.getList("fallen", Tag.TAG_INT_ARRAY)));
+        instance.lost.addAll(readUuids(tag.getList("lost", Tag.TAG_INT_ARRAY)));
+        instance.exitGuards.addAll(readUuids(tag.getList("exitGuards", Tag.TAG_INT_ARRAY)));
+        // Проходы старой версии не считали монстров этажей: раннего выхода у них нет.
+        instance.exit = tag.contains("exit") ? ExitState.byName(tag.getString("exit")) : ExitState.CLOSED;
+        instance.exitSeal = tag.getString("exitSeal");
         return instance;
     }
 

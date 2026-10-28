@@ -450,7 +450,7 @@
   "message.heroicpaths.access.level": "Вход в «%s» — со среднего уровня группы %s. Средний уровень вашей группы: %s.",
   "message.heroicpaths.access.not_party": "Эти врата открыты для другой группы.",
   "message.heroicpaths.access.scroll": "Для входа нужен свиток: %s.",
-  "message.heroicpaths.dungeon_rules": "Выйти из данжа можно, только победив босса — тогда откроются врата у входа — или погибнув. Стены данжа не разрушить.",
+  "message.heroicpaths.dungeon_rules": "Выйти из данжа можно через врата у входа, когда зачищен предпоследний этаж (пока группа не спустилась ниже), или победив босса. Павшего соратника поднимает свиток воскрешения; если падёт вся группа — смерть окончательна. Стены данжа не разрушить.",
   "message.heroicpaths.gate_items_returned": "Во врата никто не вошёл: камень врат и свиток возвращены.",
   "message.heroicpaths.contract_needs_scroll": "Для входа понадобится «%s». Его крафтят из трофеев босса предыдущего данжа.",
   "item.heroicpaths.crypt_crown_shard": "Осколок короны Короля Склепа",
@@ -1495,5 +1495,17 @@
   "message.heroicpaths.skill_table_cost": "Нужны книга, 8 лазурита и 5 уровней опыта",
   "message.heroicpaths.skill_table_cost_unique": "Нужны книга, 32 лазурита, алмаз и 30 уровней опыта",
   "message.heroicpaths.skill_table_done": "Создана книга: %s",
-  "message.heroicpaths.crafted_enchanted": "Вещь вышла из крафта зачарованной!"
+  "message.heroicpaths.crafted_enchanted": "Вещь вышла из крафта зачарованной!",
+  "item.heroicpaths.resurrection_scroll": "Свиток воскрешения",
+  "item.heroicpaths.resurrection_scroll.desc": "В данже поднимает павшего соратника рядом с вами",
+  "container.heroicpaths.personal_chest": "%s (личная добыча)",
+  "message.heroicpaths.dungeon_exit_opened": "Этаж %s из %s зачищен: врата у входа в данж открылись — можно вернуться домой. Спуститесь ниже — и они закроются.",
+  "message.heroicpaths.dungeon_exit_closed": "Врата у входа закрылись. Домой — только через победу над боссом.",
+  "message.heroicpaths.fallen.you": "Вы пали. Соратник может поднять вас свитком воскрешения, победа над боссом поднимет всех павших. Если падёт вся группа — смерть станет окончательной.",
+  "message.heroicpaths.fallen.ally": "%s пал! Поднимите соратника свитком воскрешения.",
+  "message.heroicpaths.fallen.final": "Группа пала. Смерть окончательна: вещи остались в данже.",
+  "message.heroicpaths.resurrect.not_dungeon": "Свиток воскрешения действует только в данже.",
+  "message.heroicpaths.resurrect.nobody": "Некого воскрешать.",
+  "message.heroicpaths.resurrect.done": "%s поднимает %s свитком воскрешения!",
+  "message.heroicpaths.resurrect.you": "Вы снова в строю!"
 }

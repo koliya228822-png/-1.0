@@ -45,6 +45,10 @@ public final class DungeonData extends SavedData {
         return instances.get(index);
     }
 
+    public java.util.Collection<DungeonInstance> instances() {
+        return instances.values();
+    }
+
     public void addPendingReturn(UUID player, ItemStack stack) {
         if (stack.isEmpty()) return;
         pendingReturns.computeIfAbsent(player, uuid -> new ArrayList<>()).add(stack.copy());
