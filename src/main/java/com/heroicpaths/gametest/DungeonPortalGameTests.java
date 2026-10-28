@@ -432,6 +432,7 @@ public class DungeonPortalGameTests {
             helper.assertTrue(countBlocks(level, hall, ModBlocks.QUEST_BOARD.get()) >= 2, biome + " hall must have quest boards");
             helper.assertTrue(countBlocks(level, hall, ModBlocks.ORDER_BOARD.get()) >= 2, biome + " hall must have order boards");
             helper.assertTrue(countBlocks(level, hall, ModBlocks.BOUNTY_BOARD.get()) == 1, biome + " hall must have the herald's bounty board");
+            helper.assertTrue(level.getBlockState(pos.offset(14, 1, 23)).is(ModBlocks.WAYSTONE.get()), biome + " hall has no waystone by the entrance");
             AABB box = AABB.of(hall);
             var villagers = level.getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class, box);
             helper.assertTrue(villagers.stream().anyMatch(v -> v.getVillagerData().getProfession() == ModVillagers.GUILDMASTER.get()),

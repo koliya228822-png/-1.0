@@ -82,9 +82,9 @@ public class MerchantGameTests {
                 helper.assertTrue(offer.getXp() > 0, "buying " + item + " gives the dealer no experience");
                 helper.assertTrue(ItemRarity.get(item) != null, item + " has no rarity");
                 helper.assertTrue(offer.getMaxUses() == 1, "an item can be bought " + offer.getMaxUses() + " times");
-                if (BuiltInRegistries.ITEM.getKey(item.getItem()).getPath().contains("bow")) bows++;
+                if (item.getItem() instanceof net.minecraft.world.item.ProjectileWeaponItem || item.getItem() instanceof com.heroicpaths.item.MusketItem) bows++;
             }
-            helper.assertTrue(bows == 3, "expected 3 bows, got " + bows);
+            helper.assertTrue(bows == 3, "expected 3 ranged weapons, got " + bows);
 
             // Купленное не возвращается до конца дня.
             dealer.getPersistentData().putInt(HeroicPaths.MODID + ".sold", 1);
