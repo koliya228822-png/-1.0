@@ -36,8 +36,8 @@ import java.util.function.Supplier;
  * Банкир, мастер-оружейник, книжник, скупщик, ювелир и огранщик стоят за своими прилавками и не покидают их: «дом» каждого —
  * клетка, где он появился в своём доме, отойти от неё он может на пару шагов, а сдвинутого (толпой, мобом, игроком, лодкой)
  * сразу ставит обратно. Товары задаются здесь, а не обычными уровнями жителя:
- * банкир всегда скупает добычу из данжей за изумруды, оружейник каждый игровой день выставляет десять новых
- * мечей и луков (с шансом редких, с бонусами и чарами) за большие деньги, ювелир — восемь украшений ({@link Jeweler});
+ * банкир всегда скупает добычу из данжей за изумруды, оружейник каждый игровой день выставляет двенадцать новых
+ * вещей из всего оружия мода до дамаска (с шансом редких, с бонусами и чарами) за большие деньги, ювелир — восемь украшений ({@link Jeweler});
  * купленное у них до конца дня не возвращается. Огранщик каждый день выкладывает свои камни ({@link GemCutter}), книжник —
  * десять трактатов ремёсел ({@link Bookseller}); дневной товар всех четверых можно обновить рероллом ({@link TradeReroll}).
  * Скупщик каждый раз заново оценивает инвентарь подошедшего игрока ({@link Pawnbroker}).
@@ -50,7 +50,7 @@ public final class MerchantPosts {
     /** Версия списка банкира: при изменении цен старые банкиры получают новый список. */
     private static final long BANK_STOCK = 2;
     /** Версия дневных товаров: при изменении старые торговцы сразу раскладывают товар заново. */
-    private static final long DAILY_STOCK = 2;
+    private static final long DAILY_STOCK = 3;
     private static final String STOCK_VERSION = HeroicPaths.MODID + ".stock_version";
     /** Сколько раз товар этого торговца обновляли рероллом: входит в зерно набора. */
     private static final String REROLLS = HeroicPaths.MODID + ".rerolls";
@@ -58,7 +58,7 @@ public final class MerchantPosts {
     public static final int POST_LEASH = 2;
     private static final double MAX_AWAY = 2.5;
     public static final int CHECK_TICKS = 5;
-    public static final int ARMS_OFFERS = 10;
+    public static final int ARMS_OFFERS = 12;
 
     private MerchantPosts() {}
 
@@ -292,16 +292,49 @@ public final class MerchantPosts {
     /** Товар оружейника и уровень торговца, с которого он появляется на прилавке. */
     record Ware(Supplier<? extends Item> item, int level) {}
 
-    /** Мечи и луки на прилавке: железо — с новичка, сталь — с ученика, дамаск — с эксперта. Алмазное оружие только куют. */
-    static final List<Ware> BLADES = List.of(
-            new Ware(ModItems.IRON_DAGGER, 1), new Ware(ModItems.IRON_RAPIER, 1), new Ware(ModItems.IRON_GREATSWORD, 1),
-            new Ware(ModItems.STEEL_DAGGER, 2), new Ware(ModItems.STEEL_SWORD, 2), new Ware(ModItems.STEEL_RAPIER, 2),
-            new Ware(ModItems.STEEL_GREATSWORD, 2),
-            new Ware(ModItems.DAMASCUS_DAGGER, 4), new Ware(ModItems.DAMASCUS_SWORD, 4), new Ware(ModItems.DAMASCUS_RAPIER, 4),
-            new Ware(ModItems.DAMASCUS_GREATSWORD, 4));
-    static final List<Ware> BOWS = List.of(new Ware(() -> Items.BOW, 1), new Ware(ModItems.COMPOSITE_BOW, 2), new Ware(ModItems.RANGER_LONGBOW, 4));
+    /** Оружие на прилавке делится на ближнее, стрелковое и жезлы с посохами. */
+    enum WareKind { MELEE, RANGED, FOCUS }
 
-    /** Шансы редкости у оружейника: обычных больше всего, легендарные — изредка. */
+    /** С какого уровня торговца продаётся вещь грейда I–III: железо — с новичка, сталь — с ученика, дамаск — с эксперта. */
+    private static final int[] GRADE_LEVEL = {1, 1, 2, 4};
+    /** Сколько вещей каждого вида на прилавке за день. */
+    private static final int MELEE_OFFERS = 6, RANGED_OFFERS = 3;
+    private static List<Ware> melee, ranged, foci;
+
+    /**
+     * Всё оружие мода не выше дамаска (грейд I–III): клинки, топоры, древковое и дробящее, луки, ручные арбалеты, мушкеты,
+     * жезлы и посохи. Алмазное оружие (IV–VI) только куют.
+     */
+    static List<Ware> wares(WareKind kind) {
+        if (melee == null) {
+            List<Ware> m = new ArrayList<>(), r = new ArrayList<>(), f = new ArrayList<>();
+            r.add(new Ware(() -> Items.BOW, 1));
+            for (Item item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+                if (!HeroicPaths.MODID.equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).getNamespace())) continue;
+                WareKind k = kindOf(item);
+                if (k == null) continue;
+                int grade = Grades.of(new ItemStack(item));
+                if (grade < 1 || grade > 3) continue;
+                Ware ware = new Ware(() -> item, GRADE_LEVEL[grade]);
+                (k == WareKind.MELEE ? m : k == WareKind.RANGED ? r : f).add(ware);
+            }
+            melee = List.copyOf(m);
+            ranged = List.copyOf(r);
+            foci = List.copyOf(f);
+        }
+        return kind == WareKind.MELEE ? melee : kind == WareKind.RANGED ? ranged : foci;
+    }
+
+    private static WareKind kindOf(Item item) {
+        if (item instanceof com.heroicpaths.item.FocusItem) return WareKind.FOCUS;
+        if (item instanceof com.heroicpaths.item.GradedBowItem || item instanceof com.heroicpaths.item.HandCrossbowItem
+                || item instanceof com.heroicpaths.item.MusketItem) return WareKind.RANGED;
+        if (item instanceof net.minecraft.world.item.SwordItem) return WareKind.MELEE;
+        if (item instanceof net.minecraft.world.item.AxeItem axe && !com.heroicpaths.combat.WeaponType.isToolAxe(axe)) return WareKind.MELEE;
+        return null;
+    }
+
+    /** Шансы редкости у оружейника: обычных больше всего, эпические — изредка. */
     private static final ItemRarity.Tier[] TIERS = {ItemRarity.Tier.COMMON, ItemRarity.Tier.FINE, ItemRarity.Tier.RARE,
             ItemRarity.Tier.UNIQUE, ItemRarity.Tier.EPIC, ItemRarity.Tier.LEGENDARY};
     private static final float[] TIER_WEIGHTS = {40f, 28f, 17f, 9f, 4.5f, 1.5f};
@@ -310,17 +343,18 @@ public final class MerchantPosts {
     private static final int[] GRADE_PRICE = {26, 16, 26, 40};
 
     /**
-     * Десять вещей на этот день: семь клинков и три лука. Один и тот же день у одного торговца — один и тот же набор.
+     * Двенадцать вещей на этот день: шесть для ближнего боя, три стрелковых, три жезла или посоха. Один и тот же день у одного торговца — один и тот же набор.
      * Ассортимент растёт с уровнем торговца ({@code merchantLevel} 1–5): новичок продаёт железо обычной и качественной
-     * редкости, каждый следующий уровень открывает материал получше и ещё одну ступень редкости, легендарное — у мастера.
+     * редкости, каждый следующий уровень открывает материал получше и ещё одну ступень редкости, эпическое — у эксперта и мастера.
      */
     public static List<MerchantOffer> armsOffers(ServerLevel level, long seed, long day, int merchantLevel) {
         RandomSource random = RandomSource.create(seed * 31 + day * 0x9E3779B97F4A7C15L);
         List<MerchantOffer> list = new ArrayList<>();
         for (int i = 0; i < ARMS_OFFERS; i++) {
-            List<Ware> pool = (i < 7 ? BLADES : BOWS).stream().filter(w -> w.level() <= merchantLevel).toList();
+            WareKind kind = i < MELEE_OFFERS ? WareKind.MELEE : i < MELEE_OFFERS + RANGED_OFFERS ? WareKind.RANGED : WareKind.FOCUS;
+            List<Ware> pool = wares(kind).stream().filter(w -> w.level() <= merchantLevel).toList();
             ItemStack stack = new ItemStack(pool.get(random.nextInt(pool.size())).item().get());
-            ItemRarity.Tier tier = rollTier(random, merchantLevel);
+            ItemRarity.Tier tier = rollTier(random, merchantLevel, ARMS_TOP);
             ItemRarity.apply(stack, tier, random, level.registryAccess());
             int price = price(stack, tier);
             // Покупки растят торговца: опыт за вещь — по её цене.
@@ -329,9 +363,18 @@ public final class MerchantPosts {
         return list;
     }
 
+    /** Оружейник продаёт не выше эпической редкости. */
+    private static final ItemRarity.Tier ARMS_TOP = ItemRarity.Tier.EPIC;
+
     /** Редкость по весам; торговец уровня L продаёт не выше (L+1)-й ступени, мастер — до легендарной. */
     static ItemRarity.Tier rollTier(RandomSource random, int merchantLevel) {
+        return rollTier(random, merchantLevel, ItemRarity.Tier.LEGENDARY);
+    }
+
+    /** То же, но не выше {@code cap}. */
+    static ItemRarity.Tier rollTier(RandomSource random, int merchantLevel, ItemRarity.Tier cap) {
         int top = Math.min(TIERS.length - 1, merchantLevel);
+        while (top > 0 && TIERS[top].ordinal() > cap.ordinal()) top--;
         float total = 0;
         for (int i = 0; i <= top; i++) total += TIER_WEIGHTS[i];
         float roll = random.nextFloat() * total;

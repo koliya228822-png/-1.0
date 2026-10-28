@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "heroicpaths:relic_altar",
+    "heroicpaths:waystone",
     "heroicpaths:gem_wheel",
     "heroicpaths:arcane_lectern",
     "heroicpaths:gate_altar",

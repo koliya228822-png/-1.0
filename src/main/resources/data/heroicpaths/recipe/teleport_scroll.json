@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    { "item": "minecraft:hay_block" },
+    { "item": "minecraft:emerald" },
+    { "item": "minecraft:emerald" },
+    { "item": "minecraft:saddle" },
+    { "item": "minecraft:paper" }
+  ],
+  "result": { "id": "heroicpaths:teleport_scroll", "count": 1 }
+}

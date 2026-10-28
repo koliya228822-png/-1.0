@@ -70,6 +70,7 @@ public class HeroicPaths {
         NeoForge.EVENT_BUS.register(MentorEvents.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MentorHomes.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.MerchantPosts.class);
+        NeoForge.EVENT_BUS.register(com.heroicpaths.travel.Waystones.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.TradeReroll.class);
         NeoForge.EVENT_BUS.register(com.heroicpaths.village.GuardPosts.class);
         NeoForge.EVENT_BUS.register(ItemRarity.class);

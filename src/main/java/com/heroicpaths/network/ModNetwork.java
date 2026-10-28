@@ -16,8 +16,21 @@ public final class ModNetwork {
     private ModNetwork() {}
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("10");
+        PayloadRegistrar registrar = event.registrar("11");
 
+        // Камни перемещения: список известных точек на клиент, перемещение и переименование — на сервер.
+        registrar.playToClient(WaystoneListPayload.TYPE, WaystoneListPayload.STREAM_CODEC, (payload, context) ->
+                com.heroicpaths.client.map.ClientWaystones.receive(payload));
+        registrar.playToServer(WaystoneActionPayload.TYPE, WaystoneActionPayload.STREAM_CODEC, (payload, context) -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
+            if (payload.action() == WaystoneActionPayload.RENAME) {
+                com.heroicpaths.travel.Waystones.rename(player, payload.target(), payload.name());
+                return;
+            }
+            net.minecraft.network.chat.Component problem = com.heroicpaths.travel.Waystones.travel(player, payload.dimension(),
+                    payload.target(), payload.scroll(), payload.source());
+            if (problem != null) player.displayClientMessage(problem.copy().withStyle(net.minecraft.ChatFormatting.RED), true);
+        });
         // Клиент хранит копию данных прямо в attachment своего игрока: HUD и меню читают её оттуда.
         registrar.playToClient(SyncRpgDataPayload.TYPE, SyncRpgDataPayload.STREAM_CODEC, (payload, context) ->
                 RpgManager.get(context.player()).deserializeNBT(context.player().registryAccess(), payload.data()));

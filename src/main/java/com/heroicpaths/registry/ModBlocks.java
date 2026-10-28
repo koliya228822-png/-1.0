@@ -103,6 +103,11 @@ public final class ModBlocks {
             () -> new com.heroicpaths.guild.OrderBoardBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_PLANKS).strength(2.5f)));
 
     /** Алтарь реликвий: поднимает легендарную вещь до реликвии за Искру реликвии. */
+    /** Камень перемещения: точка быстрого перемещения. */
+    public static final DeferredBlock<com.heroicpaths.travel.WaystoneBlock> WAYSTONE = BLOCKS.register("waystone",
+            () -> new com.heroicpaths.travel.WaystoneBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE_BRICKS).strength(3f, 1200f)
+                    .requiresCorrectToolForDrops().lightLevel(state -> 7)));
+
     public static final DeferredBlock<com.heroicpaths.craft.RelicAltarBlock> RELIC_ALTAR = BLOCKS.register("relic_altar",
             () -> new com.heroicpaths.craft.RelicAltarBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE)
                     .lightLevel(state -> 8)));

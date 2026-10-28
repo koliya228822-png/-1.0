@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " S ",
+    " E ",
+    "CCC"
+  ],
+  "key": {
+    "S": { "item": "heroicpaths:teleport_scroll" },
+    "E": { "item": "minecraft:emerald_block" },
+    "C": { "item": "minecraft:cobblestone" }
+  },
+  "result": { "id": "heroicpaths:waystone", "count": 1 }
+}

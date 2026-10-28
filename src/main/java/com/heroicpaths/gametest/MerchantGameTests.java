@@ -117,11 +117,17 @@ public class MerchantGameTests {
     @GameTest(template = ARENA)
     public static void armsDealerAssortmentGrowsWithLevel(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        boolean damascus = false, rare = false;
+        boolean damascus = false, rare = false, staff = false, ranged = false;
         for (long day = 0; day < 10; day++) {
             for (MerchantOffer offer : MerchantPosts.armsOffers(level, 42L, day, 5)) {
-                if (com.heroicpaths.item.Grades.of(offer.getResult()) == 3) damascus = true;
-                if (ItemRarity.get(offer.getResult()).ordinal() > ItemRarity.Tier.FINE.ordinal()) rare = true;
+                ItemStack result = offer.getResult();
+                int grade = com.heroicpaths.item.Grades.of(result);
+                if (grade == 3) damascus = true;
+                helper.assertTrue(grade >= 1 && grade <= 3, "dealer sells above damascus: " + result);
+                helper.assertTrue(ItemRarity.get(result).ordinal() <= ItemRarity.Tier.EPIC.ordinal(), "dealer sells " + ItemRarity.get(result));
+                if (ItemRarity.get(result).ordinal() > ItemRarity.Tier.FINE.ordinal()) rare = true;
+                if (result.getItem() instanceof com.heroicpaths.item.FocusItem) staff = true;
+                if (result.getItem() instanceof com.heroicpaths.item.MusketItem || result.getItem() instanceof com.heroicpaths.item.HandCrossbowItem) ranged = true;
             }
             for (MerchantOffer offer : MerchantPosts.armsOffers(level, 42L, day, 1)) {
                 helper.assertTrue(com.heroicpaths.item.Grades.of(offer.getResult()) <= 1, "novice sells " + offer.getResult());
@@ -129,6 +135,7 @@ public class MerchantGameTests {
             }
         }
         helper.assertTrue(damascus && rare, "a master dealer never offered damascus (" + damascus + ") or rare gear (" + rare + ")");
+        helper.assertTrue(staff && ranged, "a master dealer never offered foci (" + staff + ") or muskets/hand crossbows (" + ranged + ")");
         helper.succeed();
     }
 

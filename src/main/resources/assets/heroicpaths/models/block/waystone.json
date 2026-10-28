@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "particle": "heroicpaths:block/waystone_side",
+    "bottom": "heroicpaths:block/waystone_bottom",
+    "top": "heroicpaths:block/waystone_top",
+    "side": "heroicpaths:block/waystone_side"
+  }
+}

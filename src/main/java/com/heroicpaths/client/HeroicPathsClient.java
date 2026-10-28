@@ -96,6 +96,12 @@ public class HeroicPathsClient {
         NeoForge.EVENT_BUS.addListener(PlayerForms::onLogout);
         NeoForge.EVENT_BUS.addListener(MobPlates::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(HeroicPathsClient::onTooltip);
+        // Метки и камни перемещения принадлежат миру: при выходе из него забываются.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) -> {
+            com.heroicpaths.client.map.ClientWaypoints.reset();
+            com.heroicpaths.client.map.ClientWaystones.clear();
+            com.heroicpaths.client.map.MinimapLayer.reset();
+        });
     }
 
     private static void onTooltip(ItemTooltipEvent event) {
@@ -162,6 +168,7 @@ public class HeroicPathsClient {
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(ModKeys.OPEN_SKILLS);
         event.register(ModKeys.OPEN_ACCESSORIES);
+        event.register(ModKeys.OPEN_MAP);
         for (KeyMapping key : ModKeys.ABILITIES) event.register(key);
     }
 
@@ -170,6 +177,18 @@ public class HeroicPathsClient {
         event.replaceLayer(net.neoforged.neoforge.client.gui.VanillaGuiLayers.PLAYER_HEALTH, HudBars::renderHealth);
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.FOOD_LEVEL, HeroicPaths.id("stamina_bar"), HudBars::renderStamina);
         event.registerAboveAll(HeroicPaths.id("rpg_hud"), new RpgHudLayer());
+        // Миникарта в правом верхнем углу; значки эффектов, пока она видна, сдвигаются левее неё.
+        event.registerBelow(net.neoforged.neoforge.client.gui.VanillaGuiLayers.EFFECTS, HeroicPaths.id("minimap"), new com.heroicpaths.client.map.MinimapLayer());
+        event.wrapLayer(net.neoforged.neoforge.client.gui.VanillaGuiLayers.EFFECTS, effects -> (graphics, delta) -> {
+            if (!com.heroicpaths.client.map.MinimapLayer.visible()) {
+                effects.render(graphics, delta);
+                return;
+            }
+            graphics.pose().pushPose();
+            graphics.pose().translate(-(com.heroicpaths.client.map.MinimapLayer.SIZE + com.heroicpaths.client.map.MinimapLayer.MARGIN + 4), 0, 0);
+            effects.render(graphics, delta);
+            graphics.pose().popPose();
+        });
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("cast_bar"), new CastBarLayer());
         event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, HeroicPaths.id("power_attack"), new ClientCombat.Layer());
     }
@@ -199,6 +218,11 @@ public class HeroicPathsClient {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) return;
         ClientCombat.tick(minecraft);
+        com.heroicpaths.client.map.MinimapLayer.tick(minecraft);
+        while (ModKeys.OPEN_MAP.consumeClick()) {
+            if (com.heroicpaths.client.map.MinimapLayer.hasMap(minecraft.player)) minecraft.setScreen(new com.heroicpaths.client.map.WorldMapScreen());
+            else minecraft.player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.heroicpaths.need_map"), true);
+        }
         while (ModKeys.OPEN_SKILLS.consumeClick()) {
             minecraft.setScreen(new RpgScreen());
         }

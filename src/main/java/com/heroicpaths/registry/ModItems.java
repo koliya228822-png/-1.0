@@ -75,6 +75,10 @@ public final class ModItems {
             () -> new GateStoneItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<com.heroicpaths.dungeon.ResurrectionScrollItem> RESURRECTION_SCROLL = ITEMS.register("resurrection_scroll",
             () -> new com.heroicpaths.dungeon.ResurrectionScrollItem(new Item.Properties().stacksTo(16).rarity(Rarity.RARE)));
+    public static final DeferredItem<com.heroicpaths.travel.TeleportScrollItem> TELEPORT_SCROLL = ITEMS.register("teleport_scroll",
+            () -> new com.heroicpaths.travel.TeleportScrollItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<BlockItem> WAYSTONE = ITEMS.registerSimpleBlockItem("waystone", ModBlocks.WAYSTONE,
+            new Item.Properties().rarity(Rarity.UNCOMMON));
     public static final DeferredItem<BlockItem> GATE_ALTAR = ITEMS.registerSimpleBlockItem("gate_altar", ModBlocks.GATE_ALTAR);
     public static final DeferredItem<BlockItem> QUEST_BOARD = ITEMS.registerSimpleBlockItem("quest_board", ModBlocks.QUEST_BOARD);
     public static final DeferredItem<BlockItem> DUNGEON_GATE = ITEMS.registerSimpleBlockItem("dungeon_gate", ModBlocks.DUNGEON_GATE,
