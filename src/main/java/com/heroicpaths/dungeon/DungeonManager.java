@@ -267,7 +267,7 @@ public final class DungeonManager {
                 break;
             }
             monsters += convertSpawners(level, pieces, type, partySize, floor);
-            shaftTop = descentHole(pieces);
+            shaftTop = descentHole(level, pieces);
         }
         return new Built(floors, arrival, bossArrival, monsters);
     }
@@ -308,14 +308,32 @@ public final class DungeonManager {
         return sealed;
     }
 
-    /** Проём в полу зала спуска (центр пола); если зал не поместился — центр первой комнаты этажа. */
-    private static BlockPos descentHole(List<PoolElementStructurePiece> pieces) {
-        PoolElementStructurePiece hole = pieces.get(0);
+    /** Комнаты, посреди которых может открыться спуск на нижний этаж. */
+    private static final List<String> HOLE_ROOMS = List.of("/descent]", "/floor_hub]", "/tomb_room]", "/library]", "/spider_den]", "/armory]");
+
+    /**
+     * Проём в полу для спуска на этаж ниже: посередине случайной комнаты этажа (зал спуска, центральный зал или любая
+     * из комнат), каждый раз в новом месте. Над проёмом убирается убранство, а стоящие там монстры отходят в сторону.
+     */
+    private static BlockPos descentHole(ServerLevel level, List<PoolElementStructurePiece> pieces) {
+        List<PoolElementStructurePiece> rooms = new ArrayList<>();
         for (PoolElementStructurePiece piece : pieces) {
-            if (piece.getElement().toString().contains("/descent]")) hole = piece;
+            String name = piece.getElement().toString();
+            if (HOLE_ROOMS.stream().anyMatch(name::contains)) rooms.add(piece);
         }
+        PoolElementStructurePiece hole = rooms.isEmpty() ? pieces.get(0) : rooms.get(level.getRandom().nextInt(rooms.size()));
         BoundingBox box = hole.getBoundingBox();
-        return new BlockPos(box.getCenter().getX(), box.minY(), box.getCenter().getZ());
+        BlockPos top = new BlockPos(box.getCenter().getX(), box.minY(), box.getCenter().getZ());
+        for (BlockPos pos : BlockPos.betweenClosed(top.offset(-1, 1, -1), top.offset(1, 4, 1))) {
+            if (!level.getBlockState(pos).isAir()) level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        }
+        for (Mob mob : level.getEntitiesOfClass(Mob.class, new net.minecraft.world.phys.AABB(top.offset(-1, 1, -1)).expandTowards(2, 3, 2).inflate(0.3))) {
+            double dx = mob.getX() - (top.getX() + 0.5), dz = mob.getZ() - (top.getZ() + 0.5);
+            if (Math.abs(dx) < 0.5 && Math.abs(dz) < 0.5) continue; // посередине — опора, стоять на ней можно
+            double scale = 2.5 / Math.max(Math.abs(dx), Math.abs(dz));
+            mob.setPos(top.getX() + 0.5 + dx * scale, mob.getY(), top.getZ() + 0.5 + dz * scale);
+        }
+        return top;
     }
 
     /** Кольцо клеток вокруг опоры винтовой лестницы по часовой стрелке (если смотреть сверху): так по ней спускаются. */
