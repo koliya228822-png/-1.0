@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "heroicpaths:block/jewelry_showcase_top",
+    "side": "heroicpaths:block/jewelry_showcase_side"
+  }
+}

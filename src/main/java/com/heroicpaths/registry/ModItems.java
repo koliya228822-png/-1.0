@@ -59,6 +59,8 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> ARMS_DISPLAY = ITEMS.registerSimpleBlockItem("arms_display", ModBlocks.ARMS_DISPLAY);
     public static final DeferredItem<BlockItem> BOOKSELLER_DESK = ITEMS.registerSimpleBlockItem("bookseller_desk", ModBlocks.BOOKSELLER_DESK);
     public static final DeferredItem<BlockItem> APPRAISAL_SCALES = ITEMS.registerSimpleBlockItem("appraisal_scales", ModBlocks.APPRAISAL_SCALES);
+    public static final DeferredItem<BlockItem> JEWELRY_SHOWCASE = ITEMS.registerSimpleBlockItem("jewelry_showcase", ModBlocks.JEWELRY_SHOWCASE);
+    public static final DeferredItem<BlockItem> GEM_WHEEL = ITEMS.registerSimpleBlockItem("gem_wheel", ModBlocks.GEM_WHEEL);
 
     public static final DeferredItem<DeferredSpawnEggItem> CRYPT_KING_SPAWN_EGG = ITEMS.register("crypt_king_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.CRYPT_KING, 0x2A2530, 0x9A40FF, new Item.Properties()));

@@ -39,6 +39,10 @@ public final class ModVillagers {
             POI_TYPES.register("bookseller", () -> workstation(ModBlocks.BOOKSELLER_DESK.get()));
     public static final DeferredHolder<PoiType, PoiType> PAWNBROKER_POI =
             POI_TYPES.register("pawnbroker", () -> workstation(ModBlocks.APPRAISAL_SCALES.get()));
+    public static final DeferredHolder<PoiType, PoiType> JEWELER_POI =
+            POI_TYPES.register("jeweler", () -> workstation(ModBlocks.JEWELRY_SHOWCASE.get()));
+    public static final DeferredHolder<PoiType, PoiType> GEM_CUTTER_POI =
+            POI_TYPES.register("gem_cutter", () -> workstation(ModBlocks.GEM_WHEEL.get()));
 
     public static final DeferredHolder<VillagerProfession, VillagerProfession> SWORDMASTER =
             PROFESSIONS.register("swordmaster", () -> profession("swordmaster", SWORDMASTER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
@@ -58,12 +62,18 @@ public final class ModVillagers {
     /** Мастер-оружейник: каждый день выставляет десять мечей и луков, бывают и редкие. */
     public static final DeferredHolder<VillagerProfession, VillagerProfession> ARMS_DEALER =
             PROFESSIONS.register("arms_dealer", () -> profession("arms_dealer", ARMS_DEALER_POI.getKey(), SoundEvents.VILLAGER_WORK_WEAPONSMITH));
-    /** Книжник: продаёт трактаты всех ремёсел и всех ступеней. */
+    /** Книжник: каждый день выставляет трактаты ремёсел разных ступеней. */
     public static final DeferredHolder<VillagerProfession, VillagerProfession> BOOKSELLER =
             PROFESSIONS.register("bookseller", () -> profession("bookseller", BOOKSELLER_POI.getKey(), SoundEvents.VILLAGER_WORK_LIBRARIAN));
     /** Скупщик: за изумруды покупает у игрока его вещи — в пять раз дешевле их цены. */
     public static final DeferredHolder<VillagerProfession, VillagerProfession> PAWNBROKER =
             PROFESSIONS.register("pawnbroker", () -> profession("pawnbroker", PAWNBROKER_POI.getKey(), SoundEvents.VILLAGER_WORK_CARTOGRAPHER));
+    /** Ювелир: каждый день выставляет кольца, серьги и ожерелья, бывают и редкие. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> JEWELER =
+            PROFESSIONS.register("jeweler", () -> profession("jeweler", JEWELER_POI.getKey(), SoundEvents.VILLAGER_WORK_TOOLSMITH));
+    /** Огранщик: торгует драгоценными камнями — от аметиста до бриллианта. */
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> GEM_CUTTER =
+            PROFESSIONS.register("gem_cutter", () -> profession("gem_cutter", GEM_CUTTER_POI.getKey(), SoundEvents.VILLAGER_WORK_MASON));
 
     private ModVillagers() {}
 

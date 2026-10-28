@@ -2075,7 +2075,9 @@ public class StructureGen {
             write(structures.resolve(b.name() + "/armory.nbt"), armory(b).toNbt());
             write(structures.resolve(b.name() + "/bookshop.nbt"), bookshop(b).toNbt());
             write(structures.resolve(b.name() + "/pawnshop.nbt"), pawnshop(b).toNbt());
-            count += 6;
+            write(structures.resolve(b.name() + "/jewelry_shop.nbt"), jewelryShop(b).toNbt());
+            write(structures.resolve(b.name() + "/gem_shop.nbt"), gemShop(b).toNbt());
+            count += 8;
         }
         return count;
     }
@@ -3114,6 +3116,93 @@ public class StructureGen {
         for (int dz : new int[]{-3, 0, 3}) t.set(0, 7, door + dz, "minecraft:gray_wall_banner[facing=west]");
         shopSign(t, s, door, "Скупка");
         t.entities.add(villager(b, "pawnbroker", 7, COUNTER_WINDOW));
+        return t;
+    }
+
+    /** Предметы в рамках на задней стене каморки (x = 8, z = 4…8), как у оружейника и скупщика. */
+    static void wallFrames(Template t, String[] items) {
+        int[] zs = {4, 5, 6, 7, 8};
+        for (int i = 0; i < zs.length; i++) {
+            for (int y = 2; y <= 3; y++) {
+                if (y == 3 && i % 2 == 1) continue;
+                String item = y == 2 ? items[i % items.length] : items[(i + 2) % items.length];
+                t.entities.add(map("blockPos", List.of(8, y, zs[i]), "pos", List.of(8.96875, y + 0.5, zs[i] + 0.5),
+                        "nbt", map("id", "minecraft:item_frame", "Facing", (byte) 4, "TileX", 8, "TileY", y, "TileZ", zs[i],
+                                "Item", map("id", item, "count", 1), "Fixed", (byte) 1, "Invisible", (byte) 0)));
+            }
+        }
+    }
+
+    /**
+     * Ювелирная лавка: прилавок под решёткой с витриной ювелира в окошке, за ним — кольца и ожерелья в рамках,
+     * сундук, бочка и кровать ювелира. В зале — витрины-стёкла на подставках, бархатный ковёр, свечи; наверху —
+     * мастерская со столом и сундуками. Снаружи пурпурные знамёна и вывеска «Украшения».
+     */
+    static Template jewelryShop(Biome b) {
+        HallStyle s = hallStyle(b);
+        int door = 5;
+        Template t = counterShop(b, s, MODID + ":jewelry_showcase", pane("iron_bars", false), "minecraft:dark_oak_planks");
+        String woodStairs = "minecraft:" + s.wood() + "_stairs";
+        wallFrames(t, new String[]{MODID + ":ring", MODID + ":necklace", MODID + ":earring", "minecraft:gold_ingot", "minecraft:amethyst_shard"});
+        t.set(8, 1, 2, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        t.set(8, 1, 3, "minecraft:barrel[facing=up,open=false]");
+        t.set(7, 1, 2, "minecraft:gold_block");
+        t.set(7, 2, 2, "minecraft:candle[candles=2,lit=true,waterlogged=false]");
+        bed(t, 8, 1, 9, "south", "purple");
+        t.set(7, 1, 10, "minecraft:barrel[facing=up,open=false]");
+        // Зал: витрины (стекло на тёмных подставках), ковёр, свечи на прилавке.
+        for (int x = 3; x <= 5; x++) for (int z = 3; z <= 8; z++) t.set(x, 1, z, "minecraft:purple_carpet");
+        for (int z : new int[]{2, 8}) {
+            t.set(3, 1, z, "minecraft:polished_deepslate");
+            t.set(3, 2, z, "minecraft:glass");
+        }
+        t.set(5, 1, 10, st(woodStairs, "north", false));
+        t.set(COUNTER_X, 2, 4, "minecraft:candle[candles=3,lit=true,waterlogged=false]");
+        t.set(COUNTER_X, 2, 8, "minecraft:candle[candles=2,lit=true,waterlogged=false]");
+        // Наверху — мастерская.
+        t.set(4, 6, 4, "minecraft:smithing_table");
+        t.set(8, 6, 8, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        t.set(8, 6, 10, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        for (int z = 5; z <= 6; z++) t.set(5, 6, z, "minecraft:" + s.wood() + "_slab[type=top,waterlogged=false]");
+        t.set(5, 7, 5, "minecraft:candle[candles=1,lit=true,waterlogged=false]");
+        for (int dz : new int[]{-3, 0, 3}) t.set(0, 7, door + dz, "minecraft:purple_wall_banner[facing=west]");
+        shopSign(t, s, door, "Украшения");
+        t.entities.add(villager(b, "jeweler", 7, COUNTER_WINDOW));
+        return t;
+    }
+
+    /**
+     * Лавка огранщика: прилавок под решёткой с точильным кругом огранщика в окошке, за ним — самоцветы в рамках,
+     * друзы аметиста, точило, сундук и кровать огранщика. В зале — глыбы руды на подставках, ковёр, фонари;
+     * наверху — кладовая камня. Снаружи голубые знамёна и вывеска «Самоцветы».
+     */
+    static Template gemShop(Biome b) {
+        HallStyle s = hallStyle(b);
+        int door = 5;
+        Template t = counterShop(b, s, MODID + ":gem_wheel", pane("iron_bars", false), "minecraft:polished_andesite");
+        wallFrames(t, new String[]{MODID + ":ruby", MODID + ":sapphire", MODID + ":topaz", "minecraft:diamond", MODID + ":faceted_diamond"});
+        t.set(8, 1, 2, "minecraft:chest[facing=west,type=single,waterlogged=false]");
+        t.set(7, 1, 2, "minecraft:grindstone[face=floor,facing=north]");
+        t.set(8, 1, 3, "minecraft:amethyst_block");
+        t.set(8, 2, 3, "minecraft:amethyst_cluster[facing=up,waterlogged=false]");
+        bed(t, 8, 1, 9, "south", "light_blue");
+        t.set(7, 1, 10, "minecraft:barrel[facing=up,open=false]");
+        // Зал: глыбы руды на подставках, ковёр, фонари на прилавке.
+        for (int x = 3; x <= 5; x++) for (int z = 3; z <= 8; z++) t.set(x, 1, z, "minecraft:light_blue_carpet");
+        t.set(3, 1, 2, MODID + ":ruby_ore");
+        t.set(3, 1, 8, MODID + ":sapphire_ore");
+        t.set(3, 2, 2, "minecraft:small_amethyst_bud[facing=up,waterlogged=false]");
+        t.set(3, 2, 8, "minecraft:small_amethyst_bud[facing=up,waterlogged=false]");
+        t.set(5, 1, 10, "minecraft:barrel[facing=up,open=false]");
+        t.set(COUNTER_X, 2, 3, "minecraft:lantern[hanging=false,waterlogged=false]");
+        t.set(COUNTER_X, 2, 9, "minecraft:lantern[hanging=false,waterlogged=false]");
+        // Наверху: кладовая камня.
+        for (int z = 7; z <= 10; z++) t.set(8, 6, z, z % 2 == 0 ? "minecraft:chest[facing=west,type=single,waterlogged=false]" : "minecraft:barrel[facing=west,open=false]");
+        t.set(4, 6, 10, "minecraft:amethyst_block");
+        t.set(4, 6, 4, "minecraft:stonecutter[facing=north]");
+        for (int dz : new int[]{-3, 0, 3}) t.set(0, 7, door + dz, "minecraft:light_blue_wall_banner[facing=west]");
+        shopSign(t, s, door, "Самоцветы");
+        t.entities.add(villager(b, "gem_cutter", 7, COUNTER_WINDOW));
         return t;
     }
 

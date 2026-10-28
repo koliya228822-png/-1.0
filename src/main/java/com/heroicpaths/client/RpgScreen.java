@@ -846,7 +846,7 @@ public class RpgScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (tab == Tab.BOOK && scrollY != 0) return book.scroll(scrollY, Math.max(1, (height - 32 - bookTop()) / CraftBookView.ROW));
+        if (tab == Tab.BOOK && scrollY != 0) return book.scroll(scrollY, Math.max(1, (height - 32 - bookTop()) / CraftBookView.rowHeight()));
         if (tab != Tab.TREE || scrollY == 0) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         float old = zoom;
         zoom = Mth.clamp(zoom * (scrollY > 0 ? 1.15f : 1 / 1.15f), 0.25f, 2.0f);

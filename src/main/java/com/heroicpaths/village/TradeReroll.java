@@ -34,7 +34,8 @@ import java.util.List;
  * до которого житель дорос, как при обычном повышении (по два товара с уровня). Стоит 3 изумруда, каждый следующий
  * реролл у этого жителя — на изумруд дороже; утром (с началом нового игрового дня) цена снова 3.
  * Реролл немного растит торговца — как маленькая сделка.
- * У банкира, оружейника, книжника и скупщика реролла нет: их товары устроены по-своему.
+ * Оружейник, ювелир, огранщик и книжник раскладывают новый дневной набор ({@link MerchantPosts#reroll}).
+ * У банкира и скупщика реролла нет: они только покупают.
  */
 public final class TradeReroll {
     private static final String DAY = HeroicPaths.MODID + ".reroll_day";
@@ -65,7 +66,9 @@ public final class TradeReroll {
     public static boolean canReroll(Villager villager) {
         if (villager.isBaby()) return false;
         VillagerProfession profession = villager.getVillagerData().getProfession();
-        if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT || MerchantPosts.isPost(profession)) return false;
+        // Из торговцев за прилавком товар меняют все, кроме банкира и скупщика: те только покупают.
+        if (MerchantPosts.isPost(profession)) return MerchantPosts.isDaily(profession);
+        if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) return false;
         Int2ObjectMap<VillagerTrades.ItemListing[]> trades = VillagerTrades.TRADES.get(profession);
         return trades != null && !trades.isEmpty();
     }
@@ -116,8 +119,12 @@ public final class TradeReroll {
         player.serverLevel().playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.VILLAGER_YES, SoundSource.NEUTRAL, 1f, 1f);
     }
 
-    /** Заново раскладывает товары: по два с каждого уровня от новичка до текущего. */
+    /** Заново раскладывает товары: по два с каждого уровня от новичка до текущего (у торговцев за прилавком — новый дневной набор). */
     public static void reroll(Villager villager, RandomSource random) {
+        if (MerchantPosts.isPost(villager)) {
+            if (villager.level() instanceof ServerLevel level) MerchantPosts.reroll(level, villager);
+            return;
+        }
         Int2ObjectMap<VillagerTrades.ItemListing[]> trades = VillagerTrades.TRADES.get(villager.getVillagerData().getProfession());
         MerchantOffers offers = villager.getOffers();
         offers.clear();

@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Раскладка особых зданий деревни. Оружейная, банк, книжная лавка, лавка скупщика, дома наставников и казармы не выпадают из пула случайно: после того как
+ * Раскладка особых зданий деревни. Оружейная, банк, книжная лавка, лавка скупщика, ювелирная лавка, лавка огранщика, дома наставников и казармы не выпадают из пула случайно: после того как
  * jigsaw разложил улицы и дома, часть больших домов (12x13, тот же вход, что у этих зданий) заменяется ими.
  * В каждой деревне все три наставника — мечник, лучник и маг,
- * и две-три казармы стражи. Четыре лавки (оружейная, банк, книги, скупка) есть в каждой деревне: без участка для них
+ * и две-три казармы стражи. Шесть лавок (оружейная, банк, книги, скупка, украшения, самоцветы) есть в каждой деревне: без участка для них
  * деревня не ставится.
  */
 public final class VillageLayout {
@@ -65,6 +65,8 @@ public final class VillageLayout {
         if (build(pieces, lots, context, prefix + "bank", BARRACKS_DOOR) == null) return false;
         if (build(pieces, lots, context, prefix + "bookshop", BARRACKS_DOOR) == null) return false;
         if (build(pieces, lots, context, prefix + "pawnshop", BARRACKS_DOOR) == null) return false;
+        if (build(pieces, lots, context, prefix + "jewelry_shop", BARRACKS_DOOR) == null) return false;
+        if (build(pieces, lots, context, prefix + "gem_shop", BARRACKS_DOOR) == null) return false;
 
         List<Mentor> order = new ArrayList<>(MENTORS);
         shuffle(order, random);

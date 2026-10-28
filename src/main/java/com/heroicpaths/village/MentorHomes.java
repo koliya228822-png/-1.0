@@ -40,9 +40,8 @@ import java.util.Set;
 
 /**
  * Наставники гильдий (и распорядитель с глашатаем в зале) живут при своём рабочем месте: дом — это
- * их верстак, далеко от него они не уходят, на сборы у колокола не ходят, спят только в кровати рядом.
- * Ушедшего далеко (толпой унесло, заманили) наставника тянет назад, а застрявшего дольше минуты
- * возвращает домой, пока рядом нет игроков. Погибшего через пять игровых дней сменяет новый наставник
+ * их верстак, из дома они не выходят, на сборы у колокола не ходят, спят только в кровати рядом.
+ * Вышедшего за дверь или ушедшего далеко (толпой вытолкнуло, заманили) наставника сразу ставит обратно в дом. Погибшего через пять игровых дней сменяет новый наставник
  * той же профессии: он появляется у того же рабочего места, когда там загружен мир.
  */
 public final class MentorHomes {
@@ -52,11 +51,10 @@ public final class MentorHomes {
     public static final int LEASH = 8;
     /** Кровать и прочие точки дальше этого от дома наставник отпускает. */
     private static final int POI_RANGE = 14;
-    private static final int CHECK_TICKS = 40;
-    /** Сколько тиков наставник может пробыть вне дома, прежде чем его вернёт домой. */
-    private static final int RETURN_TICKS = 1200;
-    /** Ближе этого игрок «видит» наставника, и тот не телепортируется. */
-    private static final int WATCHED = 16;
+    /** Как часто проверяется, что наставник дома: за полсекунды он не успеет отойти от двери. */
+    private static final int CHECK_TICKS = 10;
+    /** Как часто торговцы за прилавком проверяют свой товар. */
+    private static final int STOCK_TICKS = 40;
     public static final long RESPAWN_TICKS = 5 * 24000L;
 
     private MentorHomes() {}
@@ -84,7 +82,7 @@ public final class MentorHomes {
         // Банкир, оружейник, книжник и скупщик стоят на посту строже наставников (см. MerchantPosts).
         if (!villager.isBaby() && MerchantPosts.isPost(villager)) {
             if (villager.tickCount % MerchantPosts.CHECK_TICKS == 0) MerchantPosts.keepPost(level, villager);
-            if (villager.tickCount % CHECK_TICKS == 0) MerchantPosts.stock(level, villager);
+            if (villager.tickCount % STOCK_TICKS == 0) MerchantPosts.stock(level, villager);
             return;
         }
         if (villager.tickCount % CHECK_TICKS != 0 || villager.isBaby() || !isKeeper(villager)) return;
@@ -107,24 +105,35 @@ public final class MentorHomes {
         releaseIf(villager, MemoryModuleType.JOB_SITE, level, home, POI_RANGE);
         releaseIf(villager, MemoryModuleType.POTENTIAL_JOB_SITE, level, home, POI_RANGE);
 
-        CompoundTag data = villager.getPersistentData();
-        if (villager.isSleeping() || villager.blockPosition().closerThan(home, LEASH)) {
-            data.remove(AWAY);
-            return;
-        }
-        brain.setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(home, 0.6f, 2));
-        int away = data.getInt(AWAY) + CHECK_TICKS;
-        if (away >= RETURN_TICKS && !watched(level, villager.blockPosition()) && level.isPositionEntityTicking(home)) {
-            BlockPos spot = standingSpot(level, home);
-            if (spot != null) {
-                villager.stopRiding();
-                villager.teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
+        // Дом под крышей — значит, выходить под открытое небо нельзя: ни идти к двери, ни стоять за ней.
+        boolean roofed = !level.canSeeSky(home.above());
+        BlockPos center = home;
+        brain.getMemory(MemoryModuleType.WALK_TARGET).ifPresent(target -> {
+            if (!inside(level, center, roofed, target.getTarget().currentBlockPosition())) {
                 brain.eraseMemory(MemoryModuleType.WALK_TARGET);
                 brain.eraseMemory(MemoryModuleType.PATH);
-                away = 0;
             }
+        });
+        CompoundTag data = villager.getPersistentData();
+        data.remove(AWAY);
+        if (villager.isSleeping() || inside(level, home, roofed, villager.blockPosition())) return;
+        // Вышел (вытолкали, заманили) — сразу обратно в дом.
+        BlockPos spot = level.isPositionEntityTicking(home) ? standingSpot(level, home) : null;
+        if (spot == null) {
+            brain.setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(home, 0.6f, 2));
+            return;
         }
-        data.putInt(AWAY, away);
+        villager.stopRiding();
+        villager.teleportTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5);
+        villager.setDeltaMovement(0, 0, 0);
+        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        brain.eraseMemory(MemoryModuleType.PATH);
+    }
+
+    /** Клетка в доме наставника: недалеко от рабочего места и, если дом под крышей, не под открытым небом. */
+    static boolean inside(ServerLevel level, BlockPos home, boolean roofed, BlockPos pos) {
+        if (!pos.closerThan(home, LEASH)) return false;
+        return !roofed || !level.canSeeSky(pos);
     }
 
     /** Дом — рабочее место наставника; если он его ещё не занял — ближайшее подходящее рядом с ним. */
@@ -144,10 +153,6 @@ public final class MentorHomes {
         if (range >= 0 && pos.get().dimension() == level.dimension() && pos.get().pos().closerThan(home, range)) return;
         villager.releasePoi(memory);
         villager.getBrain().eraseMemory(memory);
-    }
-
-    private static boolean watched(ServerLevel level, BlockPos pos) {
-        return level.getNearestPlayer(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, WATCHED, false) != null;
     }
 
     /** Свободная клетка с опорой под ногами рядом с рабочим местом. */

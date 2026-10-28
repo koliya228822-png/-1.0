@@ -18,20 +18,32 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Вкладка «Книга крафтов» меню K: все рецепты мода по станкам (и верстаку) — что получится, из чего
- * и какая ступень ремесла нужна. Только для чтения: создавать вещи надо у самого станка.
+ * и какая ступень ремесла нужна; рецепты верстака — сеткой 3×3, как их выкладывать. Только для чтения: создавать вещи надо у самого станка.
  */
 final class CraftBookView {
     static final int ROW = 22;
+    /** Строка рецепта верстака: сетка 3×3 из уменьшенных ячеек. */
+    static final int GRID_ROW = 44;
     private static final int ICON = 18;
+    private static final int CELL = 13;
+    private static final float CELL_SCALE = 0.75f;
 
-    /** Раздел книги: станок или верстак (station == null). */
-    record Entry(ItemStack result, List<ItemStack[]> ingredients, List<Integer> counts, int rank, Profession profession) {}
+    /**
+     * Рецепт в книге. У станков — ингредиенты с количеством; у верстака ({@code gridWidth} > 0) — ячейки сетки
+     * построчно, ширина {@code gridWidth}, пустая ячейка — пустой массив.
+     */
+    record Entry(ItemStack result, List<ItemStack[]> ingredients, List<Integer> counts, int rank, Profession profession, int gridWidth) {
+        Entry(ItemStack result, List<ItemStack[]> ingredients, List<Integer> counts, int rank, Profession profession) {
+            this(result, ingredients, counts, rank, profession, 0);
+        }
+    }
 
     private static int category;
     private int scroll;
@@ -48,6 +60,15 @@ final class CraftBookView {
 
     static int category() {
         return category;
+    }
+
+    private static boolean workbench() {
+        return category == categories() - 1;
+    }
+
+    /** Высота строки в текущем разделе. */
+    static int rowHeight() {
+        return workbench() ? GRID_ROW : ROW;
     }
 
     void select(int index) {
@@ -72,27 +93,23 @@ final class CraftBookView {
                 list.add(new Entry(recipe.result(), items, counts, StationCrafting.requiredRank(recipe), Profession.of(station)));
             }
         } else {
-            // Верстак: рецепты мода в обычной сетке (заготовки, порох, пули, станки…), одинаковые ингредиенты складываются.
+            // Верстак: рецепты мода в обычной сетке (заготовки, порох, пули, станки…) — как их выложить в сетку 3×3.
             for (var holder : minecraft.level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
                 if (!holder.id().getNamespace().equals(HeroicPaths.MODID)) continue;
                 ItemStack result = holder.value().getResultItem(minecraft.level.registryAccess());
                 if (result.isEmpty()) continue;
-                List<ItemStack[]> items = new ArrayList<>();
-                List<Integer> counts = new ArrayList<>();
-                for (Ingredient ingredient : holder.value().getIngredients()) {
-                    if (ingredient.isEmpty()) continue;
-                    ItemStack[] choices = ingredient.getItems();
-                    int same = -1;
-                    for (int i = 0; i < items.size(); i++) {
-                        if (items.get(i).length > 0 && choices.length > 0 && ItemStack.isSameItem(items.get(i)[0], choices[0])) same = i;
-                    }
-                    if (same >= 0) counts.set(same, counts.get(same) + 1);
-                    else {
-                        items.add(choices);
-                        counts.add(1);
-                    }
+                List<ItemStack[]> cells = new ArrayList<>();
+                int width;
+                if (holder.value() instanceof ShapedRecipe shaped) {
+                    width = shaped.getWidth();
+                    for (Ingredient ingredient : shaped.getIngredients()) cells.add(ingredient.isEmpty() ? new ItemStack[0] : ingredient.getItems());
+                } else {
+                    // Без формы: ингредиенты подряд, клади как удобно.
+                    for (Ingredient ingredient : holder.value().getIngredients()) if (!ingredient.isEmpty()) cells.add(ingredient.getItems());
+                    width = cells.size() <= 1 ? 1 : cells.size() <= 4 ? 2 : 3;
                 }
-                list.add(new Entry(result, items, counts, 0, null));
+                if (cells.stream().allMatch(c -> c.length == 0) || width < 1 || width > 3 || cells.size() > 9) continue;
+                list.add(new Entry(result, cells, List.of(), 0, null, width));
             }
         }
         entries = list;
@@ -111,7 +128,8 @@ final class CraftBookView {
         Professions professions = RpgManager.get(minecraft.player).professions();
         ItemStack hovered = ItemStack.EMPTY;
         long cycle = minecraft.level.getGameTime() / 20;
-        int rows = Math.max(1, (bottom - top) / ROW);
+        int rowHeight = rowHeight();
+        int rows = Math.max(1, (bottom - top) / rowHeight);
         scroll = Mth.clamp(scroll, 0, Math.max(0, list.size() - rows));
         if (category == categories() - 1) {
             // Подсказка о переплавке алмазных вещей — первой строкой раздела верстака.
@@ -120,13 +138,18 @@ final class CraftBookView {
                 top += 10;
             }
             top += 2;
-            rows = Math.max(1, (bottom - top) / ROW);
+            rows = Math.max(1, (bottom - top) / rowHeight);
         }
         for (int row = 0; row < rows && scroll + row < list.size(); row++) {
             Entry entry = list.get(scroll + row);
-            int y = top + row * ROW;
+            int y = top + row * rowHeight;
             boolean unlocked = entry.profession() == null || professions.rank(entry.profession()) >= entry.rank();
-            graphics.fill(left, y, right, y + ROW - 2, unlocked ? 0x70000000 : 0x90200808);
+            graphics.fill(left, y, right, y + rowHeight - 2, unlocked ? 0x70000000 : 0x90200808);
+            if (entry.gridWidth() > 0) {
+                ItemStack under = renderGrid(graphics, font, entry, left, y, right, cycle, mouseX, mouseY);
+                if (!under.isEmpty()) hovered = under;
+                continue;
+            }
             graphics.renderItem(entry.result(), left + 3, y + 2);
             graphics.renderItemDecorations(font, entry.result(), left + 3, y + 2);
             if (mouseX >= left + 2 && mouseX < left + 20 && mouseY >= y + 1 && mouseY < y + 19) hovered = entry.result();
@@ -159,12 +182,50 @@ final class CraftBookView {
         // Полоса прокрутки.
         int max = Math.max(0, list.size() - rows);
         if (max > 0) {
-            int trackHeight = rows * ROW - 2;
+            int trackHeight = rows * rowHeight - 2;
             int thumb = Math.max(10, trackHeight * rows / list.size());
             int thumbY = top + (trackHeight - thumb) * scroll / max;
             graphics.fill(right + 2, top, right + 5, top + trackHeight, 0x50000000);
             graphics.fill(right + 2, thumbY, right + 5, thumbY + thumb, 0xFFAAAAAA);
         }
+        return hovered;
+    }
+
+    /** Строка рецепта верстака: результат слева, справа сетка 3×3 с раскладкой; возвращает вещь под курсором. */
+    private static ItemStack renderGrid(GuiGraphics graphics, Font font, Entry entry, int left, int y, int right, long cycle, int mouseX, int mouseY) {
+        ItemStack hovered = ItemStack.EMPTY;
+        int gridLeft = right - 4 - 3 * CELL, gridTop = y + 2;
+        int resultY = y + (GRID_ROW - 2 - 16) / 2;
+        // Стрелка от сетки к результату — как в окне верстака.
+        int arrowX = gridLeft - 12;
+        graphics.drawString(font, "←", arrowX, resultY + 4, 0xC0C0C0, false);
+        for (int cy = 0; cy < 3; cy++) {
+            for (int cx = 0; cx < 3; cx++) {
+                int x = gridLeft + cx * CELL, top = gridTop + cy * CELL;
+                graphics.fill(x, top, x + CELL - 1, top + CELL - 1, 0x60FFFFFF);
+                graphics.fill(x + 1, top + 1, x + CELL - 1, top + CELL - 1, 0xA0202020);
+                if (cx >= entry.gridWidth()) continue;
+                int index = cy * entry.gridWidth() + cx;
+                if (index >= entry.ingredients().size()) continue;
+                ItemStack[] choices = entry.ingredients().get(index);
+                if (choices.length == 0) continue;
+                ItemStack shown = choices[(int) (cycle % choices.length)].copyWithCount(1);
+                graphics.pose().pushPose();
+                graphics.pose().translate(x, top, 0);
+                graphics.pose().scale(CELL_SCALE, CELL_SCALE, 1f);
+                graphics.renderItem(shown, 0, 0);
+                graphics.pose().popPose();
+                if (mouseX >= x && mouseX < x + CELL - 1 && mouseY >= top && mouseY < top + CELL - 1) hovered = shown;
+            }
+        }
+        graphics.renderItem(entry.result(), left + 3, resultY);
+        graphics.renderItemDecorations(font, entry.result(), left + 3, resultY);
+        if (mouseX >= left + 2 && mouseX < left + 20 && mouseY >= resultY - 1 && mouseY < resultY + 17) hovered = entry.result();
+        int textWidth = Math.max(20, arrowX - (left + 24) - 4);
+        List<FormattedCharSequence> lines = font.split(entry.result().getHoverName(), textWidth);
+        int shown = Math.min(3, lines.size());
+        int textY = resultY + 4 - (shown - 1) * 5;
+        for (int i = 0; i < shown; i++) graphics.drawString(font, lines.get(i), left + 24, textY + i * 10, 0xFFFFFF, true);
         return hovered;
     }
 }

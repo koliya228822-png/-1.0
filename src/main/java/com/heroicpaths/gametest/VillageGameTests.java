@@ -20,7 +20,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.trading.MerchantOffer;
@@ -132,7 +131,7 @@ public class VillageGameTests {
             }
             helper.assertTrue(helper.getLevel().getStructureManager().get(HeroicPaths.id("village/" + biome + "/barracks")).isPresent(),
                     "missing barracks of " + biome);
-            for (String shop : List.of("bank", "armory", "bookshop", "pawnshop")) {
+            for (String shop : List.of("bank", "armory", "bookshop", "pawnshop", "jewelry_shop", "gem_shop")) {
                 helper.assertTrue(helper.getLevel().getStructureManager().get(HeroicPaths.id("village/" + biome + "/" + shop)).isPresent(),
                         "missing " + shop + " of " + biome);
             }
@@ -168,7 +167,7 @@ public class VillageGameTests {
                 List<String> mentors = new ArrayList<>();
                 int barracks = 0;
                 int mills = 0;
-                int armories = 0, banks = 0, bookshops = 0, pawnshops = 0;
+                int armories = 0, banks = 0, bookshops = 0, pawnshops = 0, jewelers = 0, gemShops = 0;
                 for (StructurePiece piece : pieces) {
                     String id = piece.toString();
                     for (String guild : VillageInjector.GUILDS) if (id.contains("/" + guild + "]")) mentors.add(guild);
@@ -178,6 +177,8 @@ public class VillageGameTests {
                     if (id.contains("/bank]")) banks++;
                     if (id.contains("/bookshop]")) bookshops++;
                     if (id.contains("/pawnshop]")) pawnshops++;
+                    if (id.contains("/jewelry_shop]")) jewelers++;
+                    if (id.contains("/gem_shop]")) gemShops++;
                 }
                 helper.assertTrue(mentors.size() == 3, biome + " village has mentors " + mentors);
                 helper.assertTrue(mentors.stream().distinct().count() == mentors.size(), biome + " village repeats a mentor: " + mentors);
@@ -189,6 +190,7 @@ public class VillageGameTests {
                 helper.assertTrue(mills >= 1, biome + " village has no windmill");
                 helper.assertTrue(armories == 1 && banks == 1, biome + " village has " + armories + " armories and " + banks + " banks");
                 helper.assertTrue(bookshops == 1 && pawnshops == 1, biome + " village has " + bookshops + " bookshops and " + pawnshops + " pawnshops");
+                helper.assertTrue(jewelers == 1 && gemShops == 1, biome + " village has " + jewelers + " jewelry shops and " + gemShops + " gem shops");
                 com.heroicpaths.village.VillageWallPiece wall = pieces.stream()
                         .filter(p -> p instanceof com.heroicpaths.village.VillageWallPiece)
                         .map(p -> (com.heroicpaths.village.VillageWallPiece) p).findFirst().orElse(null);
@@ -321,7 +323,7 @@ public class VillageGameTests {
         });
     }
 
-    /** Наставник помнит дом у рабочего места, ушедшего тянет назад, погибшего через пять дней сменяет новый. */
+    /** Наставник помнит дом у рабочего места, ушедшего сразу ставит обратно, погибшего через пять дней сменяет новый. */
     @GameTest(template = ARENA, batch = "village_mentor_home")
     public static void fallenMentorIsReplacedAfterFiveDays(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -335,9 +337,7 @@ public class VillageGameTests {
         MentorHomes.keepHome(level, mentor);
         helper.assertTrue(home.equals(MentorHomes.home(mentor)), "mentor home is " + MentorHomes.home(mentor) + ", not the lectern " + home);
         helper.assertTrue(mentor.hasRestriction() && mentor.getRestrictCenter().equals(home), "mentor is not leashed to the lectern");
-        helper.assertTrue(mentor.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
-                        .map(target -> target.getTarget().currentBlockPosition().equals(home)).orElse(false),
-                "a mentor far from home is not walking back");
+        helper.assertTrue(mentor.blockPosition().closerThan(home, 4), "a mentor far from home was not put back, he is at " + mentor.blockPosition());
 
         MentorHomes.Graves graves = MentorHomes.Graves.get(level.getServer());
         int before = graves.all().size();

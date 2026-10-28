@@ -7,7 +7,10 @@ import com.heroicpaths.item.ItemRarity;
 import com.heroicpaths.item.ProfessionManualItem;
 import com.heroicpaths.registry.ModItems;
 import com.heroicpaths.registry.ModVillagers;
+import com.heroicpaths.accessory.AccessoryItem;
 import com.heroicpaths.village.Bookseller;
+import com.heroicpaths.village.GemCutter;
+import com.heroicpaths.village.Jeweler;
 import com.heroicpaths.village.MerchantPosts;
 import com.heroicpaths.village.Pawnbroker;
 import com.heroicpaths.village.TradeReroll;
@@ -29,7 +32,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
 
-/** Книжник, скупщик и реролл товаров жителей. */
+/** Книжник, ювелир, огранщик, скупщик и реролл товаров жителей. */
 @GameTestHolder(HeroicPaths.MODID)
 @PrefixGameTestTemplate(false)
 public class ShopGameTests {
@@ -52,16 +55,15 @@ public class ShopGameTests {
     @GameTest(template = ARENA)
     public static void booksellerSellsEveryManualDearerByRank(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
-        Villager seller = villager(helper, ModVillagers.BOOKSELLER.get(), 1);
-        MerchantPosts.stock(level, seller);
-        List<MerchantOffer> offers = seller.getOffers();
+        // Весь список трактатов: каждое ремесло, каждая ступень, старше — дороже.
+        List<MerchantOffer> all = Bookseller.offers();
         int ranks = Professions.MAX_RANK - Professions.MIN_RANK;
-        helper.assertTrue(offers.size() == Profession.values().length * ranks, "bookseller has " + offers.size() + " offers");
+        helper.assertTrue(all.size() == Profession.values().length * ranks, "bookseller knows " + all.size() + " manuals");
         for (Profession craft : Profession.values()) {
             int last = 0;
             for (int rank = Professions.MIN_RANK + 1; rank <= Professions.MAX_RANK; rank++) {
                 int r = rank;
-                MerchantOffer offer = offers.stream().filter(o -> o.getResult().is(craft.manual()) && ProfessionManualItem.rank(o.getResult()) == r)
+                MerchantOffer offer = all.stream().filter(o -> o.getResult().is(craft.manual()) && ProfessionManualItem.rank(o.getResult()) == r)
                         .findFirst().orElse(null);
                 helper.assertTrue(offer != null, "bookseller does not sell " + craft + " manual " + rank);
                 helper.assertTrue(offer.getBaseCostA().is(Items.EMERALD), "manual is not sold for emeralds");
@@ -70,10 +72,55 @@ public class ShopGameTests {
                 last = price;
             }
         }
+        // На прилавке — дневной набор, реролл раскладывает другой.
+        Villager seller = villager(helper, ModVillagers.BOOKSELLER.get(), 1);
+        MerchantPosts.stock(level, seller);
+        List<MerchantOffer> offers = seller.getOffers();
+        helper.assertTrue(offers.size() == Bookseller.SHELF, "bookseller has " + offers.size() + " offers");
+        List<String> before = offers.stream().map(o -> o.getResult().getItem() + "/" + ProfessionManualItem.rank(o.getResult())).toList();
+        helper.assertTrue(TradeReroll.canReroll(seller), "bookseller cannot be rerolled");
+        boolean changed = false;
+        for (int i = 0; i < 5 && !changed; i++) {
+            TradeReroll.reroll(seller, level.random);
+            changed = !seller.getOffers().stream().map(o -> o.getResult().getItem() + "/" + ProfessionManualItem.rank(o.getResult())).toList().equals(before);
+        }
+        helper.assertTrue(changed, "bookseller reroll did not change the shelf");
         // Распроданное возвращается.
-        offers.get(0).setToOutOfStock();
+        seller.getOffers().get(0).setToOutOfStock();
         MerchantPosts.stock(level, seller);
         helper.assertFalse(seller.getOffers().get(0).isOutOfStock(), "bookseller ran out of manuals");
+        helper.succeed();
+    }
+
+    @GameTest(template = ARENA)
+    public static void jewelerAndGemCutterSellByLevelAndReroll(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager jeweler = villager(helper, ModVillagers.JEWELER.get(), 1);
+        helper.assertTrue(MerchantPosts.isPost(jeweler) && TradeReroll.canReroll(jeweler), "jeweler is not a rerollable shopkeeper");
+        MerchantPosts.stock(level, jeweler);
+        helper.assertTrue(jeweler.getOffers().size() == Jeweler.OFFERS, "jeweler has " + jeweler.getOffers().size() + " offers");
+        for (MerchantOffer offer : jeweler.getOffers()) {
+            helper.assertTrue(offer.getResult().getItem() instanceof AccessoryItem, "jeweler sells " + offer.getResult());
+            helper.assertTrue(AccessoryItem.grade(offer.getResult()) == 1, "novice jeweler sells grade " + AccessoryItem.grade(offer.getResult()));
+        }
+        // Купленное не возвращается до реролла; реролл раскладывает всё заново.
+        jeweler.getOffers().get(0).setToOutOfStock();
+        jeweler.getPersistentData().putInt(HeroicPaths.MODID + ".sold", 1);
+        MerchantPosts.stock(level, jeweler);
+        helper.assertTrue(jeweler.getOffers().get(0).isOutOfStock(), "a sold jewel came back");
+        TradeReroll.reroll(jeweler, level.random);
+        helper.assertTrue(jeweler.getOffers().stream().noneMatch(MerchantOffer::isOutOfStock), "reroll left sold-out jewels");
+
+        Villager cutter = villager(helper, ModVillagers.GEM_CUTTER.get(), 1);
+        helper.assertTrue(TradeReroll.canReroll(cutter), "gem cutter cannot be rerolled");
+        MerchantPosts.stock(level, cutter);
+        helper.assertFalse(cutter.getOffers().isEmpty(), "gem cutter has nothing");
+        helper.assertTrue(cutter.getOffers().stream().noneMatch(o -> o.getResult().is(Items.DIAMOND) || o.getResult().is(ModItems.BRILLIANT.get())),
+                "novice gem cutter sells diamonds");
+        Villager master = villager(helper, ModVillagers.GEM_CUTTER.get(), 5);
+        MerchantPosts.stock(level, master);
+        helper.assertTrue(master.getOffers().stream().anyMatch(o -> o.getResult().is(ModItems.BRILLIANT.get())), "master gem cutter has no brilliant");
+        helper.assertTrue(master.getOffers().size() <= GemCutter.OFFERS, "master gem cutter has " + master.getOffers().size() + " offers");
         helper.succeed();
     }
 
@@ -121,7 +168,8 @@ public class ShopGameTests {
             Villager librarian = villager(helper, VillagerProfession.LIBRARIAN, 3);
             helper.assertTrue(TradeReroll.canReroll(librarian), "librarian cannot be rerolled");
             helper.assertFalse(TradeReroll.canReroll(villager(helper, ModVillagers.BANKER.get(), 1)), "banker can be rerolled");
-            helper.assertFalse(TradeReroll.canReroll(villager(helper, ModVillagers.BOOKSELLER.get(), 1)), "bookseller can be rerolled");
+            helper.assertFalse(TradeReroll.canReroll(villager(helper, ModVillagers.PAWNBROKER.get(), 1)), "pawnbroker can be rerolled");
+            helper.assertTrue(TradeReroll.canReroll(villager(helper, ModVillagers.ARMS_DEALER.get(), 1)), "arms dealer cannot be rerolled");
             helper.assertFalse(TradeReroll.canReroll(villager(helper, VillagerProfession.NITWIT, 1)), "nitwit can be rerolled");
 
             TradeReroll.reroll(librarian, level.random);

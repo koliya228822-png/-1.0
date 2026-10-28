@@ -55,6 +55,8 @@ public class VillageWallPiece extends StructurePiece {
     /** Надвратная башня: полудлина вдоль улицы и полуширина поперёк (проход — |c| ≤ 2, по бокам башни). */
     static final int GATE_A = 3, GATE_C = 9, PASSAGE = 3, ROAD = 11, ARCH = 8, TOWER_MID = 6;
     static final int MARGIN = 7, MIN_RADIUS = 40, LIMIT = 116;
+    /** Насколько ниже дна мира низ коробок стены и полей: «борода» действует на 12 блоков от низа коробки. */
+    static final int BEARD_CLEARANCE = 16;
 
     public record Gate(int x, int z, boolean alongX, int inward) {}
 
@@ -311,7 +313,10 @@ public class VillageWallPiece extends StructurePiece {
             maxZ = Math.max(maxZ, z);
         }
         int pad = ROAD + 2;
-        BoundingBox box = new BoundingBox(minX - pad, baseY - 24, minZ - pad, maxX + pad, baseY + 40, maxZ + pad);
+        // Низ коробки — под дном мира: у кусков не из jigsaw ваниль «бородой» (terrain_adaptation) выравнивает рельеф
+        // вокруг низа коробки, и на baseY - 24 под деревней выходило пустое плато (а под ним второе — от полей).
+        int bottom = context.heightAccessor().getMinBuildHeight() - BEARD_CLEARANCE;
+        BoundingBox box = new BoundingBox(minX - pad, bottom, minZ - pad, maxX + pad, baseY + 40, maxZ + pad);
         VillageWallPiece wall = new VillageWallPiece(cx, cz, baseY, r, gates, towers, biome, box);
         wall.roads.addAll(roads);
         wall.levels = levels(probe, context);

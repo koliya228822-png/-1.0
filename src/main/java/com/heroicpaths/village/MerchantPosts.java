@@ -13,6 +13,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -32,13 +33,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Банкир, мастер-оружейник, книжник и скупщик стоят за своими прилавками и не покидают их: «дом» каждого — клетка, где он появился
- * в своём доме, отойти от неё он может на пару шагов, а сдвинутого (толпой, мобом, игроком, лодкой) сразу ставит
- * обратно. Товары обоих задаются здесь, а не обычными уровнями жителя:
+ * Банкир, мастер-оружейник, книжник, скупщик, ювелир и огранщик стоят за своими прилавками и не покидают их: «дом» каждого —
+ * клетка, где он появился в своём доме, отойти от неё он может на пару шагов, а сдвинутого (толпой, мобом, игроком, лодкой)
+ * сразу ставит обратно. Товары задаются здесь, а не обычными уровнями жителя:
  * банкир всегда скупает добычу из данжей за изумруды, оружейник каждый игровой день выставляет десять новых
- * мечей и луков (с шансом редких, с бонусами и чарами) за большие деньги; купленное до конца дня не возвращается.
- * Книжник всегда продаёт все трактаты ремёсел ({@link Bookseller}), скупщик каждый раз заново оценивает инвентарь
- * подошедшего игрока ({@link Pawnbroker}).
+ * мечей и луков (с шансом редких, с бонусами и чарами) за большие деньги, ювелир — восемь украшений ({@link Jeweler});
+ * купленное у них до конца дня не возвращается. Огранщик каждый день выкладывает свои камни ({@link GemCutter}), книжник —
+ * десять трактатов ремёсел ({@link Bookseller}); дневной товар всех четверых можно обновить рероллом ({@link TradeReroll}).
+ * Скупщик каждый раз заново оценивает инвентарь подошедшего игрока ({@link Pawnbroker}).
  */
 public final class MerchantPosts {
     private static final String STOCK = HeroicPaths.MODID + ".stock";
@@ -47,8 +49,11 @@ public final class MerchantPosts {
     private static final String STOCK_LEVEL = HeroicPaths.MODID + ".stock_level";
     /** Версия списка банкира: при изменении цен старые банкиры получают новый список. */
     private static final long BANK_STOCK = 2;
-    /** Версия списка книжника. */
-    private static final long BOOK_STOCK = 1;
+    /** Версия дневных товаров: при изменении старые торговцы сразу раскладывают товар заново. */
+    private static final long DAILY_STOCK = 2;
+    private static final String STOCK_VERSION = HeroicPaths.MODID + ".stock_version";
+    /** Сколько раз товар этого торговца обновляли рероллом: входит в зерно набора. */
+    private static final String REROLLS = HeroicPaths.MODID + ".rerolls";
     /** Насколько далеко от своей клетки торговец может отойти. */
     public static final int POST_LEASH = 2;
     private static final double MAX_AWAY = 2.5;
@@ -62,9 +67,10 @@ public final class MerchantPosts {
         return isPost(p);
     }
 
-    public static boolean isPost(net.minecraft.world.entity.npc.VillagerProfession p) {
+    public static boolean isPost(VillagerProfession p) {
         return p == ModVillagers.BANKER.get() || p == ModVillagers.ARMS_DEALER.get()
-                || p == ModVillagers.BOOKSELLER.get() || p == ModVillagers.PAWNBROKER.get();
+                || p == ModVillagers.BOOKSELLER.get() || p == ModVillagers.PAWNBROKER.get()
+                || p == ModVillagers.JEWELER.get() || p == ModVillagers.GEM_CUTTER.get();
     }
 
     // ---------------------------------------------------------------- пост
@@ -130,17 +136,17 @@ public final class MerchantPosts {
         }
     }
 
-    /** Купленная у оружейника вещь до конца дня не появляется снова (даже если он пополнит запасы). */
+    /** Купленная у оружейника или ювелира вещь до конца дня не появляется снова (даже если он пополнит запасы). */
     @SubscribeEvent
     public static void onTrade(TradeWithVillagerEvent event) {
-        if (!(event.getAbstractVillager() instanceof Villager villager) || villager.getVillagerData().getProfession() != ModVillagers.ARMS_DEALER.get()) return;
+        if (!(event.getAbstractVillager() instanceof Villager villager) || !oneOfAKind(villager.getVillagerData().getProfession())) return;
         int index = villager.getOffers().indexOf(event.getMerchantOffer());
         if (index < 0) return;
         CompoundTag data = villager.getPersistentData();
         data.putInt(SOLD, data.getInt(SOLD) | (1 << index));
     }
 
-    /** Раскладывает товар: банкиру — постоянный список, оружейнику — свой на каждый день. */
+    /** Раскладывает товар: банкиру — постоянный список, оружейнику, ювелиру, огранщику и книжнику — свой на каждый день. */
     public static void stock(ServerLevel level, Villager villager) {
         if (villager.isBaby()) return;
         CompoundTag data = villager.getPersistentData();
@@ -152,31 +158,67 @@ public final class MerchantPosts {
             offers.clear();
             offers.addAll(bankOffers());
             data.putLong(STOCK, BANK_STOCK);
-        } else if (profession == ModVillagers.BOOKSELLER.get()) {
-            if (data.getLong(STOCK) != BOOK_STOCK || offers.isEmpty()) {
-                if (villager.getTradingPlayer() != null) return;
-                offers.clear();
-                offers.addAll(Bookseller.offers());
-                data.putLong(STOCK, BOOK_STOCK);
-            }
-            // Товар книжника не кончается.
-            if (villager.getTradingPlayer() == null) for (MerchantOffer offer : offers) offer.resetUses();
-        } else if (profession == ModVillagers.ARMS_DEALER.get()) {
+        } else if (isDaily(profession)) {
             long day = day(level);
             int merchantLevel = villager.getVillagerData().getLevel();
-            if (data.getLong(STOCK) != day + 1 || offers.size() != ARMS_OFFERS || data.getInt(STOCK_LEVEL) != merchantLevel) {
+            boolean stale = data.getLong(STOCK) != day + 1 || offers.isEmpty() || data.getInt(STOCK_LEVEL) != merchantLevel
+                    || data.getLong(STOCK_VERSION) != DAILY_STOCK
+                    || (profession == ModVillagers.ARMS_DEALER.get() && offers.size() != ARMS_OFFERS);
+            if (stale) {
                 if (villager.getTradingPlayer() != null) return;
-                offers.clear();
-                offers.addAll(armsOffers(level, villager.getUUID().getLeastSignificantBits() ^ villager.getUUID().getMostSignificantBits(), day, merchantLevel));
-                data.putLong(STOCK, day + 1);
-                data.putInt(STOCK_LEVEL, merchantLevel);
-                data.putInt(SOLD, 0);
+                restock(level, villager);
             }
-            int sold = data.getInt(SOLD);
-            for (int i = 0; i < offers.size(); i++) {
-                if ((sold & (1 << i)) != 0 && !offers.get(i).isOutOfStock()) offers.get(i).setToOutOfStock();
+            if (profession == ModVillagers.BOOKSELLER.get()) {
+                // Товар книжника не кончается.
+                if (villager.getTradingPlayer() == null) for (MerchantOffer offer : offers) offer.resetUses();
+            } else if (oneOfAKind(profession)) {
+                int sold = data.getInt(SOLD);
+                for (int i = 0; i < offers.size(); i++) {
+                    if ((sold & (1 << i)) != 0 && !offers.get(i).isOutOfStock()) offers.get(i).setToOutOfStock();
+                }
             }
         }
+    }
+
+    /** Торговцы, у которых каждый день новый товар (и его можно обновить рероллом). */
+    public static boolean isDaily(VillagerProfession p) {
+        return p == ModVillagers.ARMS_DEALER.get() || p == ModVillagers.BOOKSELLER.get()
+                || p == ModVillagers.JEWELER.get() || p == ModVillagers.GEM_CUTTER.get();
+    }
+
+    /** Вещи в одном экземпляре: купленная до конца дня не возвращается. */
+    private static boolean oneOfAKind(VillagerProfession p) {
+        return p == ModVillagers.ARMS_DEALER.get() || p == ModVillagers.JEWELER.get();
+    }
+
+    /** Заново раскладывает дневной товар: набор зависит от торговца, дня, его уровня и числа рероллов. */
+    private static void restock(ServerLevel level, Villager villager) {
+        CompoundTag data = villager.getPersistentData();
+        var profession = villager.getVillagerData().getProfession();
+        long day = day(level);
+        int merchantLevel = villager.getVillagerData().getLevel();
+        long seed = (villager.getUUID().getLeastSignificantBits() ^ villager.getUUID().getMostSignificantBits())
+                + data.getInt(REROLLS) * 0x632BE59BD9B4E019L;
+        List<MerchantOffer> fresh;
+        if (profession == ModVillagers.ARMS_DEALER.get()) fresh = armsOffers(level, seed, day, merchantLevel);
+        else if (profession == ModVillagers.JEWELER.get()) fresh = Jeweler.offers(level, seed, day, merchantLevel);
+        else if (profession == ModVillagers.GEM_CUTTER.get()) fresh = GemCutter.offers(seed, day, merchantLevel);
+        else fresh = Bookseller.offers(seed, day);
+        MerchantOffers offers = villager.getOffers();
+        offers.clear();
+        offers.addAll(fresh);
+        data.putLong(STOCK, day + 1);
+        data.putInt(STOCK_LEVEL, merchantLevel);
+        data.putLong(STOCK_VERSION, DAILY_STOCK);
+        data.putInt(SOLD, 0);
+    }
+
+    /** Реролл дневного товара (кнопка в окне торговли): другой набор на тот же день, проданное снова в наличии. */
+    public static void reroll(ServerLevel level, Villager villager) {
+        if (!isDaily(villager.getVillagerData().getProfession())) return;
+        CompoundTag data = villager.getPersistentData();
+        data.putInt(REROLLS, data.getInt(REROLLS) + 1);
+        restock(level, villager);
     }
 
     /** Номер игрового дня (по времени суток верхнего мира). */
@@ -304,6 +346,11 @@ public final class MerchantPosts {
     public static int price(ItemStack stack, ItemRarity.Tier tier) {
         int base = GRADE_PRICE[Math.min(3, Grades.of(stack))];
         if (stack.getItem() instanceof GreatswordItem) base += 8;
+        return byRarity(base, tier);
+    }
+
+    /** Базовая цена, умноженная по редкости. */
+    static int byRarity(int base, ItemRarity.Tier tier) {
         return Math.max(1, Math.round(base * TIER_PRICE[tier.ordinal()]));
     }
 

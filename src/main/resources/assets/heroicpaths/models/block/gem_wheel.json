@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "heroicpaths:block/gem_wheel_top",
+    "side": "heroicpaths:block/gem_wheel_side"
+  }
+}
