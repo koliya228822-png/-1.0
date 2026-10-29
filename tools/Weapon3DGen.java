@@ -1247,79 +1247,143 @@ public class Weapon3DGen {
             {0, 1.9, -22.5, 2.3, -45, 2.5, -67.5, 1.9, -45, 1.0},
             {0, 1.0, -22.5, 2.0, -45, 2.4, -67.5, 2.6, -90, 1.6, -67.5, 0.9},
             {0, 0.8, -22.5, 1.9, -45, 2.4, -67.5, 2.6, -90, 1.4, -67.5, 0.8}};
-    static final double[][] LONGBOW = {
-            {0, 2.8, -22.5, 2.7, -45, 2.6, -67.5, 2.2},
-            {0, 2.5, -22.5, 2.7, -45, 2.7, -67.5, 2.3},
-            {0, 1.4, -22.5, 2.6, -45, 2.7, -67.5, 2.7, -90, 1.0},
-            {0, 0.9, -22.5, 2.4, -45, 2.7, -67.5, 2.9, -90, 1.6}};
     /** Угол тетивы от горизонтали по кадрам: прямая, слабое, среднее и полное натяжение. */
     static final double[] STRING_ANGLE = {0, 22.5, 22.5, 45};
 
-    static void bow(M m, boolean composite, int frame) {
-        if (composite) bow(m, true, frame, "dark_wood", "bone", "grip_bow", "metal_gold", "metal_gold");
-        else bow(m, false, frame, "ranger_wood", "belly_green", "grip_ranger", "metal_iron", null);
+    /** Вид лука грейда: дерево плеч, накладка, кожа рукояти, роговые концы, металл отделки, камень. */
+    record Bow(String wood, String belly, String grip, String tip, String accent, String gem, int grade) {
     }
 
-    /** Луки IV–VI: изгиб составного лука, тёмное дерево, накладки и кольца из металла грейда. */
-    static void grandBow(M m, String mat, int frame) {
-        S s = style(mat);
-        bow(m, true, frame, "dark_wood", s.metal(), s.grip(), s.guard(), s.metal());
+    static final Map<String, Bow> BOWS = new LinkedHashMap<>();
+
+    static {
+        BOWS.put("composite_bow", new Bow("dark_wood", "bone", "grip_bow", "bone", "metal_gold", "amber", 2));
+        BOWS.put("ranger_longbow", new Bow("ranger_wood", "belly_green", "grip_ranger", "dark_wood", "metal_iron", "emerald", 3));
+        BOWS.put("diamond_longbow", new Bow("dark_wood", "metal_diamond", "grip_diamond", "metal_diamond", "metal_gold", "aqua", 4));
+        BOWS.put("faceted_longbow", new Bow("dark_wood", "metal_faceted", "grip_faceted", "metal_faceted", "metal_silver", "sapphire", 5));
+        BOWS.put("brilliant_longbow", new Bow("dark_wood", "metal_brilliant", "grip_brilliant", "metal_brilliant", "metal_gold", "prism", 6));
     }
 
-    static void bow(M m, boolean composite, int frame, String wood, String belly, String grip, String tip, String rings) {
-        double[] path = (composite ? COMPOSITE : LONGBOW)[frame];
-        double w = composite ? 0.62 : 0.6, th = composite ? 0.62 : 0.56;
+    /** Кубоид, вытянутый вдоль x: боковые грани повёрнуты на 90°, чтобы узор шёл вдоль детали. */
+    static void elX(M m, double x1, double y1, double z1, double x2, double y2, double z2, String t, double angle) {
+        m.tex.put(t, NS + ":item/3d/" + t);
+        double s = m.shift;
+        m.minY = Math.min(m.minY, y1);
+        m.maxY = Math.max(m.maxY, y2);
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"from\": [").append(f(x1 + s)).append(", ").append(f(y1 + s)).append(", ").append(f(z1 + s))
+                .append("], \"to\": [").append(f(x2 + s)).append(", ").append(f(y2 + s)).append(", ").append(f(z2 + s)).append("]");
+        if (angle != 0)
+            sb.append(", \"rotation\": {\"angle\": ").append(f(angle)).append(", \"axis\": \"x\", \"origin\": [")
+                    .append(f((x1 + x2) / 2 + s)).append(", ").append(f((y1 + y2) / 2 + s)).append(", ").append(f((z1 + z2) / 2 + s)).append("]}");
+        String ref = "\"texture\": \"#" + t + "\"";
+        String side = uv(x2 - x1, "c0.3") + ", \"rotation\": 90", cap = uv(1, "c0.3");
+        sb.append(", \"faces\": {");
+        String[] fs = {"north", "south", "up", "down", "east", "west"};
+        for (int i = 0; i < fs.length; i++)
+            sb.append(i > 0 ? ", " : "").append("\"").append(fs[i]).append("\": {\"uv\": ").append(i < 4 ? side : cap).append(", ").append(ref).append("}");
+        sb.append("}}");
+        m.els.add(sb.toString());
+    }
+
+    /** Круглый стержень вдоль x — как rod, только поперёк. */
+    static void rodX(M m, double y, double z, double x1, double x2, double r, String t) {
+        boolean fine = r >= 0.38;
+        double hw = r * Math.tan(Math.PI / (fine ? 16 : 8));
+        double[] angles = fine ? new double[]{0, 22.5, 45, -22.5} : new double[]{0, 45};
+        double step = Math.min(0.003, (x2 - x1) / 40);
+        int k = 0;
+        for (double a : angles) {
+            double i1 = step * k++, i2 = step * k++;
+            elX(m, x1 + i1, y - r, z - hw, x2 - i1, y + r, z + hw, t, a);
+            elX(m, x1 + i2, y - hw, z - r, x2 - i2, y + hw, z + r, t, a);
+        }
+    }
+
+    /** Точка на плече после первых segs отрезков. */
+    static double[] along(double[] path, boolean mir, double sx, int segs) {
+        double[] q = {sx, 5.7};
+        for (int i = 0; i < 2 * segs && i < path.length; i += 2) {
+            double rad = Math.toRadians(mir ? 180 - path[i] : path[i]);
+            q = new double[]{q[0] + Math.cos(rad) * path[i + 1], q[1] + Math.sin(rad) * path[i + 1]};
+        }
+        return q;
+    }
+
+    /**
+     * Лук: гладкая кожаная рукоять, сужающаяся к плечам, плечи с накладкой и роговые концы.
+     * С грейдом добавляется отделка: III — обвязка у корня плеч; IV — металлические муфты, оковки концов
+     * и камень на рукояти; V — кольца с камнями на плечах и шипы на концах; VI — крылья у рукояти
+     * и светящиеся камни.
+     */
+    static void bow(M m, Bow l, int frame) {
+        double[] path = COMPOSITE[frame];
+        double w = 0.6, th = 0.58;
         double[] end = null;
         for (int side = -1; side <= 1; side += 2) {
             boolean mir = side < 0;
-            double sx = side * 0.95;
-            end = chain(m, "xy", sx, 5.7, path, w, th, 0, wood, "full", mir);
+            double sx = side * 1.3;
+            end = chain(m, "xy", sx, 5.7, path, w, th, 0, l.wood(), "full", mir);
             // Накладка на внутренней стороне плеч: та же цепочка, сдвинутая к тетиве.
             double[] p = {sx, 5.7};
             for (int i = 0; i < path.length; i += 2) {
                 double ang = mir ? 180 - path[i] : path[i];
                 double rad = Math.toRadians(ang);
                 double nx = Math.sin(rad) * (mir ? -1 : 1), ny = -Math.cos(rad) * (mir ? -1 : 1);
-                double off = w / 2 + 0.08;
-                double[] q2 = seg(m, "xy", p[0] + nx * off, p[1] + ny * off, ang, path[i + 1], 0.18, th * 0.8, 0, belly, "full", 0.03);
-                if (i + 2 < path.length) pin(m, "xy", q2[0], q2[1], 0, 0.09, th * 0.8, belly, "full");
+                double off = w / 2 + 0.07;
+                double[] q2 = seg(m, "xy", p[0] + nx * off, p[1] + ny * off, ang, path[i + 1], 0.16, th * 0.8, 0, l.belly(), "full", 0.03);
+                if (i + 2 < path.length) pin(m, "xy", q2[0], q2[1], 0, 0.08, th * 0.8, l.belly(), "full");
                 p = new double[]{p[0] + Math.cos(rad) * path[i + 1], p[1] + Math.sin(rad) * path[i + 1]};
             }
-            if (rings != null) {
-                // Кольца на середине плеч.
-                double[] q = {sx, 5.7};
-                for (int i = 0; i < 4; i += 2) {
-                    double ang = mir ? 180 - path[i] : path[i];
-                    double rad = Math.toRadians(ang);
-                    q = new double[]{q[0] + Math.cos(rad) * path[i + 1], q[1] + Math.sin(rad) * path[i + 1]};
-                }
-                boxC(m, q[0], q[1], 0, 0.85, 0.85, th + 0.14, rings, "light", 'z', 0, false);
+            // Сужающийся рог для тетивы на конце плеча.
+            double lastAng = mir ? 180 - path[path.length - 2] : path[path.length - 2];
+            double[] e = seg(m, "xy", end[0], end[1], lastAng, 0.35, 0.44, th + 0.04, 0, l.tip(), "full", 0.1);
+            seg(m, "xy", e[0], e[1], lastAng, 0.25, 0.28, th - 0.08, 0, l.tip(), "full", 0.08);
+
+            if (l.grade() >= 3) {
+                double[] q = along(path, mir, sx, 1);
+                pin(m, "xy", (sx + q[0]) / 2 + side * 0.05, 5.7 + (q[1] - 5.7) / 2, 0, 0.42, th + 0.14, "string", "full");
             }
-            boxC(m, end[0], end[1], 0, 0.5, 0.5, th + 0.1, tip, "light", 'y', 45, false);
-            boxC(m, end[0], end[1], 0, 0.26, 0.26, th + 0.26, tip, "light", 'y', 45, false);
-            // Окантовка у корня плеча.
-            boxC(m, side * 1.12, 5.7, 0, 0.3, w + 0.2, th + 0.14, tip, "light", 'z', 0, false);
+            if (l.grade() >= 4) {
+                rodX(m, 5.7, 0, side > 0 ? 1.28 : -1.58, side > 0 ? 1.58 : -1.28, 0.38, l.accent());
+                double rad = Math.toRadians(lastAng);
+                seg(m, "xy", end[0] - Math.cos(rad) * 0.4, end[1] - Math.sin(rad) * 0.4, lastAng, 0.5, 0.72, th + 0.12, 0, l.accent(), "light", 0.05);
+            }
+            if (l.grade() >= 5) {
+                double[] q = along(path, mir, sx, 2);
+                boxC(m, q[0], q[1], 0, 0.8, 0.8, th + 0.16, l.accent(), "light", 'z', 0, false);
+                diamond(m, q[0], q[1], 0.28, th / 2 + 0.12, "gem_" + l.gem(), "full", l.grade() >= 6);
+                seg(m, "xy", e[0], e[1], lastAng + (mir ? -22.5 : 22.5), 0.9, 0.2, 0.18, 0, l.accent(), "light", 0.05);
+            }
+            if (l.grade() >= 6) {
+                seg(m, "xy", sx + side * 0.2, 5.7 + 0.35, mir ? 180 - 22.5 : 22.5, 1.1, 0.16, 0.2, 0, l.accent(), "light", 0.05);
+                seg(m, "xy", sx + side * 0.5, 5.7 + 0.25, mir ? 180 - 45 : 45, 0.75, 0.14, 0.18, 0, l.accent(), "light", 0.05);
+            }
         }
-        // Рукоять с кольцами по краям и полочкой для стрелы.
-        box(m, -1.0, 4.85, -0.42, 1.0, 6.55, 0.42, grip, "full");
-        boxC(m, 0, 5.7, 0, 1.9, 1.6, 0.9, grip, "full", 'y', 45, false);
-        box(m, -1.04, 4.8, -0.47, 1.04, 4.98, 0.47, tip, "full");
-        box(m, -1.04, 6.42, -0.47, 1.04, 6.6, 0.47, tip, "full");
-        box(m, -0.3, 6.55, 0.3, 0.3, 6.75, 0.62, tip, "light");
+        // Рукоять: толще посередине, ступенями сужается к плечам.
+        rodX(m, 5.7, 0, -0.75, 0.75, 0.46, l.grip());
+        rodX(m, 5.7, 0, -1.15, -0.72, 0.4, l.grip());
+        rodX(m, 5.7, 0, 0.72, 1.15, 0.4, l.grip());
+        rodX(m, 5.7, 0, -1.45, -1.12, 0.34, l.grip());
+        rodX(m, 5.7, 0, 1.12, 1.45, 0.34, l.grip());
+        if (l.grade() == 4 || l.grade() == 5) diamond(m, 0, 5.7 + 0.42, 0.26, 0.2, "gem_" + l.gem(), "full", false);
+        if (l.grade() >= 6) {
+            // Крупный светящийся камень в оправе на спинке рукояти.
+            boxC(m, 0, 5.7 + 0.4, 0, 1.1, 0.3, 0.7, l.accent(), "light", 'z', 0, false);
+            diamond(m, 0, 5.7 + 0.62, 0.42, 0.26, "gem_" + l.gem(), "full", true);
+        }
         // Тетива.
         double tx = end[0], ty = end[1];
         double a = STRING_ANGLE[frame];
-        double nock;
         if (a == 0) {
-            box(m, -tx, ty - 0.08, -0.08, tx, ty + 0.08, 0.08, "string", "full");
-            nock = ty;
+            box(m, -tx, ty - 0.07, -0.07, tx, ty + 0.07, 0.07, "string", "full");
         } else {
-            nock = ty - tx * Math.tan(Math.toRadians(a));
+            double nock = ty - tx * Math.tan(Math.toRadians(a));
             double len = tx / Math.cos(Math.toRadians(a));
-            seg(m, "xy", tx, ty, 180 + a, len, 0.16, 0.16, 0, "string", "full");
-            seg(m, "xy", -tx, ty, -a, len, 0.16, 0.16, 0, "string", "full");
+            seg(m, "xy", tx, ty, 180 + a, len, 0.14, 0.14, 0, "string", "full");
+            seg(m, "xy", -tx, ty, -a, len, 0.14, 0.14, 0, "string", "full");
+            arrow(m, nock, nock + 14.5, 0);
         }
-        if (frame > 0) arrow(m, nock, nock + 14.5, 0);
     }
 
     /** Стрела вдоль y: оперение у хвоста, наконечник-ромб. */
@@ -1747,28 +1811,16 @@ public class Weapon3DGen {
             one(mat + "_kite_shield", Kind.SHIELD, m -> { m.shift = 0; kiteShield(m, grade); });
         }
 
-        for (String bowName : new String[]{"composite_bow", "ranger_longbow"}) {
-            boolean comp = bowName.startsWith("composite");
+        for (Map.Entry<String, Bow> b : BOWS.entrySet()) {
+            String bowName = b.getKey();
             String ovs = String.join(",\n",
                     ov("\"pulling\": 1", bowName + "_pulling_0"),
                     ov("\"pulling\": 1, \"pull\": 0.65", bowName + "_pulling_1"),
                     ov("\"pulling\": 1, \"pull\": 0.9", bowName + "_pulling_2"));
-            one(bowName, Kind.BOW, m -> bow(m, comp, 0), ovs);
+            one(bowName, Kind.BOW, m -> bow(m, b.getValue(), 0), ovs);
             for (int f = 0; f < 3; f++) {
                 int frame = f + 1;
-                one(bowName + "_pulling_" + f, Kind.BOW, m -> bow(m, comp, frame));
-            }
-        }
-        for (String mat : new String[]{"diamond", "faceted", "brilliant"}) {
-            String bowName = mat + "_longbow";
-            String ovs = String.join(",\n",
-                    ov("\"pulling\": 1", bowName + "_pulling_0"),
-                    ov("\"pulling\": 1, \"pull\": 0.65", bowName + "_pulling_1"),
-                    ov("\"pulling\": 1, \"pull\": 0.9", bowName + "_pulling_2"));
-            one(bowName, Kind.BOW, m -> grandBow(m, mat, 0), ovs);
-            for (int f = 0; f < 3; f++) {
-                int frame = f + 1;
-                one(bowName + "_pulling_" + f, Kind.BOW, m -> grandBow(m, mat, frame));
+                one(bowName + "_pulling_" + f, Kind.BOW, m -> bow(m, b.getValue(), frame));
             }
         }
 
